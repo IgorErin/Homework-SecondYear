@@ -1,19 +1,17 @@
-namespace DefaultNamespace;
-
-namespace CSharpTest;
+namespace MatrixMul;
 
 public abstract class IntMatrix
 {
     protected readonly int[,] IntArray;
     
-    protected readonly int RowCount;
-    protected readonly int ColumnCount;
+    private readonly int _rowCount;
+    private readonly int _columnCount;
 
     protected IntMatrix(int[,] intArray)
     {
         this.IntArray = intArray;
-        this.RowCount = intArray.GetLength(0);
-        this.ColumnCount = intArray.GetLength(1);
+        this._rowCount = intArray.GetLength(0);
+        this._columnCount = intArray.GetLength(1);
     }
 
     protected static bool AvailableForMultiplication(IntMatrix leftMatrix, IntMatrix rightMatrix)
@@ -49,9 +47,9 @@ public abstract class IntMatrix
     {
         var sb = new System.Text.StringBuilder();
 
-        for (var rowIndex = 0; rowIndex < this.RowCount; rowIndex++)
+        for (var rowIndex = 0; rowIndex < this._rowCount; rowIndex++)
         {
-            for (var columnIndex = 0; columnIndex < this.ColumnCount; columnIndex++)
+            for (var columnIndex = 0; columnIndex < this._columnCount; columnIndex++)
             {
                 sb.Append(this.IntArray[rowIndex, columnIndex].ToString() + " ");
             }

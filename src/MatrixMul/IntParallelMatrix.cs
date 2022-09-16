@@ -1,6 +1,6 @@
-using Microsoft.CSharp.RuntimeBinder;
+namespace MatrixMul;
 
-namespace CSharpTest;
+using Microsoft.CSharp.RuntimeBinder;
 
 public class IntParallelMatrix : IntMatrix
 {
@@ -8,7 +8,7 @@ public class IntParallelMatrix : IntMatrix
     {
     }
 
-    public static IntMatrix operator *(IntParallelMatrix leftMatrix, IntParallelMatrix rightMatrix)
+    public static IntParallelMatrix operator *(IntParallelMatrix leftMatrix, IntParallelMatrix rightMatrix)
     {
         if (AvailableForMultiplication(leftMatrix, rightMatrix))
         {
@@ -17,7 +17,7 @@ public class IntParallelMatrix : IntMatrix
 
         int[, ] result = Multiply(leftMatrix.IntArray, rightMatrix.IntArray);
         
-        return new IntSequentialMatrix(result);
+        return new IntParallelMatrix(result);
     }
     
     private static int[,] Multiply(int[,] leftArray, int[,] rightArray)

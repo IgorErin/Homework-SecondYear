@@ -1,6 +1,6 @@
-﻿using System.Diagnostics.Contracts;
+﻿
 
-namespace CSharpTest;
+namespace MatrixMul;
 
 public class MatrixMain
 {

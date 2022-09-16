@@ -1,4 +1,6 @@
-namespace DefaultNamespace;
+using Microsoft.CSharp.RuntimeBinder;
+
+namespace MatrixMul;
 
 public class IntSequentialMatrix : IntMatrix
 {
