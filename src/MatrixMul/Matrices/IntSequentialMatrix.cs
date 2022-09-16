@@ -1,7 +1,7 @@
-using Microsoft.CSharp.RuntimeBinder;
+using MatrixMul;
+using MatrixMul.MatrixExceptions;
 
-namespace MatrixMul;
-
+namespace MatrixMul.Matrices;
 public class IntSequentialMatrix : IntMatrix
 {
     public IntSequentialMatrix(int[,] intArray) : base(intArray)
@@ -12,7 +12,7 @@ public class IntSequentialMatrix : IntMatrix
     {
         if (AvailableForMultiplication(leftMatrix, rightMatrix))
         {
-            throw new RuntimeBinderException(); //TODO
+            throw new MatrixMulException("TODO");
         }
 
         int[, ] result = Multiply(leftMatrix.IntArray, rightMatrix.IntArray);

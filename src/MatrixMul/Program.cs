@@ -1,8 +1,9 @@
-﻿
+﻿using System;
+using MatrixMul.Matrices;
 
 namespace MatrixMul;
 
-public class MatrixMain
+public static class MatrixMain
 {
     public static void Main()
     {

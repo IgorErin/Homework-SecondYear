@@ -1,6 +1,8 @@
-namespace MatrixMul;
+using System.Collections.Generic;
+using System.Threading;
+using MatrixMul.MatrixExceptions;
 
-using Microsoft.CSharp.RuntimeBinder;
+namespace MatrixMul.Matrices;
 
 public class IntParallelMatrix : IntMatrix
 {
@@ -12,7 +14,7 @@ public class IntParallelMatrix : IntMatrix
     {
         if (AvailableForMultiplication(leftMatrix, rightMatrix))
         {
-            throw new RuntimeBinderException(); //TODO
+            throw new MatrixMulException("TODO");
         }
 
         int[, ] result = Multiply(leftMatrix.IntArray, rightMatrix.IntArray);

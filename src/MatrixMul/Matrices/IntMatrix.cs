@@ -1,4 +1,4 @@
-namespace MatrixMul;
+namespace MatrixMul.Matrices;
 
 public abstract class IntMatrix
 {
@@ -24,7 +24,7 @@ public abstract class IntMatrix
     
     protected static int GetResultItem(int resultColumnIndex, int resultRowIndex, int[ , ] leftArray, int[ , ] rightArray)
     {
-        int sum = 0;
+        var sum = 0;
         
         var leftColumnCount = leftArray.GetLength(1);
         var rightRowCount = rightArray.GetLength(0);
