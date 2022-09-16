@@ -6,6 +6,7 @@ namespace MatrixMul.Matrices;
 
 public class IntParallelMatrix : IntMatrix
 {
+    private const int ThreadCount = 8; 
     public IntParallelMatrix(int[,] intArray) : base(intArray)
     {
     }
@@ -35,7 +36,7 @@ public class IntParallelMatrix : IntMatrix
         {
             for (var resultColumnIndex = 0; resultColumnIndex < rightColumnCount; resultColumnIndex++)
             {
-                if (taskList.Count >= 8)
+                if (taskList.Count >= ThreadCount)
                 {
                     ExecuteList(taskList);
                 
