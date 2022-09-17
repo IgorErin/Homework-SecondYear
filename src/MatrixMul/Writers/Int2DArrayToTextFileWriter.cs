@@ -2,9 +2,9 @@ using MatrixMul.Matrices;
 
 namespace MatrixMul.Writers;
 
-public static class IntMatrixToTextFileWriter
+public static class Int2DArrayToTextFileWriter
 {
-    public static void WriteToFile(string pathToFile, IntMatrix matrix)
+    public static void WriteToFile(string pathToFile, int[,] matrix)
     {
         using var writer = new StreamWriter(pathToFile);
 

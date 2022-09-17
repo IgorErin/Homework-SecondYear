@@ -22,14 +22,14 @@ public static class MatrixOperations
         }
 
         var forLoopRowBounds = new int[ThreadCount + 1];
-        forLoopRowBounds[0] = 0;
+        forLoopRowBounds[ThreadCount] = leftRowCount;
         
         var lenPiece = (int) Math.Ceiling(leftRowCount / (double) ThreadCount); //TODO()
         Console.WriteLine($"piece: {lenPiece}");
 
-        for (var threadIndex = 1; threadIndex < ThreadCount + 1; threadIndex++)
+        for (var threadIndex = 0; threadIndex < ThreadCount; threadIndex++)
         {
-            forLoopRowBounds[threadIndex] = (threadIndex) * lenPiece;
+            forLoopRowBounds[threadIndex] = threadIndex * lenPiece;
         }
         
         var result = new int[leftRowCount, rightColumnCount];

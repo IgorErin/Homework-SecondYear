@@ -1,6 +1,6 @@
 namespace MatrixMul.Readers;
 
-public static class FileToIntMatrixReader
+public static class TextFileToInt2DArrayReader
 {
     public static int [,] GetMatrix(string pathToFile)
     {
