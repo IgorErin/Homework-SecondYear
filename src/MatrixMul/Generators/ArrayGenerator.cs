@@ -1,6 +1,6 @@
 namespace MatrixMul.Generators;
 
-public static class MatrixGenerator
+public static class ArrayGenerator
 {
     private const int MaxRandValue = 20;
 
