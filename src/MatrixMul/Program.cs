@@ -9,7 +9,7 @@ namespace MatrixMul;
 
 public static class MatrixMain
 {
-    private const string DefaultOutputPath = ""; //TODO()
+    private const string DefaultOutputPath = "./resultMatrix"; //TODO()
     private const int DefaultRunWithFixedSizeCount = 10;
     
     private const int MaxLength = 15;
@@ -21,8 +21,18 @@ public static class MatrixMain
     private const string DevSeqTimeRowMessage = "standard deviation sequential time";
     private const string DevParTimeRowMessage = "standard deviation parallel time";
 
+    private const int StartTestElementsCount = 200;
+    private const int PoweredDelta = 2;
+
     public static void Main()
     {
+        var left = ArrayGenerator.Generate2DIntArray(100, 100);
+        var right = ArrayGenerator.Generate2DIntArray(100, 100);
+        
+        Int2DArrayToTextFileWriter.WriteToFile("./leftInt2DArray", left);
+        Int2DArrayToTextFileWriter.WriteToFile("./rightInt2DArray", right);
+        
+        
         Console.WriteLine("Welcome to high performance matrix multiplication...");
         Console.WriteLine(
             "You want to multiply your matrices, otherwise a test measurement will be performed? [yes/no]");
@@ -32,9 +42,10 @@ public static class MatrixMain
 
         while (!correctInput)
         {
-            Console.WriteLine("Incorrect answer, try again");
+            Console.WriteLine("Incorrect answer, try again [yes/no]");
 
             testRunOrCustomMulAnswer = Console.ReadLine();
+            
             correctInput = IsCorrectAnswer(testRunOrCustomMulAnswer, "no", "yes");
         }
 
@@ -71,7 +82,7 @@ public static class MatrixMain
             var parTimeArray = new double[runCount];
             var seqTimeArray = new double[runCount];
 
-            var elementCount = 200 + 2.IntPow(globalRunIndex);
+            var elementCount = StartTestElementsCount + PoweredDelta.IntPow(globalRunIndex);
 
             for (var runIndex = 0; runIndex < runCount; runIndex++)
             {
@@ -168,9 +179,6 @@ public static class MatrixMain
             "par" => MatrixOperations.Int2DArrayParallelMul,
             _ => MatrixOperations.Int2DArraySequentialMul,
         };
-
-    private static int[,] ExecuteMul(Func<int[,], int[,], int[,]> func, int[,] leftArray, int[,] rightArray)
-        => func(leftArray, rightArray);
 
     private static int ReadInputCountWithMessage(string message)
     {
