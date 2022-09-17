@@ -1,5 +1,4 @@
-﻿using System.Data;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text;
 using MatrixMul.Generators;
 using MatrixMul.Readers;
@@ -11,19 +10,19 @@ public static class MatrixMain
 {
     private const string DefaultOutputPath = ""; //TODO()
     private const int DefaultRunWithFixedSizeCount = 10;
-    private const int ConvertArrayCount = 3;
+    private const int MaxLength = 15;
 
     public static void Main()
     {
         
         //
-        var firstArray = new double[] { 0.4, 0.4, 0.5 };
-        var scondArray = new double[] { 0.4, 0.4, 0.5 };
+        /*var firstArray = new double[] { 0.4, 0.4, 0.5 };
+        var scondArray = new double[] { 0.4, 0.455, 0.5 };
         var thirdArray = new int[] { 0, 4, 0 };
         
-        Console.WriteLine(ConvertArraysToTuple(firstArray, scondArray, thirdArray));
-        //
-        /*Console.WriteLine("Welcome to high performance matrix multiplication...");
+        Console.WriteLine(ConvertArraysToString(firstArray, scondArray, thirdArray));*/
+        
+        Console.WriteLine("Welcome to high performance matrix multiplication...");
         Console.WriteLine(
             "You want to multiply your matrices, otherwise a test measurement will be performed? [yes/no]");
 
@@ -32,7 +31,7 @@ public static class MatrixMain
 
         while (!correctInput)
         {
-            Console.Write("Incorrect answer, try again");
+            Console.WriteLine("Incorrect answer, try again");
 
             testRunOrCustomMulAnswer = Console.ReadLine();
             correctInput = IsCorrectAnswer(testRunOrCustomMulAnswer, "no", "yes");
@@ -45,7 +44,7 @@ public static class MatrixMain
         else
         {
             TestMatrixMul();
-        }*/
+        }
     }
 
     private static bool IsCorrectAnswer(string? answer, params string[] correctAnswers)
@@ -53,7 +52,7 @@ public static class MatrixMain
 
     private static void TestMatrixMul()
     {
-        var runCount = ReadInputCountWithMessage("Please enter the number of test runs with fixed matrix size");
+        var runCount = ReadInputCountWithMessage("Please enter the number of test runs with fixed matrix size: ");
 
         var parMulFun = MatrixOperations.Int2DArrayParallelMul;
         var seqMulFun = MatrixOperations.Int2DArraySequentialMul;
@@ -89,8 +88,8 @@ public static class MatrixMain
             seqResultTime[globalRunIndex] = Enumerable.Average(seqTimeArray);
             resultElementCounts[globalRunIndex] = elementCount;
         }
-
-        //Console.WriteLine(ResultTableWriter.WriteTableToFile((parResultTime, seqResultTime, resultElementCounts))); TODO()
+        
+        Console.WriteLine(ConvertArraysToString(parResultTime, seqResultTime, resultElementCounts));
     }
 
     private static void UserMatrixMul()
@@ -107,7 +106,7 @@ public static class MatrixMain
 
         Console.Write("Please enter the path to the right matrix: ");
 
-        var rightMatrixPath = Console.ReadLine() ?? "";
+        var rightMatrixPath = Console.ReadLine();
         while (File.Exists(rightMatrixPath))
         {
             Console.Write("Incorrect path, try again");
@@ -115,8 +114,8 @@ public static class MatrixMain
             leftMatrixPath = Console.ReadLine();
         }
 
-        var left2DArray = TextFileToInt2DArrayReader.GetMatrix(leftMatrixPath);
-        var right2DArray = TextFileToInt2DArrayReader.GetMatrix(rightMatrixPath);
+        var left2DArray = TextFileToInt2DArrayReader.GetMatrix(leftMatrixPath); //TODO null ref
+        var right2DArray = TextFileToInt2DArrayReader.GetMatrix(rightMatrixPath); //TODO
 
         Console.WriteLine("Perform parallel multiplication or serial multiplication");
         Console.WriteLine("enter \"par\" for parallel and \"seq\" for sequential respectively");
@@ -180,7 +179,7 @@ public static class MatrixMain
         return stopwatch.ElapsedMilliseconds;
     }
 
-    private static string ConvertArraysToTuple(double[] parTimes, double[] seqTimes, int[] itemCount) //TODO
+    private static string ConvertArraysToString(double[] parTimes, double[] seqTimes, int[] itemCount) //TODO
     {
         var firstCond = parTimes.Length != seqTimes.Length;
         var secondCond = parTimes.Length != itemCount.Length;
@@ -191,11 +190,20 @@ public static class MatrixMain
             throw new ArgumentException("TODO()");
         }
 
-        var length = parTimes.Length;
+        var length = parTimes.Length + 1;
 
         var stringBuilder = new StringBuilder();
         
-        stringBuilder.AppendFormat("+{0}+", new String('-', 100));
+        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength));
+        stringBuilder.Append(ResultTableWriter.WriteRow(itemCount, MaxLength, "element count"));
+        
+        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength));
+        stringBuilder.Append(ResultTableWriter.WriteRow(seqTimes, MaxLength, "sequential time"));
+
+        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength));
+        stringBuilder.Append(ResultTableWriter.WriteRow(parTimes, MaxLength, "parallel time"));
+
+        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength));
 
         return stringBuilder.ToString();
     }
