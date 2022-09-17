@@ -26,13 +26,6 @@ public static class MatrixMain
 
     public static void Main()
     {
-        var left = ArrayGenerator.Generate2DIntArray(100, 100);
-        var right = ArrayGenerator.Generate2DIntArray(100, 100);
-        
-        Int2DArrayToTextFileWriter.WriteToFile("./leftInt2DArray", left);
-        Int2DArrayToTextFileWriter.WriteToFile("./rightInt2DArray", right);
-        
-        
         Console.WriteLine("Welcome to high performance matrix multiplication...");
         Console.WriteLine(
             "You want to multiply your matrices, otherwise a test measurement will be performed? [yes/no]");
@@ -49,13 +42,21 @@ public static class MatrixMain
             correctInput = IsCorrectAnswer(testRunOrCustomMulAnswer, "no", "yes");
         }
 
-        if (testRunOrCustomMulAnswer == "yes")
+        try
         {
-            UserMatrixMul();
+            if (testRunOrCustomMulAnswer == "yes")
+            {
+                UserMatrixMul();
+            }
+            else
+            {
+                TestMatrixMul();
+            }
         }
-        else
+        catch (Exception exception)
         {
-            TestMatrixMul();
+            Console.WriteLine(exception.Message);
+            Console.WriteLine("Please, restart the program");
         }
     }
 
