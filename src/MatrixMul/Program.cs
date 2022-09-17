@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using MatrixMul.Generators;
+using MatrixMul.MatrixExceptions;
 using MatrixMul.Readers;
 using MatrixMul.Writers;
 
@@ -38,12 +40,42 @@ public static class MatrixMain
     
     private static void TestMul()
     {
-        var leftRowCount = ReadInputCountWithMessage("Enter the number of rows in the left matrix: ");
-        var leftColumnCount = ReadInputCountWithMessage("Enter the number of columns in the left matrix: ");
+        var runCount = ReadInputCountWithMessage("Please enter the number of test runs");
         
-        var rightRowCount = ReadInputCountWithMessage("Enter the number of rows in the right matrix: ");
-        var rightColumnCount = ReadInputCountWithMessage("Enter the number of columns in the right matrix: ");
+        var parTimeArray = new double[runCount];
+        var seqTimeArray = new double[runCount];
 
+        var parMulFun = MatrixOperations.Int2DArrayParallelMul;
+        var seqMulFun = MatrixOperations.Int2DArraySequentialMul;
+
+
+        for (var elementPower = 0; elementPower < 10; elementPower++)
+        {
+            for (var runIndex = 0; runIndex < runCount; runIndex++)
+            {
+                Console.WriteLine("gen arrays...");
+                
+                var elementCount = 200 * (2 ** elementPower)
+
+                var leftInt2DArray = ArrayGenerator.Generate2DIntArray(100 + 2 * elementPower, elementCount);
+                var rightInt2DArray = ArrayGenerator.Generate2DIntArray(elementCount, elementCount);
+
+                Console.WriteLine($"Execute parallel multiplication #{runIndex}");
+
+                var currentParTimeResult = GetExecutionTime(parMulFun, leftInt2DArray, rightInt2DArray);
+
+                Console.WriteLine($"Execute sequential multiplication #{runIndex}");
+
+                var currentSeqTimeResult = GetExecutionTime(seqMulFun, leftInt2DArray, rightInt2DArray);
+
+                parTimeArray[runIndex] = currentParTimeResult;
+                seqTimeArray[runIndex] = currentSeqTimeResult;
+            }
+            
+            var resultParAverageTime = Enumerable.Average(parTimeArray);
+            var resultSeqAverageTime = Enumerable.Average(seqTimeArray);
+        }
+        
         
     }
 
@@ -111,7 +143,7 @@ public static class MatrixMain
 
     private static int ReadInputCountWithMessage(string message)
     {
-        var localCount = 0;
+        int localCount;
         
         Console.Write(message);
         
@@ -122,4 +154,17 @@ public static class MatrixMain
 
         return localCount;
     }
+
+    private static long GetExecutionTime(Func<int[,], int[,], int[,]> mulFunc, int[,] left2DArray, int[,] right2DArray)
+    {
+        var stopwatch = new Stopwatch();
+        
+        stopwatch.Start();
+        var result = mulFunc(left2DArray, right2DArray);
+        stopwatch.Stop();
+
+        return stopwatch.ElapsedMilliseconds;
+    }
+    
+    
 }
