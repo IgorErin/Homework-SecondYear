@@ -1,18 +1,15 @@
-using System;
-using System.IO;
-
 namespace MatrixMul.Readers;
 
-public class FileToIntMatrixReader
+public static class FileToIntMatrixReader
 {
-    public static int[ , ] GetMatrix(string pathToFile)
+    public static int [,] GetMatrix(string pathToFile)
     {
-        string[] textLines = File.ReadAllLines(pathToFile);
+        var textLines = File.ReadAllLines(pathToFile);
 
         return ReadMatrix(textLines);
     }
 
-    private static int[ , ] ReadMatrix(string[] textLines)
+    private static int[,] ReadMatrix(string[] textLines)
     {
         var rowCount = textLines.Length;
         var columnCount = textLines[0].Split(" ").Length;

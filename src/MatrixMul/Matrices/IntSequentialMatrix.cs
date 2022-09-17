@@ -1,4 +1,3 @@
-using MatrixMul;
 using MatrixMul.MatrixExceptions;
 
 namespace MatrixMul.Matrices;
@@ -10,12 +9,12 @@ public class IntSequentialMatrix : IntMatrix
 
     public static IntMatrix operator *(IntSequentialMatrix leftMatrix, IntSequentialMatrix rightMatrix)
     {
-        if (AvailableForMultiplication(leftMatrix, rightMatrix))
+        if (NotAvailableForMultiplication(leftMatrix, rightMatrix))
         {
-            throw new MatrixMulException("TODO");
+            throw new IntMatrixMulException("matrix multiplication is not possible, wrong dimension");
         }
 
-        int[, ] result = Multiply(leftMatrix.IntArray, rightMatrix.IntArray);
+        var result = Multiply(leftMatrix.IntArray, rightMatrix.IntArray);
         
         return new IntSequentialMatrix(result);
     }
@@ -25,7 +24,7 @@ public class IntSequentialMatrix : IntMatrix
         var leftRowCount = leftArray.GetLength(0);
         var rightColumnCount = rightArray.GetLength(1);
 
-        int[,] result = new int[leftRowCount, rightColumnCount];
+        var result = new int[leftRowCount, rightColumnCount];
 
         for (var resultRowIndex = 0; resultRowIndex < leftRowCount; resultRowIndex++)
         {

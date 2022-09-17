@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Threading;
 using MatrixMul.MatrixExceptions;
 
 namespace MatrixMul.Matrices;
@@ -13,34 +11,34 @@ public class IntParallelMatrix : IntMatrix
 
     public static IntParallelMatrix operator *(IntParallelMatrix leftMatrix, IntParallelMatrix rightMatrix)
     {
-        if (AvailableForMultiplication(leftMatrix, rightMatrix))
+        if (NotAvailableForMultiplication(leftMatrix, rightMatrix))
         {
-            throw new MatrixMulException("TODO");
+            throw new IntMatrixMulException("matrix multiplication is not possible, wrong dimension");
         }
 
-        int[, ] result = Multiply(leftMatrix.IntArray, rightMatrix.IntArray);
+        var result = Multiply(leftMatrix.IntArray, rightMatrix.IntArray);
         
         return new IntParallelMatrix(result);
     }
-    
+
     private static int[,] Multiply(int[,] leftArray, int[,] rightArray)
     {
         var leftRowCount = leftArray.GetLength(0);
         var rightColumnCount = rightArray.GetLength(1);
 
-        var taskList = new List<Thread>();
+        var taskArray = new Thread[ThreadCount];
+        var currentThreadNum = 0;
 
-        int[,] result = new int[leftRowCount, rightColumnCount];
+        var result = new int[leftRowCount, rightColumnCount];
 
         for (var resultRowIndex = 0; resultRowIndex < leftRowCount; resultRowIndex++)
         {
             for (var resultColumnIndex = 0; resultColumnIndex < rightColumnCount; resultColumnIndex++)
             {
-                if (taskList.Count >= ThreadCount)
+                if (currentThreadNum >= ThreadCount)
                 {
-                    ExecuteList(taskList);
-                
-                    taskList.Clear();
+                    ExecuteArray(taskArray, currentThreadNum);
+                    currentThreadNum = 0;
                 }
                 
                 var localColumnIndex = resultColumnIndex;
@@ -54,25 +52,26 @@ public class IntParallelMatrix : IntMatrix
                     }
                 );
 
-                taskList.Add(thread);
+                taskArray[currentThreadNum] = thread;
+                currentThreadNum++;
             }
         }
         
-        ExecuteList(taskList);
+        ExecuteArray(taskArray, currentThreadNum);
 
         return result;
     }
 
-    private static void ExecuteList(List<Thread> threadList)
+    private static void ExecuteArray(Thread[] threadArray, int threadNum)
     {
-        foreach (var thread in threadList)
+        for (var threadIndex = 0; threadIndex < threadNum; threadIndex++)
         {
-            thread.Start();
+            threadArray[threadIndex].Start();
         }
 
-        foreach (var thread in threadList)
+        for (var threadIndex = 0; threadIndex < threadNum; threadIndex++)
         {
-            thread.Join();
+            threadArray[threadIndex].Join();
         }
     } 
 }

@@ -1,3 +1,6 @@
+using System.Security.Principal;
+using MatrixMul.MatrixExceptions;
+
 namespace MatrixMul.Matrices;
 
 public abstract class IntMatrix
@@ -9,20 +12,22 @@ public abstract class IntMatrix
 
     protected IntMatrix(int[,] intArray)
     {
-        this.IntArray = intArray;
-        this._rowCount = intArray.GetLength(0);
-        this._columnCount = intArray.GetLength(1);
+        IntArray = intArray;
+        _rowCount = intArray.GetLength(0);
+        _columnCount = intArray.GetLength(1);
     }
 
-    protected static bool AvailableForMultiplication(IntMatrix leftMatrix, IntMatrix rightMatrix)
+    protected static bool NotAvailableForMultiplication(IntMatrix leftMatrix, IntMatrix rightMatrix)
     {
-        var rowLenLeftMatrix = leftMatrix.IntArray.GetLength(0);
-        var columnLenRightMatrix = rightMatrix.IntArray.GetLength(1); //TODO()
+        var rowLenLeftMatrix = leftMatrix.IntArray.GetLength(1);
+        var columnLenRightMatrix = rightMatrix.IntArray.GetLength(1); 
+        
+        Console.WriteLine($"left : {rowLenLeftMatrix}, right: {columnLenRightMatrix}");
 
         return rowLenLeftMatrix != columnLenRightMatrix;
     }
     
-    protected static int GetResultItem(int resultColumnIndex, int resultRowIndex, int[ , ] leftArray, int[ , ] rightArray)
+    protected static int GetResultItem(int resultColumnIndex, int resultRowIndex, int[ , ] leftArray, int[ , ] rightArray) //TODO()
     {
         var sum = 0;
         
@@ -42,16 +47,21 @@ public abstract class IntMatrix
 
         return sum;
     }
+
+    public static IntMatrix operator *(IntMatrix leftMatrix, IntMatrix rightMatrix)
+    {
+        throw new IntMatrixMulException("operation \"*\" not implemented yet");
+    }
     
     public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
 
-        for (var rowIndex = 0; rowIndex < this._rowCount; rowIndex++)
+        for (var rowIndex = 0; rowIndex < _rowCount; rowIndex++)
         {
             for (var columnIndex = 0; columnIndex < this._columnCount; columnIndex++)
             {
-                sb.Append(this.IntArray[rowIndex, columnIndex].ToString() + " ");
+                sb.Append(IntArray[rowIndex, columnIndex] + " ");
             }
 
             sb.Append("\n");
@@ -59,4 +69,10 @@ public abstract class IntMatrix
 
         return sb.ToString();
     }
+
+    public int this[int i, int j]
+        => IntArray[i, j];
+
+    public int GetLength(int index)
+        => IntArray.GetLength(index);
 }
