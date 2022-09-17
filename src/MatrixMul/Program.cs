@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text;
+using MatrixMul.Extensions;
 using MatrixMul.Generators;
 using MatrixMul.Readers;
 using MatrixMul.Writers;
@@ -10,18 +11,18 @@ public static class MatrixMain
 {
     private const string DefaultOutputPath = ""; //TODO()
     private const int DefaultRunWithFixedSizeCount = 10;
+    
     private const int MaxLength = 15;
+    private const int MessageDelta = 25;
+
+    private const string ElementCountRowMessage = "average element count";
+    private const string AverSeqTimeRowMessage = "average sequential time";
+    private const string AverParTimeRowMessage = "average parallel time";
+    private const string DevSeqTimeRowMessage = "standard deviation sequential time";
+    private const string DevParTimeRowMessage = "standard deviation parallel time";
 
     public static void Main()
     {
-        
-        //
-        /*var firstArray = new double[] { 0.4, 0.4, 0.5 };
-        var scondArray = new double[] { 0.4, 0.455, 0.5 };
-        var thirdArray = new int[] { 0, 4, 0 };
-        
-        Console.WriteLine(ConvertArraysToString(firstArray, scondArray, thirdArray));*/
-        
         Console.WriteLine("Welcome to high performance matrix multiplication...");
         Console.WriteLine(
             "You want to multiply your matrices, otherwise a test measurement will be performed? [yes/no]");
@@ -59,6 +60,10 @@ public static class MatrixMain
 
         var parResultTime = new double[DefaultRunWithFixedSizeCount];
         var seqResultTime = new double[DefaultRunWithFixedSizeCount];
+        
+        var parResultDeviation = new double[DefaultRunWithFixedSizeCount];
+        var seqResultDeviation = new double[DefaultRunWithFixedSizeCount];
+        
         var resultElementCounts = new int[DefaultRunWithFixedSizeCount];
 
         for (var globalRunIndex = 0; globalRunIndex < DefaultRunWithFixedSizeCount; globalRunIndex++)
@@ -86,10 +91,19 @@ public static class MatrixMain
 
             parResultTime[globalRunIndex] = Enumerable.Average(parTimeArray);
             seqResultTime[globalRunIndex] = Enumerable.Average(seqTimeArray);
+            
+            parResultDeviation[globalRunIndex] = GetDeviation(parTimeArray);
+            seqResultDeviation[globalRunIndex] = GetDeviation(seqTimeArray);
+            
             resultElementCounts[globalRunIndex] = elementCount;
         }
         
-        Console.WriteLine(ConvertArraysToString(parResultTime, seqResultTime, resultElementCounts));
+        Console.WriteLine(ConvertArraysToString(
+            parResultTime,
+            seqResultTime,
+            parResultDeviation,
+            seqResultDeviation,
+            resultElementCounts));
     }
 
     private static void UserMatrixMul()
@@ -144,6 +158,10 @@ public static class MatrixMain
         Console.WriteLine($"the result is written in {DefaultOutputPath}");
     }
 
+    private static double GetDeviation(double[] values)
+        => Enumerable.Average(values.Select(x => x * x)) -
+           Enumerable.Average(values) * Enumerable.Average(values);
+
     private static Func<int[,], int[,], int[,]> GetMulFun(string parallelRunOrSequentialMulAnswer)
         => parallelRunOrSequentialMulAnswer switch
         {
@@ -179,7 +197,12 @@ public static class MatrixMain
         return stopwatch.ElapsedMilliseconds;
     }
 
-    private static string ConvertArraysToString(double[] parTimes, double[] seqTimes, int[] itemCount) //TODO
+    private static string ConvertArraysToString(
+        double[] parTimes,
+        double[] seqTimes, 
+        double[] parDeviation,
+        double[] seqDeviation,
+        int[] itemCount)
     {
         var firstCond = parTimes.Length != seqTimes.Length;
         var secondCond = parTimes.Length != itemCount.Length;
@@ -194,16 +217,22 @@ public static class MatrixMain
 
         var stringBuilder = new StringBuilder();
         
-        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength));
-        stringBuilder.Append(ResultTableWriter.WriteRow(itemCount, MaxLength, "element count"));
+        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength, MessageDelta));
+        stringBuilder.Append(ResultTableWriter.WriteRow(itemCount, MaxLength, ElementCountRowMessage, MessageDelta));
         
-        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength));
-        stringBuilder.Append(ResultTableWriter.WriteRow(seqTimes, MaxLength, "sequential time"));
+        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength, MessageDelta));
+        stringBuilder.Append(ResultTableWriter.WriteRow(seqTimes, MaxLength, AverSeqTimeRowMessage, MessageDelta));
 
-        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength));
-        stringBuilder.Append(ResultTableWriter.WriteRow(parTimes, MaxLength, "parallel time"));
+        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength, MessageDelta));
+        stringBuilder.Append(ResultTableWriter.WriteRow(parTimes, MaxLength, AverParTimeRowMessage, MessageDelta));
+        
+        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength, MessageDelta));
+        stringBuilder.Append(ResultTableWriter.WriteRow(parDeviation, MaxLength, DevSeqTimeRowMessage, MessageDelta));
+        
+        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength, MessageDelta));
+        stringBuilder.Append(ResultTableWriter.WriteRow(seqDeviation, MaxLength, DevParTimeRowMessage, MessageDelta));
 
-        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength));
+        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength, MessageDelta));
 
         return stringBuilder.ToString();
     }

@@ -27,7 +27,11 @@ public abstract class IntMatrix
         return rowLenLeftMatrix != columnLenRightMatrix;
     }
     
-    protected static int GetResultItem(int resultColumnIndex, int resultRowIndex, int[ , ] leftArray, int[ , ] rightArray) //TODO()
+    protected static int GetResultItem(
+        int resultColumnIndex, 
+        int resultRowIndex, 
+        int[ , ] leftArray,
+        int[ , ] rightArray) 
     {
         var sum = 0;
         

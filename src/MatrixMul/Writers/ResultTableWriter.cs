@@ -1,15 +1,16 @@
-using System.Data;
 using System.Text;
 
-namespace MatrixMul;
+namespace MatrixMul.Writers;
 
 public static class ResultTableWriter
 {
-    public static string WriteBound(int length, int maxLength)
+    public static string WriteBound(int length, int maxLength, int messageDelta = 0)
     {
         var stringBuilder = new StringBuilder();
+        
+        stringBuilder.AppendFormat("+{0}", new String('-', maxLength + messageDelta));
 
-        for (var i = 0; i < length; i++)
+        for (var i = 1; i < length; i++)
         {
             stringBuilder.AppendFormat("+{0}", new String('-', maxLength));
         }
@@ -20,15 +21,15 @@ public static class ResultTableWriter
         return stringBuilder.ToString();
     }
     
-    public static string WriteRow<T>(IEnumerable<T> elements, int maxLength, string name)
+    public static string WriteRow<T>(IEnumerable<T> elements, int maxLength, string name, int messageDelta = 0)
     {
         var stringBuilder = new StringBuilder();
         
-        stringBuilder.AppendFormat("|{0}", GetAlignString(name ?? "", maxLength));
+        stringBuilder.AppendFormat("|{0}", GetAlignString(name ?? "", maxLength + messageDelta));
         
         foreach(var element in elements)
         {
-            stringBuilder.AppendFormat("|{0}", GetAlignString(element?.ToString() ?? "", maxLength)); // TODO
+            stringBuilder.AppendFormat("|{0}", GetAlignString(element?.ToString() ?? "", maxLength));
         }
 
         stringBuilder.Append("|");
@@ -37,7 +38,7 @@ public static class ResultTableWriter
         return stringBuilder.ToString();
     }
 
-    public static string GetAlignString(string stringElement, int maxLength)
+    private static string GetAlignString(string stringElement, int maxLength)
     {
         if (stringElement.Length >= maxLength)
         {

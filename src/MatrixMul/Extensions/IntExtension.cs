@@ -1,4 +1,4 @@
-namespace MatrixMul;
+namespace MatrixMul.Extensions;
 
 public static class IntExtension
 {

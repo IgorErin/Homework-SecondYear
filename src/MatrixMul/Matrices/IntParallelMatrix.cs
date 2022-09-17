@@ -24,54 +24,71 @@ public class IntParallelMatrix : IntMatrix
     private static int[,] Multiply(int[,] leftArray, int[,] rightArray)
     {
         var leftRowCount = leftArray.GetLength(0);
+        var leftColumnCount = leftArray.GetLength(1);
+
+        var rightRowCount = rightArray.GetLength(0);
         var rightColumnCount = rightArray.GetLength(1);
 
-        var taskArray = new Thread[ThreadCount];
-        var currentThreadNum = 0;
-
-        var result = new int[leftRowCount, rightColumnCount];
-
-        for (var resultRowIndex = 0; resultRowIndex < leftRowCount; resultRowIndex++)
+        if (leftColumnCount != rightRowCount)
         {
-            for (var resultColumnIndex = 0; resultColumnIndex < rightColumnCount; resultColumnIndex++)
-            {
-                if (currentThreadNum >= ThreadCount)
-                {
-                    ExecuteArray(taskArray, currentThreadNum);
-                    currentThreadNum = 0;
-                }
-                
-                var localColumnIndex = resultColumnIndex;
-                var localRowIndex = resultRowIndex;
-                
-                var thread = new Thread(() =>
-                    {
-                        var resultItem = GetResultItem(localColumnIndex, localRowIndex, leftArray, rightArray);
-
-                        result[localRowIndex, localColumnIndex] = resultItem;
-                    }
+            throw new MatrixOperationsException(
+                $"matrix multiplication is not possible, wrong dimension: {leftColumnCount} != {rightRowCount}"
                 );
+        }
 
-                taskArray[currentThreadNum] = thread;
-                currentThreadNum++;
-            }
+        var forLoopRowBounds = new int[ThreadCount + 1];
+        forLoopRowBounds[ThreadCount] = leftRowCount;
+        
+        var lenPiece = (int) Math.Ceiling(leftRowCount / (double) ThreadCount);
+
+        for (var threadIndex = 0; threadIndex < ThreadCount; threadIndex++)
+        {
+            forLoopRowBounds[threadIndex] = threadIndex * lenPiece;
         }
         
-        ExecuteArray(taskArray, currentThreadNum);
+        var result = new int[leftRowCount, rightColumnCount];
+        var threads = new Thread[ThreadCount];
+
+        for (var threadIndex = 0; threadIndex < ThreadCount; threadIndex++)
+        {
+            var currentLowBound = forLoopRowBounds[threadIndex];
+            var currentHighBound = forLoopRowBounds[threadIndex + 1];
+            
+            var currentThread = new Thread(() =>
+                {
+                    for (var leftRowIndex = currentLowBound; leftRowIndex < currentHighBound; leftRowIndex++) 
+                    {
+                        for (var rightColumnIndex = 0; rightColumnIndex < rightColumnCount; rightColumnIndex++)
+                        {
+                            for (var currentItemIndex = 0; currentItemIndex < leftColumnCount; currentItemIndex++)
+                            {
+                                result[leftRowIndex, rightColumnIndex] +=
+                                    leftArray[leftRowIndex, currentItemIndex] *
+                                    rightArray[currentItemIndex, rightColumnIndex];
+                            }
+                        }
+                    }
+                }
+            );
+
+            threads[threadIndex] = currentThread;
+        }
+
+        ExecuteArray(threads);
 
         return result;
     }
 
-    private static void ExecuteArray(Thread[] threadArray, int threadNum)
+    private static void ExecuteArray(Thread[] threadArray)
     {
-        for (var threadIndex = 0; threadIndex < threadNum; threadIndex++)
+        foreach (var thread in threadArray)
         {
-            threadArray[threadIndex].Start();
+            thread.Start();
         }
 
-        for (var threadIndex = 0; threadIndex < threadNum; threadIndex++)
+        foreach (var thread in threadArray)
         {
-            threadArray[threadIndex].Join();
+            thread.Join();
         }
     } 
 }

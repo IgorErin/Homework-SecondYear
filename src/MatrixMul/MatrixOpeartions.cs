@@ -24,8 +24,7 @@ public static class MatrixOperations
         var forLoopRowBounds = new int[ThreadCount + 1];
         forLoopRowBounds[ThreadCount] = leftRowCount;
         
-        var lenPiece = (int) Math.Ceiling(leftRowCount / (double) ThreadCount); //TODO()
-        Console.WriteLine($"piece: {lenPiece}");
+        var lenPiece = (int) Math.Ceiling(leftRowCount / (double) ThreadCount);
 
         for (var threadIndex = 0; threadIndex < ThreadCount; threadIndex++)
         {
