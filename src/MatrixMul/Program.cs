@@ -9,11 +9,6 @@ namespace MatrixMul;
 public static class MatrixMain
 {
     /// <summary>
-    /// Default path to save result of user multiplication in. Used in UserMatrixMul.
-    /// </summary>
-    private const string DefaultOutputPath = "./resultMatrix";
-    
-    /// <summary>
     /// Values for table builder. Used in ConvertArraysToString method.
     /// </summary>
     private const int MaxLength = 15;
@@ -45,15 +40,14 @@ public static class MatrixMain
     public static void Main()
     {
         Console.WriteLine("Welcome to high performance matrix multiplication...");
-        Console.WriteLine(
-            "You want to multiply your matrices, otherwise a test measurement will be performed? [yes/no]");
+        Console.Write("You want to multiply your matrices, otherwise a test measurement will be performed? [yes/no]: ");
 
         var testRunOrCustomMulAnswer = Console.ReadLine();
         var correctInput = IsCorrectAnswer(testRunOrCustomMulAnswer, "no", "yes");
 
         while (!correctInput)
         {
-            Console.WriteLine("Incorrect answer, try again [yes/no]");
+            Console.Write("Incorrect answer, try again [yes/no]: ");
 
             testRunOrCustomMulAnswer = Console.ReadLine();
             
@@ -71,15 +65,22 @@ public static class MatrixMain
                 TestMatrixMul();
             }
         }
+        catch (DirectoryNotFoundException exception)
+        {
+            Console.Write($"Incorrect file path: {exception.Message}");
+        }
         catch (Exception exception)
         {
             Console.WriteLine(exception.Message);
+        }
+        finally
+        {
             Console.WriteLine("Please, restart the program");
         }
     }
 
     /// <summary>
-    /// Allows you to match the entered value with constant strings.
+    /// Method that allows you to match the entered value with constant strings.
     /// </summary>
     /// <param name="answer">The string value to be found.</param>
     /// <param name="correctAnswers">Strings among which the search will be carried out.</param>
@@ -151,31 +152,15 @@ public static class MatrixMain
     /// </summary>
     private static void UserMatrixMul()
     {
-        Console.Write("Please enter the path to the left matrix: ");
-
-        var leftMatrixPath = Console.ReadLine();
-        while (!File.Exists(leftMatrixPath))
-        {
-            Console.Write("Incorrect path, try again");
-
-            leftMatrixPath = Console.ReadLine();
-        }
-
-        Console.Write("Please enter the path to the right matrix: ");
-
-        var rightMatrixPath = Console.ReadLine();
-        while (!File.Exists(rightMatrixPath))
-        {
-            Console.Write("Incorrect path, try again");
-
-            leftMatrixPath = Console.ReadLine();
-        }
-
+        var leftMatrixPath = GetPathFromClI("Please enter the path to the left matrix: ");
+        var rightMatrixPath = GetPathFromClI("Please enter the path to the right matrix: ");
+        var resultPath = GetPathFromClI("Please enter the path to the result file: ");
+        
         var left2DArray = TextFileToInt2DArrayReader.Read(leftMatrixPath);
         var right2DArray = TextFileToInt2DArrayReader.Read(rightMatrixPath); 
 
         Console.WriteLine("Perform parallel multiplication or sequential multiplication");
-        Console.WriteLine("enter \"par\" for parallel and \"seq\" for sequential respectively");
+        Console.Write("Enter \"par\" for parallel and \"seq\" for sequential respectively [par/Seq]: ");
 
         var parallelOrSequentialMulAnswer = Console.ReadLine();
         var correctInput = IsCorrectAnswer(parallelOrSequentialMulAnswer, "par", "seq");
@@ -195,10 +180,39 @@ public static class MatrixMain
         var result = mulFun(left2DArray, right2DArray);
         stopwatch.Stop();
 
-        Int2DArrayToTextFileWriter.Write(DefaultOutputPath, result);
+        Int2DArrayToTextFileWriter.Write(resultPath, result);
 
         Console.WriteLine($"Multiplication done in {stopwatch.ElapsedMilliseconds} milliseconds");
-        Console.WriteLine($"the result is written in {DefaultOutputPath}");
+        Console.WriteLine($"the result is written in {resultPath}");
+    }
+
+    /// <summary>
+    /// a method that tries to read the path from the console, displaying messages
+    /// </summary>
+    /// <param name="message">message printed on first try</param>
+    /// <returns>file path as a string</returns>
+    /// <exception cref="IOException">An exception will be thrown if the arrays have different lengths</exception>
+    private static string GetPathFromClI(string message)
+    {
+        Console.Write(message);
+        
+        var inputCount = 0;
+        var matrixPath = Console.ReadLine();
+        
+        while (!File.Exists(matrixPath))
+        {
+            Console.Write("Incorrect path, try again: ");
+
+            matrixPath = Console.ReadLine();
+            inputCount++;
+
+            if (inputCount >= 10)
+            {
+                throw new IOException("Too many attempts to enter a value, please try again later");
+            }
+        }
+
+        return matrixPath;
     }
     
     /// <summary>
