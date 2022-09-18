@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using MatrixMul.Extensions;
 using MatrixMul.Generators;
 using MatrixMul.Readers;
@@ -8,21 +11,37 @@ namespace MatrixMul;
 
 public static class MatrixMain
 {
+    /// <summary>
+    /// Default path to save result of user multiplication in. Used in UserMatrixMul.
+    /// </summary>
     private const string DefaultOutputPath = "./resultMatrix";
-    private const int DefaultRunWithFixedSizeCount = 10;
     
+    /// <summary>
+    /// Values for table builder. Used in ConvertArraysToString method.
+    /// </summary>
     private const int MaxLength = 15;
     private const int MessageDelta = 25;
 
+    /// <summary>
+    /// Message for table builder. Used in ConvertArraysToString method.
+    /// </summary>
     private const string ElementCountRowMessage = "average element count";
     private const string AverSeqTimeRowMessage = "average sequential time";
     private const string AverParTimeRowMessage = "average parallel time";
     private const string DevSeqTimeRowMessage = "standard deviation sequential time";
     private const string DevParTimeRowMessage = "standard deviation parallel time";
-
+    
+    /// <summary>
+    /// Start and delta values for test run. Used in TestMatrixMul method.
+    /// </summary>
     private const int StartTestElementsCount = 200;
     private const int PoweredDelta = 2;
     
+    /// <summary>
+    /// Default test run count. Used in TestMatrixMul method.
+    /// </summary>
+    private const int DefaultRunWithFixedSizeCount = 10;
+
     /// <summary>
     /// Main function of a program.
     /// </summary>
@@ -277,29 +296,29 @@ public static class MatrixMain
 
         if (firstCond || secondCond || thirdCond)
         {
-            throw new ArgumentException("TODO()");
+            throw new ArgumentException("Array sizes are different");
         }
 
         var length = parTimes.Length + 1;
 
-        var tableWriter = new StringTableBuilder();
+        var tableWriter = new StringTableBuilder(MaxLength);
         
-        tableWriter.WriteBound(length, MaxLength, MessageDelta);
-        tableWriter.WriteRow(itemCount, MaxLength, ElementCountRowMessage, MessageDelta);
+        tableWriter.WriteBound(length, MessageDelta);
+        tableWriter.WriteRow<int>(itemCount, ElementCountRowMessage, MessageDelta);
         
-        tableWriter.WriteBound(length, MaxLength, MessageDelta);
-        tableWriter.WriteRow(seqTimes, MaxLength, AverSeqTimeRowMessage, MessageDelta);
+        tableWriter.WriteBound(length, MessageDelta);
+        tableWriter.WriteRow<double>(seqTimes, AverSeqTimeRowMessage, MessageDelta);
 
-        tableWriter.WriteBound(length, MaxLength, MessageDelta);
-        tableWriter.WriteRow(parTimes, MaxLength, AverParTimeRowMessage, MessageDelta);
+        tableWriter.WriteBound(length, MessageDelta);
+        tableWriter.WriteRow(parTimes, AverParTimeRowMessage, MessageDelta);
         
-        tableWriter.WriteBound(length, MaxLength, MessageDelta);
-        tableWriter.WriteRow(parDeviation, MaxLength, DevSeqTimeRowMessage, MessageDelta);
+        tableWriter.WriteBound(length, MessageDelta);
+        tableWriter.WriteRow(parDeviation, DevSeqTimeRowMessage, MessageDelta);
         
-        tableWriter.WriteBound(length, MaxLength, MessageDelta);
-        tableWriter.WriteRow(seqDeviation, MaxLength, DevParTimeRowMessage, MessageDelta);
+        tableWriter.WriteBound(length, MessageDelta);
+        tableWriter.WriteRow(seqDeviation, DevParTimeRowMessage, MessageDelta);
 
-        tableWriter.WriteBound(length, MaxLength, MessageDelta);
+        tableWriter.WriteBound(length, MessageDelta);
 
         return tableWriter.ToString();
     }
