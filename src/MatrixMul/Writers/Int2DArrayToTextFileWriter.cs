@@ -4,7 +4,7 @@ namespace MatrixMul.Writers;
 
 public static class Int2DArrayToTextFileWriter
 {
-    public static void WriteToFile(string pathToFile, int[,] matrix)
+    public static void Write(string pathToFile, int[,] matrix)
     {
         using var writer = File.CreateText(pathToFile);;
 

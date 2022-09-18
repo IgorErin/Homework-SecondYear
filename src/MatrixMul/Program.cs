@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Text;
 using MatrixMul.Extensions;
 using MatrixMul.Generators;
 using MatrixMul.Readers;
@@ -9,7 +8,7 @@ namespace MatrixMul;
 
 public static class MatrixMain
 {
-    private const string DefaultOutputPath = "./resultMatrix"; //TODO()
+    private const string DefaultOutputPath = "./resultMatrix";
     private const int DefaultRunWithFixedSizeCount = 10;
     
     private const int MaxLength = 15;
@@ -60,7 +59,7 @@ public static class MatrixMain
         }
     }
 
-    private static bool IsCorrectAnswer(string? answer, params string[] correctAnswers)
+    private static bool IsCorrectAnswer(string answer, params string[] correctAnswers)
         => Array.Exists(correctAnswers, s => s == answer);
 
     private static void TestMatrixMul()
@@ -89,8 +88,8 @@ public static class MatrixMain
             {
                 Console.WriteLine("Gen arrays...");
 
-                var leftInt2DArray = ArrayGenerator.Generate2DIntArray(elementCount, elementCount);
-                var rightInt2DArray = ArrayGenerator.Generate2DIntArray(elementCount, elementCount);
+                var leftInt2DArray = IntArrayGenerator.Generate2DIntArray(elementCount, elementCount);
+                var rightInt2DArray = IntArrayGenerator.Generate2DIntArray(elementCount, elementCount);
 
                 Console.WriteLine($"Executing multiplication #{runIndex} with {elementCount} elements");
 
@@ -140,8 +139,8 @@ public static class MatrixMain
             leftMatrixPath = Console.ReadLine();
         }
 
-        var left2DArray = TextFileToInt2DArrayReader.GetMatrix(leftMatrixPath); //TODO null ref
-        var right2DArray = TextFileToInt2DArrayReader.GetMatrix(rightMatrixPath); //TODO
+        var left2DArray = TextFileToInt2DArrayReader.Read(leftMatrixPath); //TODO null ref
+        var right2DArray = TextFileToInt2DArrayReader.Read(rightMatrixPath); //TODO
 
         Console.WriteLine("Perform parallel multiplication or serial multiplication");
         Console.WriteLine("enter \"par\" for parallel and \"seq\" for sequential respectively");
@@ -164,7 +163,7 @@ public static class MatrixMain
         var result = mulFun(left2DArray, right2DArray);
         stopwatch.Stop();
 
-        Int2DArrayToTextFileWriter.WriteToFile(DefaultOutputPath, result);
+        Int2DArrayToTextFileWriter.Write(DefaultOutputPath, result);
 
         Console.WriteLine($"Multiplication done in {stopwatch.ElapsedMilliseconds} milliseconds");
         Console.WriteLine($"the result is written in {DefaultOutputPath}");
@@ -200,7 +199,7 @@ public static class MatrixMain
         var stopwatch = new Stopwatch(); //TODO()
 
         stopwatch.Start();
-        var result = mulFunc(left2DArray, right2DArray);
+        mulFunc(left2DArray, right2DArray);
         stopwatch.Stop();
 
         return stopwatch.ElapsedMilliseconds;
@@ -224,25 +223,25 @@ public static class MatrixMain
 
         var length = parTimes.Length + 1;
 
-        var stringBuilder = new StringBuilder();
+        var tableWriter = new TableWriter();
         
-        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength, MessageDelta));
-        stringBuilder.Append(ResultTableWriter.WriteRow(itemCount, MaxLength, ElementCountRowMessage, MessageDelta));
+        tableWriter.WriteBound(length, MaxLength, MessageDelta);
+        tableWriter.WriteRow(itemCount, MaxLength, ElementCountRowMessage, MessageDelta);
         
-        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength, MessageDelta));
-        stringBuilder.Append(ResultTableWriter.WriteRow(seqTimes, MaxLength, AverSeqTimeRowMessage, MessageDelta));
+        tableWriter.WriteBound(length, MaxLength, MessageDelta);
+        tableWriter.WriteRow(seqTimes, MaxLength, AverSeqTimeRowMessage, MessageDelta);
 
-        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength, MessageDelta));
-        stringBuilder.Append(ResultTableWriter.WriteRow(parTimes, MaxLength, AverParTimeRowMessage, MessageDelta));
+        tableWriter.WriteBound(length, MaxLength, MessageDelta);
+        tableWriter.WriteRow(parTimes, MaxLength, AverParTimeRowMessage, MessageDelta);
         
-        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength, MessageDelta));
-        stringBuilder.Append(ResultTableWriter.WriteRow(parDeviation, MaxLength, DevSeqTimeRowMessage, MessageDelta));
+        tableWriter.WriteBound(length, MaxLength, MessageDelta);
+        tableWriter.WriteRow(parDeviation, MaxLength, DevSeqTimeRowMessage, MessageDelta);
         
-        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength, MessageDelta));
-        stringBuilder.Append(ResultTableWriter.WriteRow(seqDeviation, MaxLength, DevParTimeRowMessage, MessageDelta));
+        tableWriter.WriteBound(length, MaxLength, MessageDelta);
+        tableWriter.WriteRow(seqDeviation, MaxLength, DevParTimeRowMessage, MessageDelta);
 
-        stringBuilder.Append(ResultTableWriter.WriteBound(length, MaxLength, MessageDelta));
+        tableWriter.WriteBound(length, MaxLength, MessageDelta);
 
-        return stringBuilder.ToString();
+        return tableWriter.ToString();
     }
 }

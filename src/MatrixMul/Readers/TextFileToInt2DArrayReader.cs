@@ -2,7 +2,7 @@ namespace MatrixMul.Readers;
 
 public static class TextFileToInt2DArrayReader
 {
-    public static int [,] GetMatrix(string pathToFile)
+    public static int[,] Read(string pathToFile)
     {
         var textLines = File.ReadAllLines(pathToFile);
 
