@@ -1,5 +1,3 @@
-using System;
-
 namespace MatrixMul.Extensions;
 
 /// <summary>
