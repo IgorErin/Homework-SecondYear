@@ -2,12 +2,22 @@ using MatrixMul.MatrixExceptions;
 
 namespace MatrixMul;
 
-public static class MatrixOperations
+/// <summary>
+/// Static class providing int two-dimensional array multiplication operations.
+/// </summary>
+public static class Int2DArrayOperations
 {
-    private const int ThreadCount = 8;
-    
+    /// <summary>
+    /// A function that performs parallel multiplication of two two-dimensional arrays.
+    /// </summary>
+    /// <param name="leftMatrix">Left array passed for multiplication</param>
+    /// <param name="rightMatrix">Right array passed for multiplication</param>
+    /// <returns>Result of multiplication</returns>
+    /// <exception cref="Int2DArrayOperationsException">Exception was thrown if the arrays have wrong dimension</exception>
     public static int[,] Int2DArrayParallelMul(int[,] leftMatrix, int[,] rightMatrix)
     {
+        var threadCount = Environment.ProcessorCount;
+        
         var leftRowCount = leftMatrix.GetLength(0);
         var leftColumnCount = leftMatrix.GetLength(1);
 
@@ -16,25 +26,25 @@ public static class MatrixOperations
 
         if (leftColumnCount != rightRowCount)
         {
-            throw new MatrixOperationsException(
+            throw new Int2DArrayOperationsException(
                 $"matrix multiplication is not possible, wrong dimension: {leftColumnCount} != {rightRowCount}"
                 );
         }
 
-        var forLoopRowBounds = new int[ThreadCount + 1];
-        forLoopRowBounds[ThreadCount] = leftRowCount;
+        var forLoopRowBounds = new int[threadCount + 1];
+        forLoopRowBounds[threadCount] = leftRowCount;
         
-        var lenPiece = (int) Math.Ceiling(leftRowCount / (double) ThreadCount) - 1;
+        var lenPiece = (int) Math.Ceiling(leftRowCount / (double) threadCount) - 1;
 
-        for (var threadIndex = 0; threadIndex < ThreadCount; threadIndex++)
+        for (var threadIndex = 0; threadIndex < threadCount; threadIndex++)
         {
             forLoopRowBounds[threadIndex] = threadIndex * lenPiece;
         }
 
         var result = new int[leftRowCount, rightColumnCount];
-        var threads = new Thread[ThreadCount];
+        var threads = new Thread[threadCount];
 
-        for (var threadIndex = 0; threadIndex < ThreadCount; threadIndex++)
+        for (var threadIndex = 0; threadIndex < threadCount; threadIndex++)
         {
             var currentLowBound = forLoopRowBounds[threadIndex];
             var currentHighBound = forLoopRowBounds[threadIndex + 1];
@@ -64,6 +74,10 @@ public static class MatrixOperations
         return result;
     }
 
+    /// <summary>
+    /// Start and join each thread in the array.
+    /// </summary>
+    /// <param name="threads">Array of Thread.</param>
     private static void StartAndJoinThreadArray(Thread[] threads)
     {
         foreach (var thread in threads)
@@ -77,6 +91,13 @@ public static class MatrixOperations
         }
     }
     
+    /// <summary>
+    /// A function that performs sequential multiplication of two two-dimensional arrays.
+    /// </summary>
+    /// <param name="leftMatrix">Left array passed for multiplication</param>
+    /// <param name="rightMatrix">Right array passed for multiplication</param>
+    /// <returns>Result of multiplication</returns>
+    /// <exception cref="Int2DArrayOperationsException">Exception was thrown if the arrays have wrong dimension</exception>
     public static int[,] Int2DArraySequentialMul(int[,] leftMatrix, int[,] rightMatrix)
     {
         var leftRowCount = leftMatrix.GetLength(0);
@@ -87,7 +108,7 @@ public static class MatrixOperations
 
         if (leftColumnCount != rightRowCount)
         {
-            throw new MatrixOperationsException(
+            throw new Int2DArrayOperationsException(
                 $"matrix multiplication is not possible, wrong dimension: {leftColumnCount} != {rightRowCount}"
             );
         }
