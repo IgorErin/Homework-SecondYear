@@ -24,13 +24,13 @@ public static class MatrixOperations
         var forLoopRowBounds = new int[ThreadCount + 1];
         forLoopRowBounds[ThreadCount] = leftRowCount;
         
-        var lenPiece = (int) Math.Ceiling(leftRowCount / (double) ThreadCount);
+        var lenPiece = (int) Math.Ceiling(leftRowCount / (double) ThreadCount) - 1;
 
         for (var threadIndex = 0; threadIndex < ThreadCount; threadIndex++)
         {
             forLoopRowBounds[threadIndex] = threadIndex * lenPiece;
         }
-        
+
         var result = new int[leftRowCount, rightColumnCount];
         var threads = new Thread[ThreadCount];
 

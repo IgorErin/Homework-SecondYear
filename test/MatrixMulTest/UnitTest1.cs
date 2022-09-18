@@ -12,14 +12,14 @@ public class Tests
 {
     private const string MatrixReadTestPath = "./MatrixGenTest";
 
-    private const string LeftMatrixPath = "test/MatrixMulTest/TextMatrices/leftInt2DArray";
-    private const string RightMatrixPath = "test/MatrixMulTest/TextMatrices/rightInt2DArray";
-
-    [Test]
-    public void ParMulEqualsToSeqMulTest()
+    [TestCase(1, 1, 100)]
+    [TestCase(1, 100, 1)]
+    [TestCase(100, 1, 1)]
+    public void ParMulEqualsToSeqMulTest(int leftRowCount, int commonCount, int rightColumnCount)
     {
-        var leftMatrix = TextFileToInt2DArrayReader.GetMatrix(LeftMatrixPath);
-        var rightMatrix = TextFileToInt2DArrayReader.GetMatrix(RightMatrixPath);
+
+        var leftMatrix = ArrayGenerator.Generate2DIntArray(leftRowCount, commonCount);
+        var rightMatrix = ArrayGenerator.Generate2DIntArray(commonCount, rightColumnCount);
 
         var parResult = MatrixOperations.Int2DArrayParallelMul(leftMatrix, rightMatrix);
         var seqResult = MatrixOperations.Int2DArraySequentialMul(leftMatrix, rightMatrix);
@@ -27,34 +27,41 @@ public class Tests
         Assert.That(parResult, Is.EqualTo(seqResult));
     }
     
-    [Test]
-    public void ParMulCorrectMatrixDimTest()
+    [TestCase(1, 1, 100)]
+    [TestCase(1, 100, 1)]
+    [TestCase(100, 1, 1)]
+    public void ParMulCorrectMatrixDimTest(int leftRowCount, int commonCount, int rightColumnCount)
     {
-        var leftMatrix = ArrayGenerator.Generate2DIntArray(1, 1000);
-        var rightMatrix = ArrayGenerator.Generate2DIntArray(1000, 2);
+        var leftMatrix = ArrayGenerator.Generate2DIntArray(leftRowCount, commonCount);
+        var rightMatrix = ArrayGenerator.Generate2DIntArray(commonCount, rightColumnCount);
 
         var parResult = MatrixOperations.Int2DArrayParallelMul(leftMatrix, rightMatrix);
         
         Console.WriteLine(parResult.GetLength(0));
 
-        Assert.AreEqual(1, parResult.GetLength(0));
-        Assert.AreEqual(2, parResult.GetLength(1));
+        Assert.AreEqual(leftRowCount, parResult.GetLength(0));
+        Assert.AreEqual(rightColumnCount, parResult.GetLength(1));
     }
     
-    [Test]
-    public void SeqMulCorrectMatrixDimTest()
+    [TestCase(1, 1, 100)]
+    [TestCase(1, 100, 1)]
+    [TestCase(100, 1, 1)] 
+    public void SeqMulCorrectMatrixDimTest(int leftRowCount, int commonCount, int rightColumnCount)
     {
-        var leftMatrix = ArrayGenerator.Generate2DIntArray(1, 1000);
-        var rightMatrix = ArrayGenerator.Generate2DIntArray(1000, 2);
+        var leftMatrix = ArrayGenerator.Generate2DIntArray(leftRowCount, commonCount);
+        var rightMatrix = ArrayGenerator.Generate2DIntArray(commonCount, rightColumnCount);
 
         var parResult = MatrixOperations.Int2DArraySequentialMul(leftMatrix, rightMatrix);
 
-        Assert.AreEqual(1,parResult.GetLength(0));
-        Assert.AreEqual(2, parResult.GetLength(1));
+        Assert.AreEqual(leftRowCount,parResult.GetLength(0));
+        Assert.AreEqual(rightColumnCount, parResult.GetLength(1));
     }
     
-    [Test]
-    public void CorrectReadText2DArrayTest()
+    [TestCase(1, 100)]
+    [TestCase(100, 1)]
+    [TestCase(10000, 1000)]
+    [TestCase(1, 1)]
+    public void CorrectReadText2DArrayTest(int rowCount, int columnCount)
     {
         var int2DArray = ArrayGenerator.Generate2DIntArray(100, 1000);
 
@@ -63,5 +70,18 @@ public class Tests
         var resultMatrix = TextFileToInt2DArrayReader.GetMatrix(MatrixReadTestPath);
         
         Assert.AreEqual(int2DArray , resultMatrix);
+    }
+    
+    [TestCase(1, 100)]
+    [TestCase(100, 1)]
+    [TestCase(10000, 1000)]
+    [TestCase(1, 1)]
+    public void CorrectMatrixGen(int rowCount, int columnCount)
+    {
+        
+        var int2DArray = ArrayGenerator.Generate2DIntArray(rowCount, columnCount);
+
+        Assert.AreEqual(rowCount , int2DArray.GetLength(0));
+        Assert.AreEqual(columnCount , int2DArray.GetLength(1));
     }
 }
