@@ -57,11 +57,7 @@ public class IntSequentialMatrix : IntMatrix
         {
             for (var resultColumnIndex = 0; resultColumnIndex < rightColumnCount; resultColumnIndex++)
             {
-                var item = GetResultItem(
-                    resultRowIndex, 
-                    resultColumnIndex,
-                    leftArray,
-                    rightArray);
+                var item = GetResultItem(resultRowIndex, resultColumnIndex, leftArray, rightArray);
                 
                 result[resultRowIndex, resultColumnIndex] = item;
             }

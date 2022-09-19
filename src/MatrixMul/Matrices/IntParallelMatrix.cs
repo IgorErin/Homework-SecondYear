@@ -51,8 +51,6 @@ public class IntParallelMatrix : IntMatrix
         var threadCount = Environment.ProcessorCount;
         
         var leftRowCount = leftArray.GetLength(0);
-        var commonCount = leftArray.GetLength(1);
-        
         var rightColumnCount = rightArray.GetLength(1);
 
         var forLoopRowBounds = new int[threadCount + 1];
@@ -80,6 +78,7 @@ public class IntParallelMatrix : IntMatrix
                         for (var rightColumnIndex = 0; rightColumnIndex < rightColumnCount; rightColumnIndex++)
                         {
                             var resultItem = GetResultItem(leftRowIndex, rightColumnIndex, leftArray, rightArray);
+                            
                             result[leftRowIndex, rightColumnIndex] = resultItem;
                         }
 
@@ -98,7 +97,7 @@ public class IntParallelMatrix : IntMatrix
     /// <summary>
     /// Start and join each thread in the array.
     /// </summary>
-    /// <param name="threads">Array of Thread.</param>
+    /// <param name="threads">Array of Threads.</param>
     private static void ExecuteArray(Thread[] threads)
     {
         foreach (var thread in threads)
