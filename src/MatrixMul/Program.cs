@@ -17,7 +17,7 @@ public static class MatrixMain
     /// <summary>
     /// Message for table builder. Used in ConvertArraysToString method.
     /// </summary>
-    private const string ElementCountRowMessage = "average element count";
+    private const string ElementCountRowMessage = "element count";
     private const string AverSeqTimeRowMessage = "average sequential time";
     private const string AverParTimeRowMessage = "average parallel time";
     private const string DevSeqTimeRowMessage = "standard deviation sequential time";
