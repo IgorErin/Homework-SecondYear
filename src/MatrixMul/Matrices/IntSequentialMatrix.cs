@@ -26,9 +26,13 @@ public class IntSequentialMatrix : IntMatrix
     /// </exception>
     public static IntMatrix operator *(IntSequentialMatrix leftMatrix, IntSequentialMatrix rightMatrix)
     {
-        if (AvailableForMultiplication(leftMatrix, rightMatrix))
+        if (!AvailableForMultiplication(leftMatrix, rightMatrix))
         {
-            throw new IntMatrixMulException("matrix multiplication is not possible, wrong dimension");
+            var leftRowLen = leftMatrix.GetLength(1);
+            var rightColumnLen = rightMatrix.GetLength(0);
+            
+            throw new IntMatrixMulException(
+                $"matrix multiplication is not possible, wrong dimension: {leftRowLen} != {rightColumnLen}");
         }
 
         var result = Multiply(leftMatrix.IntArray, rightMatrix.IntArray);
@@ -53,7 +57,11 @@ public class IntSequentialMatrix : IntMatrix
         {
             for (var resultColumnIndex = 0; resultColumnIndex < rightColumnCount; resultColumnIndex++)
             {
-                var item = GetResultItem(resultColumnIndex, resultRowIndex, leftArray, rightArray);
+                var item = GetResultItem(
+                    resultRowIndex, 
+                    resultColumnIndex,
+                    leftArray,
+                    rightArray);
                 
                 result[resultRowIndex, resultColumnIndex] = item;
             }

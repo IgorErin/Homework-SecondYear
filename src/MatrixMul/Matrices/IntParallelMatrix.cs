@@ -28,7 +28,11 @@ public class IntParallelMatrix : IntMatrix
     {
         if (!AvailableForMultiplication(leftMatrix, rightMatrix))
         {
-            throw new IntMatrixMulException("matrix multiplication is not possible, wrong dimension");
+            var leftRowLen = leftMatrix.GetLength(1);
+            var rightColumnLen = rightMatrix.GetLength(0);
+            
+            throw new IntMatrixMulException(
+                $"matrix multiplication is not possible, wrong dimension: {leftRowLen} != {rightColumnLen}");
         }
 
         var result = Multiply(leftMatrix.IntArray, rightMatrix.IntArray);
@@ -68,25 +72,22 @@ public class IntParallelMatrix : IntMatrix
         {
             var currentLowBound = forLoopRowBounds[threadIndex];
             var currentHighBound = forLoopRowBounds[threadIndex + 1];
-            
+
             var currentThread = new Thread(() =>
                 {
-                    for (var leftRowIndex = currentLowBound; leftRowIndex < currentHighBound; leftRowIndex++) 
+                    for (var leftRowIndex = currentLowBound; leftRowIndex < currentHighBound; leftRowIndex++)
                     {
                         for (var rightColumnIndex = 0; rightColumnIndex < rightColumnCount; rightColumnIndex++)
                         {
-                            for (var currentItemIndex = 0; currentItemIndex < commonCount; currentItemIndex++)
-                            {
-                                result[leftRowIndex, rightColumnIndex] +=
-                                    leftArray[leftRowIndex, currentItemIndex] *
-                                    rightArray[currentItemIndex, rightColumnIndex];
-                            }
+                            var resultItem = GetResultItem(leftRowIndex, rightColumnIndex, leftArray, rightArray);
+                            result[leftRowIndex, rightColumnIndex] = resultItem;
                         }
+
                     }
                 }
             );
 
-            threads[threadIndex] = currentThread;
+        threads[threadIndex] = currentThread;
         }
 
         ExecuteArray(threads);

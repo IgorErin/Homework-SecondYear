@@ -1,6 +1,7 @@
 using System;
 using MatrixMul;
 using MatrixMul.Generators;
+using MatrixMul.Matrices;
 using MatrixMul.Readers;
 using MatrixMul.Writers;
 using NUnit.Framework;
@@ -117,5 +118,66 @@ public class Tests
 
         Assert.AreEqual(rowCount , int2DArray.GetLength(0));
         Assert.AreEqual(columnCount , int2DArray.GetLength(1));
+    }
+    
+    /// <summary>
+    /// Test that checks the equals of the array operations and IntMatrix parallel multiplication
+    /// </summary>
+    /// <param name="leftRowCount">Number of rows of the left generated matrix</param>
+    /// <param name="commonCount">Number of columns and row of the right and left generated matrix, respectively</param>
+    /// <param name="rightColumnCount">Number of columns of the right generated matrix</param>
+    [TestCase(1, 1, 100)]
+    [TestCase(1, 100, 1)]
+    [TestCase(100, 1, 1)]
+    public void OperationAndIntMatrixParallelMultiplyAreEqual(int leftRowCount, int commonCount, int rightColumnCount)
+    {
+        
+        var leftArray = IntArrayGenerator.Generate2DIntArray(leftRowCount, commonCount);
+        var rightArray = IntArrayGenerator.Generate2DIntArray(commonCount, rightColumnCount);
+
+        var leftIntMatrix = new IntParallelMatrix(leftArray);
+        var rightIntMatrix = new IntParallelMatrix(rightArray);
+
+        var intMatrixResult = leftIntMatrix * rightIntMatrix;
+        var operationsResult = Int2DArrayOperations.Int2DArraySequentialMul(leftArray, rightArray);
+
+        for (var i = 0; i < leftRowCount; i++)
+        {
+            for (var j = 0; j < rightColumnCount; j++)
+            {
+                Assert.AreEqual(operationsResult[i, j], intMatrixResult[i, j]);
+            }
+        }
+    }
+    
+    
+    /// <summary>
+    /// Test that checks the equals of the array operations and IntMatrix sequential multiplication
+    /// </summary>
+    /// <param name="leftRowCount">Number of rows of the left generated matrix</param>
+    /// <param name="commonCount">Number of columns and row of the right and left generated matrix, respectively</param>
+    /// <param name="rightColumnCount">Number of columns of the right generated matrix</param>
+    [TestCase(1, 1, 100)]
+    [TestCase(1, 100, 1)]
+    [TestCase(100, 1, 1)]
+    public void OperationAndIntMatrixSequentialMultiplyAreEqual(int leftRowCount, int commonCount, int rightColumnCount)
+    {
+        
+        var leftArray = IntArrayGenerator.Generate2DIntArray(leftRowCount, commonCount);
+        var rightArray = IntArrayGenerator.Generate2DIntArray(commonCount, rightColumnCount);
+
+        var leftIntMatrix = new IntSequentialMatrix(leftArray);
+        var rightIntMatrix = new IntSequentialMatrix(rightArray);
+
+        var intMatrixResult = leftIntMatrix * rightIntMatrix;
+        var operationsResult = Int2DArrayOperations.Int2DArraySequentialMul(leftArray, rightArray);
+
+        for (var i = 0; i < leftRowCount; i++)
+        {
+            for (var j = 0; j < rightColumnCount; j++)
+            {
+                Assert.AreEqual(operationsResult[i, j], intMatrixResult[i, j]);
+            }
+        }
     }
 }

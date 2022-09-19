@@ -38,10 +38,8 @@ public abstract class IntMatrix
     /// <returns>Boolean equal to true if matrices can be multiplied, otherwise false</returns>
     protected static bool AvailableForMultiplication(IntMatrix leftMatrix, IntMatrix rightMatrix)
     {
-        var rowLenLeftMatrix = leftMatrix.IntArray.GetLength(1);
-        var columnLenRightMatrix = rightMatrix.IntArray.GetLength(1); 
-        
-        Console.WriteLine($"left : {rowLenLeftMatrix}, right: {columnLenRightMatrix}");
+        var rowLenLeftMatrix = leftMatrix.GetLength(1);
+        var columnLenRightMatrix = rightMatrix.GetLength(0);
 
         return rowLenLeftMatrix == columnLenRightMatrix;
     }
@@ -57,23 +55,18 @@ public abstract class IntMatrix
     protected static int GetResultItem(
         int resultRowIndex, 
         int resultColumnIndex,
-        int[ , ] leftArray,
-        int[ , ] rightArray) 
+        int[,] leftArray,
+        int[,] rightArray) 
     {
         var sum = 0;
         
-        var leftColumnCount = leftArray.GetLength(1);
-        var rightRowCount = rightArray.GetLength(0);
+        var commonCount = leftArray.GetLength(1);
 
         
-        for (var currentColumnIndex = 0; currentColumnIndex < leftColumnCount; currentColumnIndex++)
+        for (var currentIndex = 0; currentIndex < commonCount; currentIndex++)
         {
-            for (var currentRowIndex = 0; currentRowIndex < rightRowCount; currentRowIndex++)
-            {
-                var currentValue = leftArray[resultRowIndex, currentColumnIndex] *
-                                   rightArray[currentRowIndex, resultColumnIndex];
-                sum += currentValue;
-            }
+            var currentValue = leftArray[resultRowIndex, currentIndex] * rightArray[currentIndex, resultColumnIndex];
+            sum += currentValue;
         }
 
         return sum;
