@@ -133,8 +133,8 @@ public static class MatrixMain
             parResultTime[globalRunIndex] = Enumerable.Average(parTimeArray);
             seqResultTime[globalRunIndex] = Enumerable.Average(seqTimeArray);
             
-            parResultDeviation[globalRunIndex] = GetDeviation(parTimeArray);
-            seqResultDeviation[globalRunIndex] = GetDeviation(seqTimeArray);
+            parResultDeviation[globalRunIndex] = parTimeArray.GetDeviation();
+            seqResultDeviation[globalRunIndex] = seqTimeArray.GetDeviation();
             
             resultElementCounts[globalRunIndex] = elementCount;
         }
@@ -215,14 +215,6 @@ public static class MatrixMain
         return matrixPath;
     }
     
-    /// <summary>
-    /// A function that finds the standard deviation of a value from a given array.
-    /// </summary>
-    /// <param name="values">An array of doubles among which the standard deviation will be calculated</param>
-    /// <returns>Standard deviation, double value</returns>
-    private static double GetDeviation(double[] values)
-        => Enumerable.Average(values.Select(x => x * x)) -
-           Enumerable.Average(values) * Enumerable.Average(values);
 
     /// <summary>
     /// A function that returns one possible multiplication as a function based on a string value.
