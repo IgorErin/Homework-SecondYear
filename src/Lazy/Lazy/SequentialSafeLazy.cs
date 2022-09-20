@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Lazy.LazyExceptions;
 
 namespace Lazy.Lazy;
@@ -10,14 +9,14 @@ public class SequentialSafeLazy<T> : ILazy<T>
     private Func<T> _computedValue;
     private ComputationStatus _computeStatus;
 
-    private Func<Exception> _computedException;
+    private Exception _computedException;
 
     public SequentialSafeLazy(Func<T> func)
     {
         _func = func;
         _computeStatus = ComputationStatus.NotComputedYet;
         _computedValue = () => throw new NotComputedValueLazyException("expression not computed yet");
-        _computedException = () => throw new NotCachedExceptionLazyException();
+        _computedException = new NotCachedExceptionLazyException();
     }
 
     public T Get()
@@ -40,7 +39,7 @@ public class SequentialSafeLazy<T> : ILazy<T>
         }
         catch (Exception computedException)
         {
-            _computedException = () => computedException;
+            _computedException = computedException;
             _computeStatus = ComputationStatus.ComputedWithException;
         }
 
@@ -51,7 +50,7 @@ public class SequentialSafeLazy<T> : ILazy<T>
         => _computedValue.Invoke();
 
     private T ThrowComputedException()
-        => throw _computedException.Invoke();
+        => throw _computedException;
 
     private enum ComputationStatus
     {
