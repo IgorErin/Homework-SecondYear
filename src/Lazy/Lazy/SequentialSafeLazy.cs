@@ -8,7 +8,6 @@ public class SequentialSafeLazy<T> : ILazy<T>
     
     private Func<T> _computedValue;
     private ComputationStatus _computeStatus;
-
     private Exception _computedException;
 
     public SequentialSafeLazy(Func<T> func)
