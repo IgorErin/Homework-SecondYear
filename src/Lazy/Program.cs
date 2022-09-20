@@ -1,8 +1,7 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
-Console.WriteLine();
-
-class Main
+﻿namespace Lazy;
+public static class LazyMain
 {
-    
+    public static void Main()
+    {
+    }
 }
