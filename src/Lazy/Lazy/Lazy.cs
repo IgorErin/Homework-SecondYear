@@ -1,8 +1,10 @@
+using System.Dynamic;
+
 namespace Lazy.Lazy;
 
-public interface ILazy<T>
+public abstract class Lazy<T> : ILazy<T>
 {
-    public T Get();
+    public abstract T Get();
     
     protected enum ComputationStatus
     {

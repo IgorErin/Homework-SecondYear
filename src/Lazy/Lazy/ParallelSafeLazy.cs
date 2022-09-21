@@ -2,35 +2,49 @@ using Lazy.LazyExceptions;
 
 namespace Lazy.Lazy;
 
-public class SequentialSafeLazy<T> : Lazy<T>
+public class ParallelSafeLazy<T> : Lazy<T>
 {
     private readonly Func<T> _func;
     
-    private Func<T> _computedValue;
-    private ComputationStatus _computeStatus;
-    private Exception _computedException;
+    private volatile Func<T> _computedValue;
+    private volatile ComputationStatus _computeStatus;
+    private volatile Exception _computedException;
 
-    public SequentialSafeLazy(Func<T> func)
+    private readonly object _locker;
+    
+    public ParallelSafeLazy(Func<T> func)
     {
         _func = func;
         
         _computeStatus = ComputationStatus.NotComputedYet;
         _computedValue = () => throw new NotComputedValueLazyException("expression not computed yet");
         _computedException = new NotCachedExceptionLazyException();
+
+        _locker = new object();
     }
 
     public override T Get()
         => _computeStatus switch
         {
-            ComputationStatus.NotComputedYet => ExecuteFirstComputationAndGetResult(),
+            ComputationStatus.NotComputedYet => ExecuteFirsComputationLockedAndGetResult(),
             ComputationStatus.SuccessComputed => GetComputedValue(),
             ComputationStatus.ComputedWithException => ThrowComputedException(),
             _ => throw new NotImplementedException()
         };
 
-    private T ExecuteFirstComputationAndGetResult()
+    private T ExecuteFirsComputationLockedAndGetResult()
     {
-        ComputeFuncAndSetValueAndStatus();
+        lock (_locker)
+        {
+            if (_computeStatus == ComputationStatus.NotComputedYet)
+            {
+                ComputeFuncAndSetValueAndStatus();
+            }
+            else
+            {
+                // comment needed;
+            }
+        }
 
         return Get();
     }
@@ -40,7 +54,7 @@ public class SequentialSafeLazy<T> : Lazy<T>
         try
         {
             var resultValue = _func.Invoke();
-            
+
             _computedValue = () => resultValue;
             _computeStatus = ComputationStatus.SuccessComputed;
         }
@@ -50,7 +64,7 @@ public class SequentialSafeLazy<T> : Lazy<T>
             _computeStatus = ComputationStatus.ComputedWithException;
         }
     }
-    
+
     private T GetComputedValue()
         => _computedValue.Invoke();
 
