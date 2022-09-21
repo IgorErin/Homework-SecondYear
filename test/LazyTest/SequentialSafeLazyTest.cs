@@ -56,7 +56,6 @@ public class Tests
         var func = () =>
         {
             var sum = 0;
-
             var sumCount = 10;
 
             for (var i = 0; i < sumCount; i++)
