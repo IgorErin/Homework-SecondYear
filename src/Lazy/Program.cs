@@ -4,34 +4,33 @@ using Microsoft.CSharp.RuntimeBinder;
 namespace Lazy;
 public static class LazyMain
 {
+    private const int tryCount = 10;
     public static void Main()
     {
-        var lazy = new SequentialSafeLazy<int>(() =>
+        Console.WriteLine("Lazy computation example: ");
+        
+        var seqLazy = new SequentialSafeLazy<int>(() =>
         {
             Console.WriteLine("I computed!");
-            throw new RuntimeBinderException("lol");
+            
             return 1;
         });
 
-
-        var excList = new List<Exception>();
-        
-        for (var i = 0; i < 10; i++)
+        for (var tryIndex = 0; tryIndex < tryCount; tryIndex++)
         {
-            try
-            {
-                Console.WriteLine($"result = {lazy.Get()}");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                excList.Add(e);
-            }
+            var result = seqLazy.Get();
         }
 
-        foreach (var exc in excList)
+        var parLazy = new SequentialSafeLazy<int>(() =>
         {
-            Console.WriteLine($"exception = {exc.Message}");
+            Console.WriteLine("I computed!");
+            
+            return 1;
+        });
+
+        for (var tryIndex = 0; tryIndex < tryCount; tryIndex++)
+        {
+            var result = parLazy.Get();
         }
     }
 }
