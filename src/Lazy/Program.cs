@@ -21,7 +21,7 @@ public static class LazyMain
             var result = seqLazy.Get();
         }
 
-        var parLazy = new SequentialSafeLazy<int>(() =>
+        var parLazy = new ParallelSafeLazy<int>(() =>
         {
             Console.WriteLine("I computed!");
             
