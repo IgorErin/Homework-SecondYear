@@ -8,15 +8,15 @@ namespace Lazy;
 /// <summary>
 /// Nunit test class with test methods.
 /// </summary>
-public class Tests
+public class SeqTests
 {
     private const int ResultCount = 10;
-    
+
     /// <summary>
     /// Test method checking that the value is evaluated once and always the same
     /// </summary>
     [Test]
-    public void MultipleLazyGetResultAreEqualsTest()
+    public void MultipleLazyGetResultsAreEqualsTest()
     {
         var resultArray = new object[ResultCount];
         
@@ -37,7 +37,7 @@ public class Tests
     /// </summary>
     /// <exception cref="Exception">An exception is thrown and immediately caught to check for identity.</exception>
     [Test]
-    public void ExceptionLazyComputationAreEqualTest()
+    public void LazyComputationExceptionsAreEqualsTest()
     {
         var exceptions = new Exception[ResultCount];
 
@@ -59,10 +59,37 @@ public class Tests
         
         Assert.AreEqual(1, groupsCount);
     }
+
+    /// <summary>
+    /// Test method for checking if an exception is thrown in lazy computation.
+    /// </summary>
+    /// <exception cref="Exception">Checked exception</exception>
+    [Test]
+    public void LazyExceptionAreThrown()
+    {
+        var parLazy = new ParallelSafeLazy<Exception>(() => throw new Exception());
+        
+        var exceptionAreThrown = false;
+
+        for (var i = 0; i < ResultCount; i++)
+        {
+            try
+            {
+                parLazy.Get();
+            }
+            catch (Exception _)
+            {
+                exceptionAreThrown = true;
+            }
+        }
+
+        Assert.True(exceptionAreThrown);
+    }
     
     /// <summary>
-    /// Method for checking the identity of lazy evaluation and regular evaluation.
+    /// Test method for checking the identity of lazy evaluation and regular evaluation.
     /// </summary>
+    
     [Test]
     public void LazyAndSimpleLoopSumResultAreEqualsTest()
     {

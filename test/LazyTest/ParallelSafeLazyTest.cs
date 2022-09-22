@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Lazy.Lazy;
 using Lazy.Utils;
 using NUnit.Framework;
@@ -11,7 +12,14 @@ namespace Lazy;
 /// </summary>
 public class ParTests
 {
-    private const int ThreadCount = 100;
+    private const int ThreadCount = 10;
+    private Thread[] _threadArray = new Thread[ThreadCount];
+
+    [SetUp]
+    public void SetUp()
+    {
+        _threadArray = new Thread[ThreadCount];
+    }
     
     /// <summary>
     /// Test method checking that the value is evaluated once and always the same
@@ -19,7 +27,6 @@ public class ParTests
     [Test]
     public void MultipleLazyGetResultAreEqualsTest()
     {
-        var threadArray = new Thread[ThreadCount];
         var resultArray = new object[ThreadCount];
         
         var parLazy = new ParallelSafeLazy<object>(() => new object());
@@ -28,13 +35,16 @@ public class ParTests
         {
             var localIndex = i;
             
-            threadArray[i] = new Thread(() =>
+            _threadArray[i] = new Thread(() =>
             {
                 var result = parLazy.Get();
 
                 resultArray[localIndex] = result;
             });
         }
+        
+        _threadArray.StartAll();
+        _threadArray.JoinAll();
 
         var groupsCount = resultArray.DuplicatesGroupCount();
 
@@ -48,7 +58,6 @@ public class ParTests
     [Test]
     public void ExceptionLazyComputationAreEqualTest()
     {
-        var threadArray = new Thread[ThreadCount];
         var exceptions = new Exception[ThreadCount];
 
         var parLazy = new ParallelSafeLazy<object>(() => throw new Exception());
@@ -57,10 +66,51 @@ public class ParTests
         {
             var localIndex = i;
             
-            threadArray[i] = new Thread(() =>
+            _threadArray[i] = new Thread(() =>
             {
                 try
                 {
+                    parLazy.Get();
+                }
+                catch (Exception currentException)
+                {
+                    exceptions[localIndex] = currentException;
+                }
+            });
+        }
+        
+        _threadArray.StartAll();
+        _threadArray.JoinAll();
+
+        var groupsCount = exceptions.DuplicatesGroupCount();
+
+        Assert.AreEqual(1, groupsCount);
+    }
+
+    /// <summary>
+    /// Test method that check for throwing an exception in parallel lazy evaluation.
+    /// </summary>
+    /// <exception cref="Exception"></exception>
+    [Test]
+    public void ExceptionIsThrownInParallelTest()
+    {
+        var exceptions = new Exception[ThreadCount];
+
+        var parLazy = new ParallelSafeLazy<object>(() => throw new Exception());
+        
+        for (var i = 0; i < ThreadCount; i++)
+        {
+            var localIndex = i;
+            
+            _threadArray[i] = new Thread(() =>
+            {
+                try
+                {
+                    for (int i = 0; i < 100000; i++)
+                    {
+                        Task.Delay(1000000);
+                    }
+                    
                     var result = parLazy.Get();
                 }
                 catch (Exception currentException)
@@ -69,36 +119,38 @@ public class ParTests
                 }
             });
         }
+        
+        _threadArray.StartAll();
+        _threadArray.JoinAll();
 
-        var groupsCount = exceptions.DuplicatesGroupCount();
-
-        Assert.AreEqual(1, groupsCount);
+        Assert.False(exceptions.HaveNullItem());
     }
     
     /// <summary>
-    /// Method for checking the identity of lazy evaluation and regular evaluation.
+    /// Test method checking that the value is evaluated in threads.
     /// </summary>
     [Test]
-    public void LazyAndSimpleLoopSumResultAreEqualsTest()
+    public void MultipleLazyGetResultTest()
     {
-        var func = () =>
+        var resultArray = new object[ThreadCount];
+        
+        var parLazy = new ParallelSafeLazy<object>(() => new object());
+        
+        for (var i = 0; i < ThreadCount; i++)
         {
-            var sum = 0;
-            var sumCount = 10;
-
-            for (var i = 0; i < sumCount; i++)
+            var localIndex = i;
+            
+            _threadArray[i] = new Thread(() =>
             {
-                sum += i;
-            }
+                var result = parLazy.Get();
 
-            return sum;
-        };
+                resultArray[localIndex] = result;
+            });
+        }
+        
+        _threadArray.StartAll();
+        _threadArray.JoinAll();
 
-        var simpleResult = func.Invoke();
-        
-        var lazy = new ParallelSafeLazy<int>(func);
-        var lazyResult = lazy.Get();
-        
-        Assert.AreEqual(simpleResult, lazyResult);
+        Assert.False(resultArray.HaveNullItem());
     }
 }
