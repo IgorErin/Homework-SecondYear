@@ -125,8 +125,8 @@ public static class MatrixMain
 
                 Console.WriteLine($"Executing multiplication #{runIndex} with {elementCount} elements");
 
-                var currentParTimeResult = stopWatch.GetTimeOfMult(parMulFun, leftInt2DArray, rightInt2DArray);
-                var currentSeqTimeResult = stopWatch.GetTimeOfMult(seqMulFun, leftInt2DArray, rightInt2DArray);
+                var currentParTimeResult = stopWatch.ResetAndGetTimeOfMult(parMulFun, leftInt2DArray, rightInt2DArray);
+                var currentSeqTimeResult = stopWatch.ResetAndGetTimeOfMult(seqMulFun, leftInt2DArray, rightInt2DArray);
 
                 parTimeArray[runIndex] = currentParTimeResult;
                 seqTimeArray[runIndex] = currentSeqTimeResult;

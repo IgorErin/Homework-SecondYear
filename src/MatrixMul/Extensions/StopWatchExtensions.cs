@@ -12,7 +12,7 @@ public static class StopWatchExtensions
     /// <param name="left2DArray">Array passed as left argument to function.</param>
     /// <param name="right2DArray">Array passed as right argument to function.</param>
     /// <returns>The result of the passed function applied to the two passed arrays.</returns>
-    public static long GetTimeOfMult(
+    public static long ResetAndGetTimeOfMult(
         this Stopwatch stopwatch,
         Func<int[,], int[,], int[,]> mulFunc,
         int[,] left2DArray, 
