@@ -1,5 +1,8 @@
 namespace Lazy.LazyExceptions;
 
+/// <summary>
+/// Exception thrown on mismatch on exception cache error in <see cref="Lazy{T}"/>.
+/// </summary>
 [Serializable]
 public class NotCachedExceptionLazyException : Exception
 {

@@ -5,10 +5,16 @@ using NUnit.Framework;
 
 namespace Lazy;
 
+/// <summary>
+/// Nunit test class with test methods.
+/// </summary>
 public class Tests
 {
     private const int ResultCount = 10;
     
+    /// <summary>
+    /// Test method checking that the value is evaluated once and always the same
+    /// </summary>
     [Test]
     public void MultipleLazyGetResultAreEqualsTest()
     {
@@ -26,6 +32,10 @@ public class Tests
         Assert.AreEqual(1, groupsCount);
     }
 
+    /// <summary>
+    /// Method checking for throwing an exception: the calculation is unique and the exception is always the same.
+    /// </summary>
+    /// <exception cref="Exception">An exception is thrown and immediately caught to check for identity.</exception>
     [Test]
     public void ExceptionLazyComputationAreEqualTest()
     {
@@ -50,6 +60,9 @@ public class Tests
         Assert.AreEqual(1, groupsCount);
     }
     
+    /// <summary>
+    /// Method for checking the identity of lazy evaluation and regular evaluation.
+    /// </summary>
     [Test]
     public void LazyAndSimpleLoopSumResultAreEqualsTest()
     {
