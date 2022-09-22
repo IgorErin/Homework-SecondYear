@@ -9,13 +9,13 @@ namespace MatrixMul;
 public static class MatrixMain
 {
     /// <summary>
-    /// Values for table builder. Used in ConvertArraysToString method.
+    /// Values for table builder. Used in <see cref="ConvertArraysToString"/> method.
     /// </summary>
     private const int MaxLength = 15;
     private const int MessageDelta = 25;
 
     /// <summary>
-    /// Message for table builder. Used in ConvertArraysToString method.
+    /// Message for table builder. Used in <see cref="ConvertArraysToString"/> method.
     /// </summary>
     private const string ElementCountRowMessage = "element count";
     private const string AverSeqTimeRowMessage = "average sequential time";
@@ -24,13 +24,13 @@ public static class MatrixMain
     private const string DevParTimeRowMessage = "standard deviation parallel time";
     
     /// <summary>
-    /// Start and delta values for test run. Used in TestMatrixMul method.
+    /// Start and delta values for test run. Used in <see cref="TestMatrixMul"/> method.
     /// </summary>
     private const int StartTestElementsCount = 200;
     private const int PoweredDelta = 2;
     
     /// <summary>
-    /// Default test run count. Used in TestMatrixMul method.
+    /// Default test run count. Used in <see cref="TestMatrixMul"/> method.
     /// </summary>
     private const int DefaultRunWithFixedSizeCount = 10;
 
@@ -107,6 +107,8 @@ public static class MatrixMain
         
         var resultElementCounts = new int[DefaultRunWithFixedSizeCount];
 
+        var stopWatch = new Stopwatch();
+
         for (var globalRunIndex = 0; globalRunIndex < DefaultRunWithFixedSizeCount; globalRunIndex++)
         {
             var parTimeArray = new double[runCount];
@@ -123,8 +125,8 @@ public static class MatrixMain
 
                 Console.WriteLine($"Executing multiplication #{runIndex} with {elementCount} elements");
 
-                var currentParTimeResult = GetExecutionTime(parMulFun, leftInt2DArray, rightInt2DArray);
-                var currentSeqTimeResult = GetExecutionTime(seqMulFun, leftInt2DArray, rightInt2DArray);
+                var currentParTimeResult = stopWatch.GetTimeOfMult(parMulFun, leftInt2DArray, rightInt2DArray);
+                var currentSeqTimeResult = stopWatch.GetTimeOfMult(seqMulFun, leftInt2DArray, rightInt2DArray);
 
                 parTimeArray[runIndex] = currentParTimeResult;
                 seqTimeArray[runIndex] = currentSeqTimeResult;
@@ -258,24 +260,6 @@ public static class MatrixMain
     }
 
     /// <summary>
-    /// Exception thrown on high number of failed attempts.
-    /// </summary>
-    /// <param name="mulFunc">Function whose execution time will be calculated.</param>
-    /// <param name="left2DArray">Array passed as left argument to function.</param>
-    /// <param name="right2DArray">Array passed as right argument to function.</param>
-    /// <returns>The result of the passed function applied to the two passed arrays.</returns>
-    private static long GetExecutionTime(Func<int[,], int[,], int[,]> mulFunc, int[,] left2DArray, int[,] right2DArray)
-    {
-        var stopwatch = new Stopwatch();
-
-        stopwatch.Start();
-        mulFunc(left2DArray, right2DArray);
-        stopwatch.Stop();
-
-        return stopwatch.ElapsedMilliseconds;
-    }
-    
-    /// <summary>
     /// A function that builds a table with values passed as parameters.
     /// With the same length.
     /// </summary>
@@ -307,10 +291,10 @@ public static class MatrixMain
         var tableWriter = new StringTableBuilder(MaxLength);
         
         tableWriter.WriteBound(length, MessageDelta);
-        tableWriter.WriteRow<int>(itemCount, ElementCountRowMessage, MessageDelta);
+        tableWriter.WriteRow(itemCount, ElementCountRowMessage, MessageDelta);
         
         tableWriter.WriteBound(length, MessageDelta);
-        tableWriter.WriteRow<double>(seqTimes, AverSeqTimeRowMessage, MessageDelta);
+        tableWriter.WriteRow(seqTimes, AverSeqTimeRowMessage, MessageDelta);
 
         tableWriter.WriteBound(length, MessageDelta);
         tableWriter.WriteRow(parTimes, AverParTimeRowMessage, MessageDelta);
