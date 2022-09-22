@@ -7,7 +7,7 @@ namespace Lazy;
 /// </summary>
 public static class LazyMain
 {
-    private const int TryCount = 10;
+    private const int TryCount = 3;
     
     public static void Main()
     {
@@ -15,26 +15,26 @@ public static class LazyMain
         
         var seqLazy = new SequentialSafeLazy<int>(() =>
         {
-            Console.WriteLine("I computed!");
+            Console.WriteLine("I computed in seqSafeLazy! Should be printed once...");
             
             return 1;
         });
 
         for (var tryIndex = 0; tryIndex < TryCount; tryIndex++)
         {
-            var result = seqLazy.Get();
+            Console.WriteLine($"Computed and stored value: {seqLazy.Get()}");
         }
 
         var parLazy = new ParallelSafeLazy<int>(() =>
         {
-            Console.WriteLine("I computed!");
+            Console.WriteLine("I computed in parSafeLazy! Should be printed once...");
             
             return 1;
         });
 
         for (var tryIndex = 0; tryIndex < TryCount; tryIndex++)
         {
-            var result = parLazy.Get();
+            Console.WriteLine($"Computed and stored: {parLazy.Get()}");
         }
     }
 }
