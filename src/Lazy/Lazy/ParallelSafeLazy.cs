@@ -61,7 +61,8 @@ public class ParallelSafeLazy<T> : Lazy<T>
             }
             else
             {
-                // comment needed;
+                // if the value is calculated in another thread,
+                // then exit the lock without calculating it and return the result
             }
         }
 
