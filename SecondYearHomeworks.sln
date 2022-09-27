@@ -3,6 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6634FE3D-B225-4F53-86D6-92ED547F1D7D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadPool", "src\ThreadPool\ThreadPool.csproj", "{11E7F21E-46AA-4FD8-BF2C-91CA50DF5D8D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -10,5 +14,14 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{11E7F21E-46AA-4FD8-BF2C-91CA50DF5D8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11E7F21E-46AA-4FD8-BF2C-91CA50DF5D8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11E7F21E-46AA-4FD8-BF2C-91CA50DF5D8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11E7F21E-46AA-4FD8-BF2C-91CA50DF5D8D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{11E7F21E-46AA-4FD8-BF2C-91CA50DF5D8D} = {6634FE3D-B225-4F53-86D6-92ED547F1D7D}
 	EndGlobalSection
 EndGlobal
