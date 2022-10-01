@@ -27,21 +27,29 @@ internal class ThreadPoolItem
 
     private void ThreadWork()
     {
-        while (true)
+        try
         {
-            Console.WriteLine($"in thread, num = {Environment.CurrentManagedThreadId}");
-            if (_token.IsCancellationRequested)
+            while (true)
             {
-                break;
+                Console.WriteLine($"in thread, num = {Environment.CurrentManagedThreadId}");
+
+                if (_token.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                var action = _queue.Take(_token);
+
+                _threadStates = ThreadState.Work;
+
+                action();
+
+                _threadStates = ThreadState.Waiting;
             }
-
-            var action = _queue.Take();
-            
-            _threadStates = ThreadState.Work;
-
-            action();
-
-            _threadStates = ThreadState.Waiting;
+        }
+        catch (OperationCanceledException e)
+        {
+            Console.WriteLine("Cancellation exception are thrown");
         }
     }
     
