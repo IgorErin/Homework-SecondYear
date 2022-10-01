@@ -1,51 +1,29 @@
 ﻿// See https://aka.ms/new-console-template for more information
+
+using ThreadPool;
+
 class PoolMain
 {
-    private static readonly HttpClient _httpClient = new HttpClient();
-    
-    public static async Task Main()
+    public static void Main()
     {
-        Print("start async in main");
+        var pool = new MyThreadPool(4);
 
-        var task = TestAsync();
+        Console.WriteLine("start process");
         
-        Print("start await in main");
+        var task = pool.Submit(() =>
+        {
+            Console.Write("printed in thread pool");
+            return 3;
+        });
 
-        var lol = await task;
+        Task.Delay(1000);
+
+        task.ContinueWith(result =>
+        {
+            Console.Write($"result = {result}");
+            return 3;
+        });
         
-        Print("after async in main");
-
-
-        System.Console.Write($"{lol}");
-    }
-    static async Task<string> TestAsync()
-    {
-        Print("start first async method");
-        
-        var html = await GetIntSync();
-        
-
-        Print("end of first async method, return html");
-        
-        return html;
-    }
-
-    static async Task<string> GetIntSync()
-    {
-        
-        Print("start getting http clent");
-
-        var html = await _httpClient.GetStringAsync("https://dotnetfoundation.org");
-
-        
-        Print("end getting http clent");
-
-
-        return html;
-    }
-    
-    static void Print(string message)
-    {
-        Console.WriteLine($"doSome work {message}");
+        pool.ShutDown();
     }
 }

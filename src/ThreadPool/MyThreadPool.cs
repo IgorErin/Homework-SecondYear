@@ -15,11 +15,12 @@ internal class ThreadPoolItem
     public ThreadPoolItem(BlockingCollection<Action> queue, CancellationToken token)
     {
         _threadStates = ThreadState.Waiting;
+
+        _queue = queue;
         
         _thread = new Thread(() => ThreadWork());
         _thread.Start();
-
-        _queue = queue;
+        
 
         _token = token;
     }
@@ -28,6 +29,7 @@ internal class ThreadPoolItem
     {
         while (true)
         {
+            Console.WriteLine($"in thread, num = {Environment.CurrentManagedThreadId}");
             if (_token.IsCancellationRequested)
             {
                 break;
@@ -50,10 +52,10 @@ internal class ThreadPoolItem
     }
 }
 
-public class ThreadPool : IDisposable
+public class MyThreadPool : IDisposable
 {
     private readonly int _threadCount;
-    private readonly Thread[] _threads;
+    private readonly ThreadPoolItem[] _threads;
 
     private readonly BlockingCollection<Action> _queue;
 
@@ -63,12 +65,12 @@ public class ThreadPool : IDisposable
 
     private bool _disposed;
 
-    public ThreadPool(int threadCount)
+    public MyThreadPool(int threadCount)
     {
         _queue = new BlockingCollection<Action>();
         
         _threadCount = threadCount;
-        _threads = new Thread[threadCount];
+        _threads = new ThreadPoolItem[threadCount];
         
         _cancellationTokenSource = new CancellationTokenSource();
 
@@ -106,12 +108,7 @@ public class ThreadPool : IDisposable
     {
         for (var i = 0; i < _threadCount; i++)
         {
-            _threads[i] = new Thread(() => ThreadWork());
-        }
-
-        foreach (var thread in _threads)
-        {
-            thread.Start();
+            _threads[i] = new ThreadPoolItem(_queue, _cancellationTokenSource.Token);
         }
     }
 
@@ -120,10 +117,7 @@ public class ThreadPool : IDisposable
         //TODO()
     }
     
-    /// <summary>
     /// ///////////////////////////////////////////////////////////////////
-    /// </summary>
-    /// <param name="disposing"></param>
     protected virtual void Dispose(bool disposing)
     {
         if (_disposed)
