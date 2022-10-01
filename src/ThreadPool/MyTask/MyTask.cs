@@ -1,100 +1,24 @@
-using Optional;
-
 namespace ThreadPool.MyTask;
 
-public class MyTask<T> : IMyTask<T>
+public class MyTask<TResult> : IMyTask<TResult>
 {
-    private readonly Func<T> _func;
+    private readonly ResultCell<TResult> _resultCell;
+    private readonly ThreadPool _threadPull;
     
-    private Option<T> _optionResult;
-    private Option<AggregateException> _resultException;
-
-    private volatile TaskStatus _taskStatus;
-
-    private readonly object _locker;
+    private readonly object _locker = new object();
 
     public bool IsCompleted
-        => _taskStatus switch
-        {
-            TaskStatus.ValueComputed => true,
-            TaskStatus.ComputedException => true,
+        => _resultCell.IsCompleted();
 
-            _ => false
-        };
-    
-    public T Result
-        => _taskStatus switch
-        {
-            TaskStatus.ValueNotComputedYet => ComputeSafetySetStatusAndGetResult(),
-            TaskStatus.ValueComputed => GetComputedValue(),
-            TaskStatus.ComputedException => throw GetComputedException(),
-            
-            _ => throw new Exception() //TODO()
-        };
+    public TResult Result
+        => _resultCell.GetResult();
 
-    public MyTask(Func<T> func)
+    public MyTask(ResultCell<TResult> resultCell, ThreadPool threadPool)
     {
-        _func = func;
-        
-        _optionResult = Option.None<T>();
-        _resultException = Option.None<AggregateException>();
-        
-        _taskStatus = TaskStatus.ValueNotComputedYet;
-
-        _locker = new object();
+        _resultCell = resultCell;
+        _threadPull = threadPool;
     }
 
-    public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<T, TNewResult> continuation)
-        => new MyTask<TNewResult>(() => continuation.Invoke(Result));
-
-    private T ComputeSafetySetStatusAndGetResult()
-    {
-        lock (_locker)
-        {
-            if (_taskStatus == TaskStatus.ValueNotComputedYet)
-            {
-                ComputeAndSetStatus();
-            }
-            else
-            {
-                // comment needed;
-            }
-        }
-
-        return Result;
-    }
-
-    private Exception GetComputedException()
-        => _resultException.Match(
-            some: x => throw x,
-            none: () => new Exception()//TODO()
-        ); 
-
-    private T GetComputedValue()
-        => _optionResult.ValueOr(() => throw new Exception()); //TODO()
-
-    private void ComputeAndSetStatus()
-    {
-        try
-        {
-            var result = _func.Invoke();
-            _optionResult = Option.Some(result);
-
-            _taskStatus = TaskStatus.ValueComputed;
-        }
-        catch (Exception funcException)
-        {
-            var aggregateException = new AggregateException(funcException);
-            _resultException = Option.Some(aggregateException);
-
-            _taskStatus = TaskStatus.ComputedException;
-        }
-    }
-
-    private enum TaskStatus
-    {
-        ValueNotComputedYet,
-        ValueComputed,
-        ComputedException
-    }
+    public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> continuation)
+        => _threadPull.Submit(() => continuation.Invoke(this.Result)); //TODO()
 }
