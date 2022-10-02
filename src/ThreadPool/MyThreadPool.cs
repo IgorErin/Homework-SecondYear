@@ -12,7 +12,11 @@ public class MyThreadPool : IDisposable
 
     private readonly CancellationTokenSource _cancellationTokenSource;
 
+    private readonly CountdownEvent _countdownEvent;
+
     private bool _disposed;
+
+    private readonly object _locker = new object();
 
     public MyThreadPool(int threadCount)
     {
@@ -23,6 +27,8 @@ public class MyThreadPool : IDisposable
         
         _cancellationTokenSource = new CancellationTokenSource();
 
+        _countdownEvent = new CountdownEvent(threadCount);
+        
         // must be after _threads init
         InitTreadItems();
     }
@@ -35,7 +41,7 @@ public class MyThreadPool : IDisposable
 
         var newAction = () =>
         {
-            lock (resultCell)
+            lock (resultCell.Locker)
             {
                 if (!resultCell.IsComputed)
                 {
@@ -51,18 +57,22 @@ public class MyThreadPool : IDisposable
 
     public void ShutDown()
     {
-        _cancellationTokenSource.Cancel();
+        lock (_locker)
+        {
+            _cancellationTokenSource.Cancel();
+
+            _countdownEvent.Wait();
+        }
     }
     
     private void InitTreadItems()
     {
         for (var i = 0; i < _threadCount; i++)
         {
-            _threads[i] = new ThreadPoolItem(_queue, _cancellationTokenSource.Token);
+            _threads[i] = new ThreadPoolItem(_queue, _countdownEvent, _cancellationTokenSource.Token);
         }
     }
 
-    //////////////////////////////////////////////////////////////////////
     protected virtual void Dispose(bool disposing)
     {
         if (_disposed)

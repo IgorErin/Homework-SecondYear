@@ -54,13 +54,18 @@ public class MyTask<TResult> : IMyTask<TResult>
         => _resultCell.Status switch
         {
             ResultCell<TResult>.CellStatus.ResultSuccessfullyComputed => _resultCell.Result,
-            ResultCell<TResult>.CellStatus.ComputedWithException => throw _resultCell.Exception,
+            ResultCell<TResult>.CellStatus.ComputedWithException => throw GetResultException(),
             _ => throw new Exception() //TODO()
         };
 
+    private AggregateException GetResultException()
+    {
+        return new AggregateException(_resultCell.Exception);
+    }
+
     private void ComputeResultInCurrentThread()
     {
-        lock (_resultCell)
+        lock (_resultCell.Locker)
         {
             if (!_resultCell.IsComputed)
             {

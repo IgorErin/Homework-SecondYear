@@ -10,9 +10,12 @@ internal class ThreadPoolItem
 
     private readonly CancellationToken _token;
 
-    public ThreadPoolItem(BlockingCollection<Action> queue, CancellationToken token)
+    private readonly CountdownEvent _countdownEvent;
+
+    public ThreadPoolItem(BlockingCollection<Action> queue, CountdownEvent countdown, CancellationToken token)
     {
         _queue = queue;
+        _countdownEvent = countdown;
         _token = token;
         
         _thread = new Thread(() => ThreadWork());
@@ -39,6 +42,10 @@ internal class ThreadPoolItem
         catch (OperationCanceledException e)
         {
             Console.WriteLine("Cancellation exception are thrown");
+        }
+        finally
+        {
+            _countdownEvent.Signal();
         }
     }
 }

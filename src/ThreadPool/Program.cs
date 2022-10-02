@@ -28,7 +28,8 @@ class PoolMain
             Task.Delay(1000);
             Console.WriteLine($"i = {i}");
         }
-        
+
         pool.ShutDown();
+        Console.WriteLine("lol");
     }
 }

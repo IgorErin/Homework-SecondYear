@@ -1,6 +1,6 @@
 using Optional;
 
-namespace ThreadPool;
+namespace ThreadPool.MyTask;
 
 public class ResultCell<TResult>
 {
@@ -12,6 +12,13 @@ public class ResultCell<TResult>
     private volatile bool _funcIsComputed;
 
     private volatile CellStatus _cellStatus = CellStatus.ResultNotComputed;
+
+    private readonly object _locker;
+
+    public object Locker
+    {
+        get => _locker;
+    }
 
     public bool IsComputed
     {
@@ -36,6 +43,7 @@ public class ResultCell<TResult>
     public ResultCell(Func<TResult> func)
     {
         _func = func;
+        _locker = new object();
     }
 
     public void Compute()
