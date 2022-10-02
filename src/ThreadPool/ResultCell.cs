@@ -2,13 +2,6 @@ using Optional;
 
 namespace ThreadPool;
 
-public enum CellStatus // internal ?
-{
-    ResultNotComputed,
-    ResultSuccessfullyComputed,
-    ComputedWithException,
-}
-
 public class ResultCell<TResult>
 {
     private readonly Func<TResult> _func;
@@ -61,5 +54,12 @@ public class ResultCell<TResult>
         {
             _funcIsComputed = true;
         }
+    }
+    
+    public enum CellStatus // internal ?
+    {
+        ResultNotComputed,
+        ResultSuccessfullyComputed,
+        ComputedWithException,
     }
 }

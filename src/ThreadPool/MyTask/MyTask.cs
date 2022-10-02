@@ -1,116 +1,71 @@
-using System.Collections.Concurrent;
-using Optional;
-
 namespace ThreadPool.MyTask;
 
 public class MyTask<TResult> : IMyTask<TResult>
 {
-    private readonly MyThreadPool _threadPull;
-    private readonly BlockingCollection<Action> _continueWith;
-    
-    private volatile TaskState _taskState;
-    
-    private readonly Func<TResult> _funcResult;
-    private Option<TResult> _result = Option.None<TResult>();
-    private readonly List<Exception> _resultExceptions = new ();
+    private readonly ResultCell<TResult> _resultCell;
+    private readonly MyThreadPool _threadPool;
 
-    private readonly object _locker;
-    
     public bool IsCompleted
     {
-        get => false;
+        get => _resultCell.IsComputed;
     }
 
     public TResult Result
     {
-        get => _taskState switch
+        get
+        {
+            if (!_resultCell.IsComputed)
             {
-                TaskState.NotComputed => ComputeWithLockSetStatusAndGetResult(),
-                TaskState.SuccessfullyComputed => _result.ValueOr(() => throw new Exception()),
-                TaskState.ComputedWithException => throw new AggregateException(_resultExceptions)
-            };
+                ComputeResultInCurrentThread();
+            }
+
+            return GetResult();
+        }
     }
 
-    public MyTask(MyThreadPool threadPool, Func<TResult> func)
+    public MyTask(MyThreadPool threadPool, ResultCell<TResult> resultCell)
     {
-        _continueWith = new BlockingCollection<Action>();
-
-        _threadPull = threadPool;
-
-        _locker = new object();
-
-        _taskState = TaskState.NotComputed;
-
-        _funcResult = func;
+        _resultCell = resultCell;
+        _threadPool = threadPool;
     }
 
     public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> continuation)
     {
-        if (_taskState == TaskState.SuccessfullyComputed)
+        Func<TNewResult> newFunc;
+        
+        if (_resultCell.IsComputed)
         {
-            var result = _result.ValueOr(() => throw new Exception());
-            var newFunc = () =>
-            {
-                try
-                {
-                    return continuation.Invoke(result);
-                }
-                catch (Exception e)
-                {
-                    _resultExceptions.Add(e);
-
-                    throw new AggregateException(_resultExceptions);
-                }
-            };
+            newFunc = () => continuation.Invoke(GetResult());
             
-            return _threadPull.Submit(newFunc);
-        } 
-        else if (_taskState == TaskState.ComputedWithException)
-        {
-            throw new AggregateException(_resultExceptions);
+            return _threadPool.Submit(newFunc);
         }
 
-        return new MyTask<TNewResult>(null, null); //TODO()
-    }
-    
-    private TResult ComputeWithLockSetStatusAndGetResult()
-    {
-        lock (_locker)
+        newFunc = () =>
         {
-            ComputeInCurrentThreadAndSetStatus();
-        }
+            var result = Result;
 
-        return Result;
+            return continuation.Invoke(result);
+        };
+
+        return _threadPool.Submit(newFunc);
     }
-    
-    private void ComputeInCurrentThreadAndSetStatus()
-    {
-        if (_taskState == TaskState.NotComputed)
+
+    private TResult GetResult()
+        => _resultCell.Status switch
         {
-            try
+            ResultCell<TResult>.CellStatus.ResultSuccessfullyComputed => _resultCell.Result,
+            ResultCell<TResult>.CellStatus.ComputedWithException => throw _resultCell.Exception,
+            ResultCell<TResult>.CellStatus.ResultNotComputed => throw new Exception() //TODO()
+        };
+
+    private void ComputeResultInCurrentThread()
+    {
+        lock (_resultCell)
+        {
+            if (!_resultCell.IsComputed)
             {
-                _result = _funcResult.Invoke().Some();
-
-                _taskState = TaskState.SuccessfullyComputed;
-
-            }
-            catch (Exception e)
-            {
-                _resultExceptions.Add(e);
-
-                _taskState = TaskState.ComputedWithException;
+                _resultCell.Compute();
             }
         }
-        else
-        {
-            //
-        }
-    }
-
-    private enum TaskState
-    {
-        NotComputed,
-        SuccessfullyComputed,
-        ComputedWithException,
     }
 }
