@@ -31,18 +31,17 @@ public class MyThreadPool : IDisposable
     
     public MyTask<T> Submit<T>(Func<T> func)
     {
-        var taskState = new ActionState();
-        var resultCell = new ResultCell<T>(func, taskState);
+        var resultCell = new ResultCell<T>(func);
         
-        var newTask = new MyTask<T>(this, null); //TODO
+        var newTask = new MyTask<T>(this, resultCell); 
 
         var newAction = () =>
         {
             lock (resultCell)
             {
-                if (!resultCell.isComputed)
+                if (!resultCell.IsComputed)
                 {
-                    resultCell.compute();
+                    resultCell.Compute();
                 }
             }
         }; 
