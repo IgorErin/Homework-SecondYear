@@ -1,44 +1,18 @@
-using System.Diagnostics.CodeAnalysis;
+using Optional;
 
 namespace ThreadPool;
 
-using Optional;
-
 public class ResultCell<TResult>
 {
-    private Option<TResult> _optionResult = Option.None<TResult>();
+    private Lazy<TResult> _lazyResult;
 
-    private readonly object _locker = new object();
-
-    public ResultCell()
+    public ResultCell(Func<TResult> func)
     {
+        _lazyResult = new Lazy<TResult>(func);
     }
 
-    public bool IsCompleted
-        () => _optionResult.Match(
-            some: value => true,
-            none: () => false
-        );
-    
-
-    public void SetResult(TResult result)
+    public TResult Result()
     {
-        lock (_locker)
-        {
-            if (!_optionResult.HasValue)
-            {
-                _optionResult = result.Some();
-            }
-            else
-            {
-                //TODO()
-            }
-        }
+        return _lazyResult.Value;
     }
-
-    public TResult GetResult()
-        => _optionResult.Match(
-            some: value => value,
-            none: () => throw new Exception()
-            );
 }

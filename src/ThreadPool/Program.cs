@@ -6,23 +6,30 @@ class PoolMain
 {
     public static void Main()
     {
-        var pool = new MyThreadPool(4);
+        var pool = new MyThreadPool(12);
 
         Console.WriteLine("start process");
-        
-        var task = pool.Submit(() =>
-        {
-            Console.Write("printed in thread pool");
-            return 3;
-        });
 
-        Task.Delay(1000);
-
-        task.ContinueWith(result =>
+        for (var i = 0; i < 100; i++)
         {
-            Console.Write($"result = {result}");
-            return 3;
-        });
+            Task.Delay(100);
+            var task = pool.Submit(() =>
+            {
+                Console.WriteLine("printed in thread pool");
+                return 3;
+            });
+            
+            Task.Delay(1000);
+
+            task.ContinueWith(result =>
+            {
+                Console.WriteLine($"result = {result}");
+                return 3;
+            });
+            
+            Task.Delay(1000);
+            Console.WriteLine($"i = {i}");
+        }
         
         pool.ShutDown();
     }

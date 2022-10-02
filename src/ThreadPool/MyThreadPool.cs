@@ -3,63 +3,6 @@ using ThreadPool.MyTask;
 
 namespace ThreadPool;
 
-internal class ThreadPoolItem
-{
-    private readonly Thread _thread;
-    private volatile ThreadState _threadStates;
-
-    private readonly BlockingCollection<Action> _queue;
-
-    private readonly CancellationToken _token;
-
-    public ThreadPoolItem(BlockingCollection<Action> queue, CancellationToken token)
-    {
-        _threadStates = ThreadState.Waiting;
-
-        _queue = queue;
-        
-        _thread = new Thread(() => ThreadWork());
-        _thread.Start();
-        
-
-        _token = token;
-    }
-
-    private void ThreadWork()
-    {
-        try
-        {
-            while (true)
-            {
-                Console.WriteLine($"in thread, num = {Environment.CurrentManagedThreadId}");
-
-                if (_token.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                var action = _queue.Take(_token);
-
-                _threadStates = ThreadState.Work;
-
-                action();
-
-                _threadStates = ThreadState.Waiting;
-            }
-        }
-        catch (OperationCanceledException e)
-        {
-            Console.WriteLine("Cancellation exception are thrown");
-        }
-    }
-    
-    private enum ThreadState
-    {
-        Waiting,
-        Work
-    }
-}
-
 public class MyThreadPool : IDisposable
 {
     private readonly int _threadCount;
@@ -88,22 +31,19 @@ public class MyThreadPool : IDisposable
     
     public MyTask<T> Submit<T>(Func<T> func)
     {
-        var resultCell = new ResultCell<T>();
-        var newTask = new MyTask<T>(resultCell, this); //TODO
-
-        lock (_locker) //need ?
-        {
-            var newAction = (() =>
-            {
-                var result = func();
-                
-                resultCell.SetResult(result);
-                
-            });
-            
-            _queue.Add(newAction);
-        }
+        var taskState = new ActionState();
+        var resultLazy = new Lazy<T>(func);
         
+        var newTask = new MyTask<T>(resultLazy,  this); //TODO
+
+        var newAction = (() =>
+        {
+            
+            taskState.TaskCompleted();
+        });
+        
+        _queue.Add(newAction);
+
         return newTask; //TODO()
     }
 
@@ -120,12 +60,7 @@ public class MyThreadPool : IDisposable
         }
     }
 
-    private void ThreadWork()
-    {
-        //TODO()
-    }
-    
-    /// ///////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
     protected virtual void Dispose(bool disposing)
     {
         if (_disposed)

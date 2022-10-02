@@ -1,24 +1,46 @@
+using System.Collections.Concurrent;
+
 namespace ThreadPool.MyTask;
 
 public class MyTask<TResult> : IMyTask<TResult>
 {
     private readonly ResultCell<TResult> _resultCell;
     private readonly MyThreadPool _myThreadPull;
-    
-    private readonly object _locker = new object();
+
+    private readonly BlockingCollection<Action> _continueWith;
+    private readonly ActionState _actionState;
+
+    private readonly object _locker;
 
     public bool IsCompleted
-        => _resultCell.IsCompleted();
+    {
+        get => false;
+    }
 
     public TResult Result
-        => _resultCell.GetResult();
+        => default(TResult);
 
-    public MyTask(ResultCell<TResult> resultCell, MyThreadPool myThreadPool)
+    public MyTask(ResultCell<TResult> resultCell, ActionState actionState, MyThreadPool threadPool)
     {
         _resultCell = resultCell;
-        _myThreadPull = myThreadPool;
+        _actionState = actionState; 
+
+        _continueWith = new BlockingCollection<Action>();
+        _locker = new object();
     }
 
     public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> continuation)
-        => _myThreadPull.Submit(() => continuation.Invoke(this.Result)); //TODO()
+    {
+        if (!IsCompleted)
+        {
+            
+            _continueWith.Add();
+        }
+    }
+
+    private TResult GetResultWithBlock()
+    {
+        
+    }
+    
 }
