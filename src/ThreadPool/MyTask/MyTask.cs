@@ -55,7 +55,7 @@ public class MyTask<TResult> : IMyTask<TResult>
         {
             ResultCell<TResult>.CellStatus.ResultSuccessfullyComputed => _resultCell.Result,
             ResultCell<TResult>.CellStatus.ComputedWithException => throw _resultCell.Exception,
-            ResultCell<TResult>.CellStatus.ResultNotComputed => throw new Exception() //TODO()
+            _ => throw new Exception() //TODO()
         };
 
     private void ComputeResultInCurrentThread()

@@ -10,8 +10,6 @@ public class MyThreadPool : IDisposable
 
     private readonly BlockingCollection<Action> _queue;
 
-    private readonly object _locker = new ();
-
     private readonly CancellationTokenSource _cancellationTokenSource;
 
     private bool _disposed;

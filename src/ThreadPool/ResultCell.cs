@@ -9,7 +9,7 @@ public class ResultCell<TResult>
     private Option<TResult> _optionResult = Option.None<TResult>();
     private Option<Exception> _optionException = Option.None<Exception>();
 
-    private volatile bool _funcIsComputed = false;
+    private volatile bool _funcIsComputed;
 
     private volatile CellStatus _cellStatus = CellStatus.ResultNotComputed;
 
