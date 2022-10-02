@@ -1,4 +1,5 @@
 using Optional;
+using ThreadPool.Exceptions;
 
 namespace ThreadPool.MyTask;
 
@@ -12,14 +13,7 @@ public class ResultCell<TResult>
     private volatile bool _funcIsComputed;
 
     private volatile CellStatus _cellStatus = CellStatus.ResultNotComputed;
-
-    private readonly object _locker;
-
-    public object Locker
-    {
-        get => _locker;
-    }
-
+    
     public bool IsComputed
     {
         get => _funcIsComputed;
@@ -27,12 +21,17 @@ public class ResultCell<TResult>
 
     public TResult Result
     {
-        get => _optionResult.ValueOr(() => throw new Exception()); //TODO()
+        get 
+            => _optionResult.ValueOr(
+                () => throw new ResultCellException("result value not init")
+                );
     }
 
     public Exception Exception
     {
-        get => _optionException.ValueOr(() => throw new Exception()); //TODO()
+        get => _optionException.ValueOr(
+                () => throw new ResultCellException("result exception not init")
+                );
     }
 
     public CellStatus Status
@@ -43,7 +42,6 @@ public class ResultCell<TResult>
     public ResultCell(Func<TResult> func)
     {
         _func = func;
-        _locker = new object();
     }
 
     public void Compute()

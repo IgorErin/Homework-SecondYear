@@ -16,7 +16,7 @@ public class MyThreadPool : IDisposable
 
     private bool _disposed;
 
-    private readonly object _locker = new object();
+    private readonly object _locker = new ();
 
     public MyThreadPool(int threadCount)
     {
@@ -41,7 +41,7 @@ public class MyThreadPool : IDisposable
 
         var newAction = () =>
         {
-            lock (resultCell.Locker)
+            lock (resultCell)
             {
                 if (!resultCell.IsComputed)
                 {
@@ -90,7 +90,10 @@ public class MyThreadPool : IDisposable
 
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
+        lock (_locker)
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

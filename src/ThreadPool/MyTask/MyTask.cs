@@ -1,9 +1,13 @@
+using ThreadPool.Exceptions;
+
 namespace ThreadPool.MyTask;
 
 public class MyTask<TResult> : IMyTask<TResult>
 {
     private readonly ResultCell<TResult> _resultCell;
     private readonly MyThreadPool _threadPool;
+
+    private readonly List<Exception> _exceptions = new ();
 
     public bool IsCompleted
     {
@@ -42,9 +46,18 @@ public class MyTask<TResult> : IMyTask<TResult>
 
         newFunc = () =>
         {
-            var result = Result;
+            try
+            {
+                var result = Result;
 
-            return continuation.Invoke(result);
+                return continuation.Invoke(result);
+            }
+            catch (Exception e)
+            {
+                _exceptions.Add(e);
+            }
+
+            throw new AggregateException(_exceptions); //TODO()
         };
 
         return _threadPool.Submit(newFunc);
@@ -55,7 +68,8 @@ public class MyTask<TResult> : IMyTask<TResult>
         {
             ResultCell<TResult>.CellStatus.ResultSuccessfullyComputed => _resultCell.Result,
             ResultCell<TResult>.CellStatus.ComputedWithException => throw GetResultException(),
-            _ => throw new Exception() //TODO()
+            
+            _ => throw new MyTaskException($"status not match, status = {_resultCell.Status}")
         };
 
     private AggregateException GetResultException()
@@ -65,7 +79,7 @@ public class MyTask<TResult> : IMyTask<TResult>
 
     private void ComputeResultInCurrentThread()
     {
-        lock (_resultCell.Locker)
+        lock (_resultCell)
         {
             if (!_resultCell.IsComputed)
             {
