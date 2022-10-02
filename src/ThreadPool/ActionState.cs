@@ -5,21 +5,6 @@ public class ActionState
     private readonly object _actionStartLocker;
     private readonly object _actionCompleteLocker;
 
-    public bool IsCompleted
-    {
-        get
-        {
-            if (Monitor.IsEntered(_actionCompleteLocker))
-            {
-                Monitor.Exit(_actionCompleteLocker); //cringe
-
-                return true;
-            }
-
-            return false;
-        }
-    }
-    
     public ActionState()
     {
         _actionStartLocker = new object();
@@ -28,16 +13,15 @@ public class ActionState
         Monitor.Enter(_actionCompleteLocker);
     }
 
-    public void BlockUntilCompleted()
+    public void GetResultBlocking()
     {
         Monitor.Enter(_actionCompleteLocker);
-        Monitor.Exit(_actionCompleteLocker);
     }
 
     public bool TryStartAction()
         => Monitor.TryEnter(_actionStartLocker);
 
-    public void TaskCompleted()
+    public void ReleaseResultBlocking()
     {
         Monitor.Exit(_actionCompleteLocker);
     }

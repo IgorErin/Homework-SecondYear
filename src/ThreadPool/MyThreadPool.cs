@@ -26,25 +26,21 @@ public class MyThreadPool : IDisposable
         _cancellationTokenSource = new CancellationTokenSource();
 
         // must be after _threads init
-        InitAndStartThreads();
+        InitTreadItems();
     }
     
     public MyTask<T> Submit<T>(Func<T> func)
     {
         var taskState = new ActionState();
-        var resultLazy = new Lazy<T>(func);
+        var resultCell = new ResultCell<T>(func, taskState);
         
-        var newTask = new MyTask<T>(resultLazy,  this); //TODO
+        var newTask = new MyTask<T>(this, null); //TODO
 
-        var newAction = (() =>
-        {
-            
-            taskState.TaskCompleted();
-        });
+        var newAction = () => { resultCell.TryComputeResultInCurrentThread(); }; //TODO()
         
         _queue.Add(newAction);
 
-        return newTask; //TODO()
+        return newTask; 
     }
 
     public void ShutDown()
@@ -52,7 +48,7 @@ public class MyThreadPool : IDisposable
         _cancellationTokenSource.Cancel();
     }
     
-    private void InitAndStartThreads()
+    private void InitTreadItems()
     {
         for (var i = 0; i < _threadCount; i++)
         {

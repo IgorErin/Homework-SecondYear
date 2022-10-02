@@ -5,7 +5,6 @@ namespace ThreadPool;
 internal class ThreadPoolItem
 {
     private readonly Thread _thread;
-    private volatile ThreadState _threadState;
 
     private readonly BlockingCollection<Action> _queue;
 
@@ -14,12 +13,10 @@ internal class ThreadPoolItem
     public ThreadPoolItem(BlockingCollection<Action> queue, CancellationToken token)
     {
         _queue = queue;
+        _token = token;
         
         _thread = new Thread(() => ThreadWork());
         _thread.Start();
-        
-
-        _token = token;
     }
 
     private void ThreadWork()
