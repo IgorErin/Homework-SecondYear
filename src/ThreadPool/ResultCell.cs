@@ -2,66 +2,64 @@ using Optional;
 
 namespace ThreadPool;
 
+public enum CellStatus // internal ?
+{
+    ResultNotComputed,
+    ResultSuccessfullyComputed,
+    ComputedWithException,
+}
+
 public class ResultCell<TResult>
 {
     private readonly Func<TResult> _func;
-
-    private Option<TResult> _result = Option.None<TResult>();
-    private Option<Exception> _exception = Option.None<Exception>();
     
-    private readonly ActionState _actionState;
+    private Option<TResult> _optionResult = Option.None<TResult>();
+    private Option<Exception> _optionException = Option.None<Exception>();
 
-    private volatile ResultCellStatus _cellStatus;
-    
+    private volatile bool _funcIsComputed = false;
+
+    private volatile CellStatus _cellStatus = CellStatus.ResultNotComputed;
+
+    public bool IsComputed
+    {
+        get => _funcIsComputed;
+    }
+
     public TResult Result
     {
-        get
-        {
-            _actionState.GetResultBlocking();
-            
-        }
+        get => _optionResult.ValueOr(() => throw new Exception()); //TODO()
     }
 
-    public ResultCell(Func<TResult> func, ActionState actionState)
+    public Exception Exception
+    {
+        get => _optionException.ValueOr(() => throw new Exception()); //TODO()
+    }
+
+    public CellStatus Status
+    {
+        get => _cellStatus;
+    }
+
+    public ResultCell(Func<TResult> func)
     {
         _func = func;
-        _actionState = actionState;
-
-        _cellStatus = ResultCellStatus.NotComputedYet;
     }
 
-    public bool TryComputeResultInCurrentThread()
-    {
-        if (_actionState.TryStartAction())
-        {
-            ComputeResultAndSetStatus();
-            
-            _actionState.ReleaseResultBlocking();
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private void ComputeResultAndSetStatus()
+    public void Compute()
     {
         try
         {
-            _result = _func.Invoke().Some();
-            _cellStatus = ResultCellStatus.SuccessfullyComputed;
+            _optionResult = _func.Invoke().Some();
+            _cellStatus = CellStatus.ResultSuccessfullyComputed;
         }
         catch (Exception e)
         {
-            _exception = e.Some();
-            _cellStatus = ResultCellStatus.ComputedWithException;
+            _optionException = e.Some();
+            _cellStatus = CellStatus.ComputedWithException;
         }
-    }
-
-    private enum ResultCellStatus
-    {
-        NotComputedYet,
-        SuccessfullyComputed,
-        ComputedWithException,
+        finally
+        {
+            _funcIsComputed = true;
+        }
     }
 }

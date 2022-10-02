@@ -36,7 +36,16 @@ public class MyThreadPool : IDisposable
         
         var newTask = new MyTask<T>(this, null); //TODO
 
-        var newAction = () => { resultCell.TryComputeResultInCurrentThread(); }; //TODO()
+        var newAction = () =>
+        {
+            lock (resultCell)
+            {
+                if (!resultCell.isComputed)
+                {
+                    resultCell.compute();
+                }
+            }
+        }; 
         
         _queue.Add(newAction);
 
