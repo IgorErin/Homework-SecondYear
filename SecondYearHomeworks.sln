@@ -7,6 +7,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6634FE3D-B22
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadPool", "src\ThreadPool\ThreadPool.csproj", "{11E7F21E-46AA-4FD8-BF2C-91CA50DF5D8D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{1F91AFCB-7AA2-404F-B69A-070ADA619077}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadPool", "test\ThreadPool\ThreadPool.csproj", "{FD4A7E1F-4F00-4784-B198-EA50B5183EBC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,8 +24,13 @@ Global
 		{11E7F21E-46AA-4FD8-BF2C-91CA50DF5D8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11E7F21E-46AA-4FD8-BF2C-91CA50DF5D8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11E7F21E-46AA-4FD8-BF2C-91CA50DF5D8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD4A7E1F-4F00-4784-B198-EA50B5183EBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD4A7E1F-4F00-4784-B198-EA50B5183EBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD4A7E1F-4F00-4784-B198-EA50B5183EBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD4A7E1F-4F00-4784-B198-EA50B5183EBC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{11E7F21E-46AA-4FD8-BF2C-91CA50DF5D8D} = {6634FE3D-B225-4F53-86D6-92ED547F1D7D}
+		{FD4A7E1F-4F00-4784-B198-EA50B5183EBC} = {1F91AFCB-7AA2-404F-B69A-070ADA619077}
 	EndGlobalSection
 EndGlobal
