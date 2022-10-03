@@ -1,9 +1,14 @@
 using System.Collections.Concurrent;
+using ThreadPool.Exceptions;
 using ThreadPool.MyTask;
+using ThreadPool.ResultCell;
 
 namespace ThreadPool;
 
-public class MyThreadPool : IDisposable
+/// <summary>
+/// Thread pool that implement <see cref="IDisposable"/>.
+/// </summary>
+public sealed class MyThreadPool : IDisposable
 {
     private readonly int _threadCount;
     private readonly ThreadPoolItem[] _threads;
@@ -14,10 +19,16 @@ public class MyThreadPool : IDisposable
 
     private readonly CountdownEvent _countdownEvent;
 
-    private bool _disposed;
+    private volatile bool _disposed;
 
     private readonly object _locker = new ();
 
+    /// <summary>
+    /// Class constructor.
+    /// </summary>
+    /// <param name="threadCount">
+    /// Number of threads processing tasks.
+    /// </param>
     public MyThreadPool(int threadCount)
     {
         _queue = new BlockingCollection<Action>();
@@ -33,11 +44,17 @@ public class MyThreadPool : IDisposable
         InitTreadItems();
     }
     
-    public MyTask<T> Submit<T>(Func<T> func)
+    /// <summary>
+    /// A method that allows you to add a task for execution in the form of <see cref="Func{TResult}"/>
+    /// </summary>
+    /// <param name="func">Function whose value will be computed as one.</param>
+    /// <typeparam name="TResult">Function result type.</typeparam>
+    /// <returns>Abstraction over the task accepted for execution, see <see cref="IMyTask{TResult}"/></returns>
+    public MyTask<TResult> Submit<TResult>(Func<TResult> func)
     {
-        var resultCell = new ResultCell<T>(func);
+        var resultCell = new ResultCell<TResult>(func);
         
-        var newTask = new MyTask<T>(this, resultCell); 
+        var newTask = new MyTask<TResult>(this, resultCell); 
 
         var newAction = () =>
         {
@@ -48,13 +65,28 @@ public class MyThreadPool : IDisposable
                     resultCell.Compute();
                 }
             }
-        }; 
+        };
+
+        try
+        {
+            _queue.Add(newAction);
+        }
+        catch (ObjectDisposedException e)
+        {
+            throw new MyThreadPoolException("The ThreadPool has been disposed. Object name: MyThreadPool.\n", e);
+        }
         
         _queue.Add(newAction);
 
         return newTask; 
     }
 
+    /// <summary>
+    /// The blocking thread method in which it will be called,
+    /// stopping the work of threads,
+    /// the tasks that have begun to be calculated will be completed,
+    /// other tasks will not be calculated.
+    /// </summary>
     public void ShutDown()
     {
         lock (_locker)
@@ -73,27 +105,21 @@ public class MyThreadPool : IDisposable
         }
     }
 
-    protected virtual void Dispose(bool disposing)
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        if (disposing)
-        {
-            _queue.Dispose();
-        }
-
-        _disposed = true;
-    }
-
+    /// <summary>
+    /// Method to release managed resources.
+    /// </summary>
     public void Dispose()
     {
+        ShutDown();
+        
         lock (_locker)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            if (!_disposed)
+            {
+                _queue.Dispose();
+            }
+
+            _disposed = true;
         }
     }
 }

@@ -1,5 +1,8 @@
 namespace ThreadPool.Exceptions;
 
+/// <summary>
+/// <see cref="ResultCell.ResultCell{TResult}"/> class exception.
+/// </summary>
 [Serializable]
 public class ResultCellException : Exception
 {

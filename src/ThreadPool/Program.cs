@@ -7,7 +7,9 @@ class PoolMain
         var pool = new MyThreadPool(12);
 
         Console.WriteLine("start process");
-
+        
+        pool.Dispose();
+        
         for (var i = 0; i < 100; i++)
         {
             Task.Delay(100);

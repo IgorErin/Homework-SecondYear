@@ -1,5 +1,8 @@
 namespace ThreadPool.Exceptions;
 
+/// <summary>
+/// <see cref="MyTask"/> class exception.
+/// </summary>
 [Serializable]
 public class MyTaskException : Exception
 {
