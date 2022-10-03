@@ -2,36 +2,23 @@
 
 class PoolMain
 {
+    /// <summary>
+    /// <see cref="MyThreadPool"/> use case.
+    /// </summary>
     public static void Main()
     {
-        var pool = new MyThreadPool(12);
+        using var threadPool = new MyThreadPool(4);
 
-        Console.WriteLine("start process");
-        
-        pool.Dispose();
-        
-        for (var i = 0; i < 100; i++)
+        var myFunc = () => 2 * 2;
+        var myContinuation = (int x) =>
         {
-            Task.Delay(100);
-            var task = pool.Submit(() =>
-            {
-                Console.WriteLine("printed in thread pool");
-                return 3;
-            });
-            
-            Task.Delay(1000);
+            Console.WriteLine($"Result = {x}");
+            return x;
+        };
 
-            task.ContinueWith(result =>
-            {
-                Console.WriteLine($"result = {result}");
-                return 3;
-            });
-            
-            Task.Delay(1000);
-            Console.WriteLine($"i = {i}");
-        }
+        var firstTask = threadPool.Submit(myFunc);
+        firstTask.ContinueWith(myContinuation);
 
-        pool.ShutDown();
-        Console.WriteLine("lol");
+        threadPool.ShutDown();
     }
 }
