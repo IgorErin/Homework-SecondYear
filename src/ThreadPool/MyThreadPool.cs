@@ -52,7 +52,7 @@ public sealed class MyThreadPool : IDisposable
     /// <returns>Abstraction over the task accepted for execution, see <see cref="IMyTask{TResult}"/></returns>
     public MyTask<TResult> Submit<TResult>(Func<TResult> func)
     {
-        var resultCell = new ResultCell<TResult>(func);
+        var resultCell = new ComputationCell<TResult>(func);
         
         var newTask = new MyTask<TResult>(this, resultCell); 
 

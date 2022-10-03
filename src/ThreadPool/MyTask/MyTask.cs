@@ -9,26 +9,37 @@ namespace ThreadPool.MyTask;
 /// <typeparam name="TResult">Result type.</typeparam>
 public class MyTask<TResult> : IMyTask<TResult>
 {
-    private readonly ResultCell<TResult> _resultCell;
+    private readonly ComputationCell<TResult> _computationCell;
     private readonly MyThreadPool _threadPool;
-
-    private readonly List<Exception> _exceptions = new ();
 
     public bool IsCompleted
     {
-        get => _resultCell.IsComputed;
+        get => _computationCell.IsComputed;
     }
     
     public TResult Result
     {
         get
         {
-            if (!_resultCell.IsComputed)
+            if (!_computationCell.IsComputed)
             {
                 ComputeResultInCurrentThread();
             }
 
-            return GetResult();
+            try
+            {
+                var result = _computationCell.Result;
+                
+                return result;
+            }
+            catch (ResultCellException e)
+            {
+                throw new MyTaskException($"computation error: {e.Message}", e);
+            }
+            catch (Exception e)
+            {
+                throw new AggregateException(e);
+            }
         }
     }
     
@@ -36,10 +47,10 @@ public class MyTask<TResult> : IMyTask<TResult>
     /// Class constructor.
     /// </summary>
     /// <param name="threadPool">Thread pool that perform computations</param>
-    /// <param name="resultCell">Cell that encapsulates calculation and state of result</param>
-    public MyTask(MyThreadPool threadPool, ResultCell<TResult> resultCell)
+    /// <param name="computationCell">Cell that encapsulates calculation and state of result</param>
+    public MyTask(MyThreadPool threadPool, ComputationCell<TResult> computationCell)
     {
-        _resultCell = resultCell;
+        _computationCell = computationCell;
         _threadPool = threadPool;
     }
 
@@ -61,16 +72,7 @@ public class MyTask<TResult> : IMyTask<TResult>
     /// </exception>
     public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> continuation)
     {
-        Func<TNewResult> newFunc;
-        
-        if (_resultCell.IsComputed)
-        {
-            newFunc = () => continuation.Invoke(GetResult());
-            
-            return _threadPool.Submit(newFunc);
-        }
-
-        newFunc = () =>
+        var newFunc = () =>
         {
             try
             {
@@ -80,36 +82,20 @@ public class MyTask<TResult> : IMyTask<TResult>
             }
             catch (Exception e)
             {
-                _exceptions.Add(e);
+                throw new AggregateException(e);
             }
-
-            throw new AggregateException(_exceptions); //TODO()
         };
-
+        
         return _threadPool.Submit(newFunc);
     }
-
-    private TResult GetResult()
-        => _resultCell.Status switch
-        {
-            ResultCellStatus.ResultSuccessfullyComputed => _resultCell.Result,
-            ResultCellStatus.ComputedWithException => throw GetResultException(),
-            
-            _ => throw new MyTaskException($"status not match, status = {_resultCell.Status}")
-        };
-
-    private AggregateException GetResultException()
-    {
-        return new AggregateException(_resultCell.Exception);
-    }
-
+    
     private void ComputeResultInCurrentThread()
     {
-        lock (_resultCell)
+        lock (_computationCell)
         {
-            if (!_resultCell.IsComputed)
+            if (!_computationCell.IsComputed)
             {
-                _resultCell.Compute();
+                _computationCell.Compute();
             }
         }
     }
