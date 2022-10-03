@@ -36,12 +36,13 @@ public sealed class MyThreadPool : IDisposable
         _threadCount = threadCount;
         _threads = new ThreadPoolItem[threadCount];
         
+        _countdownEvent = new CountdownEvent(threadCount);
         _cancellationTokenSource = new CancellationTokenSource();
 
-        _countdownEvent = new CountdownEvent(threadCount);
-        
-        // must be after _threads init
-        InitTreadItems();
+        for (var i = 0; i < _threadCount; i++)
+        {
+            _threads[i] = new ThreadPoolItem(_queue, _countdownEvent, _cancellationTokenSource.Token);
+        }
     }
     
     /// <summary>
@@ -52,20 +53,9 @@ public sealed class MyThreadPool : IDisposable
     /// <returns>Abstraction over the task accepted for execution, see <see cref="IMyTask{TResult}"/></returns>
     public MyTask<TResult> Submit<TResult>(Func<TResult> func)
     {
-        var resultCell = new ComputationCell<TResult>(func);
-        
-        var newTask = new MyTask<TResult>(this, resultCell); 
-
-        var newAction = () =>
-        {
-            lock (resultCell)
-            {
-                if (!resultCell.IsComputed)
-                {
-                    resultCell.Compute();
-                }
-            }
-        };
+        var newComputationCell = new ComputationCell<TResult>(func);
+        var newTask = new MyTask<TResult>(this, newComputationCell);
+        var newAction = () => newComputationCell.Compute();
 
         try
         {
@@ -76,8 +66,6 @@ public sealed class MyThreadPool : IDisposable
             throw new MyThreadPoolException("The ThreadPool has been disposed. Object name: MyThreadPool.\n", e);
         }
         
-        _queue.Add(newAction);
-
         return newTask; 
     }
 
@@ -94,14 +82,6 @@ public sealed class MyThreadPool : IDisposable
             _cancellationTokenSource.Cancel();
 
             _countdownEvent.Wait();
-        }
-    }
-    
-    private void InitTreadItems()
-    {
-        for (var i = 0; i < _threadCount; i++)
-        {
-            _threads[i] = new ThreadPoolItem(_queue, _countdownEvent, _cancellationTokenSource.Token);
         }
     }
 

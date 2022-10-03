@@ -23,7 +23,7 @@ public class MyTask<TResult> : IMyTask<TResult>
         {
             if (!_computationCell.IsComputed)
             {
-                ComputeResultInCurrentThread();
+                _computationCell.Compute();
             }
 
             try
@@ -32,7 +32,7 @@ public class MyTask<TResult> : IMyTask<TResult>
                 
                 return result;
             }
-            catch (ResultCellException e)
+            catch (ComputationCellException e)
             {
                 throw new MyTaskException($"computation error: {e.Message}", e);
             }
@@ -87,16 +87,5 @@ public class MyTask<TResult> : IMyTask<TResult>
         };
         
         return _threadPool.Submit(newFunc);
-    }
-    
-    private void ComputeResultInCurrentThread()
-    {
-        lock (_computationCell)
-        {
-            if (!_computationCell.IsComputed)
-            {
-                _computationCell.Compute();
-            }
-        }
     }
 }

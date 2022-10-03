@@ -17,6 +17,8 @@ public class ComputationCell<TResult>
 
     private volatile bool _funcIsComputed;
 
+    private readonly object _locker = new object();
+
     /// <summary>
     /// Indicate state of computation.
     /// </summary>
@@ -28,15 +30,15 @@ public class ComputationCell<TResult>
     /// <summary>
     /// Property that allows you to get the result of a calculation.
     /// </summary>
-    /// <exception cref="ResultCellException">
-    /// If the result is not calculated, an exception will be thrown, see <see cref="ResultCellException"/>.
+    /// <exception cref="ComputationCellException">
+    /// If the result is not calculated, an exception will be thrown, see <see cref="ComputationCellException"/>.
     /// </exception>
     public TResult Result
     {
         get
             => _optionResult.Match(
                 some: result => result.Invoke(),
-                none: () => throw new ResultCellException("result not init")
+                none: () => throw new ComputationCellException("result not init")
             );
     }
 
@@ -53,25 +55,32 @@ public class ComputationCell<TResult>
 
     /// <summary>
     /// The method that calculates the result.
+    /// Thread safe.
     /// </summary>
     public void Compute()
     {
-        try
+        lock (_locker)
         {
-            var result = _func.Invoke();
-            var newResultFunc = () => result;
-            
-            _optionResult = (newResultFunc).Some();
-        }
-        catch (Exception exceptionResult)
-        {
-            var newExceptionFunc = new Func<TResult>(() => throw exceptionResult);
+            if (!_funcIsComputed)
+            {
+                try
+                {
+                    var result = _func.Invoke();
+                    var newResultFunc = () => result;
 
-            _optionResult = newExceptionFunc.Some();
-        }
-        finally
-        {
-            _funcIsComputed = true;
+                    _optionResult = (newResultFunc).Some();
+                }
+                catch (Exception exceptionResult)
+                {
+                    var newExceptionFunc = new Func<TResult>(() => throw exceptionResult);
+
+                    _optionResult = newExceptionFunc.Some();
+                }
+                finally
+                {
+                    _funcIsComputed = true;
+                }
+            }
         }
     }
 }

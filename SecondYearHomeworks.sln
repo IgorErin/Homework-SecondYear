@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadPool", "src\ThreadPoo
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{1F91AFCB-7AA2-404F-B69A-070ADA619077}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadPool", "test\ThreadPool\ThreadPool.csproj", "{FD4A7E1F-4F00-4784-B198-EA50B5183EBC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadPoolTest", "test\ThreadPoolTest\ThreadPoolTest.csproj", "{FD4A7E1F-4F00-4784-B198-EA50B5183EBC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
