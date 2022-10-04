@@ -41,7 +41,7 @@ public class SeqTests
     {
         var exceptions = new Exception[ResultCount];
 
-        var parLazy = new ParallelSafeLazy<Exception>(() => throw new Exception());
+        var parLazy = new ThreadSafeLazy<Exception>(() => throw new Exception());
 
         for (var i = 0; i < ResultCount; i++)
         {
@@ -67,7 +67,7 @@ public class SeqTests
     [Test]
     public void LazyExceptionAreThrown()
     {
-        var parLazy = new ParallelSafeLazy<Exception>(() => throw new Exception());
+        var parLazy = new ThreadSafeLazy<Exception>(() => throw new Exception());
         
         var exceptionAreThrown = false;
 
