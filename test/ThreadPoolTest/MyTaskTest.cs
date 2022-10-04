@@ -90,8 +90,7 @@ public class MyTaskTest
             
             threads.StartAndJoinAllThreads();
             
-            Assert.False(results.HaveNullItem());
-            Assert.That(results.DuplicatesGroupCount(), Is.EqualTo(1));
+            Assert.True(results.IsAllEqualAndNotNull());
         }
         
         threadPool.ShutDown();
@@ -133,8 +132,7 @@ public class MyTaskTest
             
             threads.StartAndJoinAllThreads();
             
-            Assert.False(results.HaveNullItem());
-            Assert.That(results.DuplicatesGroupCount(), Is.EqualTo(1));
+            Assert.True(results.IsAllEqualAndNotNull());
         }
         
         threadPool.ShutDown();

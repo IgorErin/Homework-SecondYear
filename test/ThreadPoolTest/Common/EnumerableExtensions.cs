@@ -7,4 +7,7 @@ public static class EnumerableExtensions
 
     public static bool HaveNullItem<T>(this IEnumerable<T> elements) where T : class?
         => elements.Any(x => x is null);
+
+    public static bool IsAllEqualAndNotNull<T>(this IEnumerable<T> elements) where T : class?
+        => !elements.HaveNullItem() && elements.DuplicatesGroupCount() == 1;
 }

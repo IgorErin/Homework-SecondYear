@@ -11,7 +11,6 @@ namespace ThreadPool;
 /// </summary>
 public sealed class MyThreadPool : IDisposable
 {
-    private readonly int _threadCount;
     private readonly ThreadPoolItem[] _threads;
 
     private readonly BlockingCollection<Action> _queue;
@@ -29,19 +28,25 @@ public sealed class MyThreadPool : IDisposable
     /// Class constructor.
     /// </summary>
     /// <param name="threadCount">
-    /// Number of threads processing tasks.
+    /// Number strictly greater than zero - number of threads processing tasks.
     /// </param>
     public MyThreadPool(int threadCount)
     {
+        if (threadCount <= 0)
+        {
+            throw new MyThreadPoolException(
+                $"the number of threads must be greater than 0, but was = {threadCount}"
+                );
+        }
+        
         _queue = new BlockingCollection<Action>();
         
-        _threadCount = threadCount;
         _threads = new ThreadPoolItem[threadCount];
         
         _countdownEvent = new CountdownEvent(threadCount);
         _cancellationTokenSource = new CancellationTokenSource();
 
-        for (var i = 0; i < _threadCount; i++)
+        for (var i = 0; i < threadCount; i++)
         {
             _threads[i] = new ThreadPoolItem(_queue, _countdownEvent, _cancellationTokenSource.Token);
         }
@@ -62,7 +67,7 @@ public sealed class MyThreadPool : IDisposable
             if (!_isShutDown)
             {
                 var newComputationCell = new ComputationCell<TResult>(func);
-                newTask = new MyTask<TResult>(this, newComputationCell).Some<>();
+                newTask = new MyTask<TResult>(this, newComputationCell).Some<MyTask<TResult>>();
                 var newAction = () => newComputationCell.Compute();
 
                 try
