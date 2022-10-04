@@ -74,7 +74,7 @@ public class ThreadSafeLazy<T> : Lazy<T>
         {
             var resultValue = _func.Invoke();
 
-            _computedValue = resultValue.Some<>();
+            _computedValue = resultValue.Some<T>();
             _computeStatus = ComputationStatus.SuccessComputed;
         }
         catch (Exception computedException)

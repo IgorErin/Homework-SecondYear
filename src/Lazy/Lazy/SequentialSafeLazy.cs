@@ -60,7 +60,7 @@ public class SequentialSafeLazy<T> : Lazy<T>
         {
             var resultValue = _func.Invoke();
             
-            _computedResult = resultValue.Some<>();
+            _computedResult = resultValue.Some<T>();
             _computeStatus = ComputationStatus.SuccessComputed;
         }
         catch (Exception computedException)
