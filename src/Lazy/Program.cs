@@ -25,7 +25,7 @@ public static class LazyMain
             Console.WriteLine($"Computed and stored value: {seqLazy.Get()}");
         }
 
-        var parLazy = new ParallelSafeLazy<int>(() =>
+        var parLazy = new ThreadSafeLazy<int>(() =>
         {
             Console.WriteLine("I computed in parSafeLazy! Should be printed once...");
             

@@ -1,4 +1,5 @@
 using Lazy.LazyExceptions;
+using Optional;
 
 namespace Lazy.Lazy;
 
@@ -11,24 +12,23 @@ public class SequentialSafeLazy<T> : Lazy<T>
 {
     private readonly Func<T> _func;
     
-    private Func<T> _computedValue;
-    private ComputationStatus _computeStatus;
+    private Option<T> _computedResult;
     private Exception _computedException;
+    private ComputationStatus _computeStatus;
+    
 
     /// <summary>
-    /// Constructor for init lazy computation class, see <see cref="ParallelSafeLazy{T}"/>.
+    /// Constructor for init lazy computation class, see <see cref="ThreadSafeLazy{T}"/>.
     /// </summary>
     /// <param name="func">A function that will be lazily evaluated</param>
-    /// <exception cref="NotComputedValueLazyException">
-    /// An exception will be thrown when trying to take a result from an uninitialized field
-    /// </exception>
     public SequentialSafeLazy(Func<T> func)
     {
         _func = func;
+
+        _computedResult = Option.None<T>();
+        _computedException = new NotCachedExceptionLazyException();
         
         _computeStatus = ComputationStatus.NotComputedYet;
-        _computedValue = () => throw new NotComputedValueLazyException("expression not computed yet");
-        _computedException = new NotCachedExceptionLazyException();
     }
     
     /// <summary>
@@ -60,7 +60,7 @@ public class SequentialSafeLazy<T> : Lazy<T>
         {
             var resultValue = _func.Invoke();
             
-            _computedValue = () => resultValue;
+            _computedResult = resultValue.Some<>();
             _computeStatus = ComputationStatus.SuccessComputed;
         }
         catch (Exception computedException)
@@ -69,9 +69,12 @@ public class SequentialSafeLazy<T> : Lazy<T>
             _computeStatus = ComputationStatus.ComputedWithException;
         }
     }
-    
+
     private T GetComputedValue()
-        => _computedValue.Invoke();
+        => _computedResult.Match(
+            some: result => result,
+            none: () => throw new NotComputedResultLazyException("computation error, result not computed yet")
+        );
 
     private T ThrowComputedException()
         => throw _computedException;

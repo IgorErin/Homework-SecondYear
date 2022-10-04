@@ -1,4 +1,5 @@
 using Lazy.LazyExceptions;
+using Optional;
 
 namespace Lazy.Lazy;
 
@@ -7,29 +8,27 @@ namespace Lazy.Lazy;
 /// <inheritdoc cref="Lazy{T}"/>
 /// </summary>
 /// <typeparam name="T">Result type of lazy computed expression, see <see cref="Lazy{T}"/></typeparam>
-public class ParallelSafeLazy<T> : Lazy<T>
+public class ThreadSafeLazy<T> : Lazy<T>
 {
     private readonly Func<T> _func;
     
-    private volatile Func<T> _computedValue;
-    private volatile ComputationStatus _computeStatus;
+    private Option<T> _computedValue;
     private volatile Exception _computedException;
+    
+    private volatile ComputationStatus _computeStatus;
 
     private readonly object _locker;
     
     /// <summary>
-    /// Constructor for init lazy computation class, see <see cref="ParallelSafeLazy{T}"/>.
+    /// Constructor for init lazy computation class, see <see cref="ThreadSafeLazy{T}"/>.
     /// </summary>
     /// <param name="func">A function that will be lazily evaluated</param>
-    /// <exception cref="NotComputedValueLazyException">
-    /// An exception will be thrown when trying to take a result from an uninitialized field
-    /// </exception>
-    public ParallelSafeLazy(Func<T> func)
+    public ThreadSafeLazy(Func<T> func)
     {
         _func = func;
         
         _computeStatus = ComputationStatus.NotComputedYet;
-        _computedValue = () => throw new NotComputedValueLazyException("expression not computed yet");
+        _computedValue = Option.None<T>();
         _computedException = new NotCachedExceptionLazyException();
 
         _locker = new object();
@@ -75,7 +74,7 @@ public class ParallelSafeLazy<T> : Lazy<T>
         {
             var resultValue = _func.Invoke();
 
-            _computedValue = () => resultValue;
+            _computedValue = resultValue.Some<>();
             _computeStatus = ComputationStatus.SuccessComputed;
         }
         catch (Exception computedException)
@@ -86,7 +85,10 @@ public class ParallelSafeLazy<T> : Lazy<T>
     }
 
     private T GetComputedValue()
-        => _computedValue.Invoke();
+        => _computedValue.Match(
+            some: result => result,
+            none: () => throw new NotComputedResultLazyException()
+            );
 
     private T ThrowComputedException()
         => throw _computedException;
