@@ -1,4 +1,4 @@
-﻿using ThreadPool;
+﻿namespace ThreadPool;
 
 class PoolMain
 {
@@ -20,5 +20,6 @@ class PoolMain
         firstTask.ContinueWith(myContinuation);
 
         threadPool.ShutDown();
+        threadPool.Dispose();
     }
 }

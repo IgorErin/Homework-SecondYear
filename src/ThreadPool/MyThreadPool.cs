@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Optional;
 using ThreadPool.Exceptions;
 using ThreadPool.MyTask;
 using ThreadPool.ResultCell;
@@ -20,6 +21,7 @@ public sealed class MyThreadPool : IDisposable
     private readonly CountdownEvent _countdownEvent;
 
     private volatile bool _disposed;
+    private volatile bool _isShutDown;
 
     private readonly object _locker = new ();
 
@@ -53,20 +55,30 @@ public sealed class MyThreadPool : IDisposable
     /// <returns>Abstraction over the task accepted for execution, see <see cref="IMyTask{TResult}"/></returns>
     public MyTask<TResult> Submit<TResult>(Func<TResult> func)
     {
-        var newComputationCell = new ComputationCell<TResult>(func);
-        var newTask = new MyTask<TResult>(this, newComputationCell);
-        var newAction = () => newComputationCell.Compute();
-
-        try
-        {
-            _queue.Add(newAction);
-        }
-        catch (ObjectDisposedException e)
-        {
-            throw new MyThreadPoolException("The ThreadPool has been disposed. Object name: MyThreadPool.\n", e);
-        }
+        var newTask = Option.None<MyTask<TResult>>();
         
-        return newTask; 
+        lock (_locker)
+        {
+            if (!_isShutDown)
+            {
+                var newComputationCell = new ComputationCell<TResult>(func);
+                newTask = new MyTask<TResult>(this, newComputationCell).Some<>();
+                var newAction = () => newComputationCell.Compute();
+
+                try
+                {
+                    _queue.Add(newAction);
+                }
+                catch (ObjectDisposedException e)
+                {
+                    throw new MyThreadPoolException("The ThreadPool has been disposed. Object name: MyThreadPool.\n", e);
+                }
+            }
+        }
+
+        return newTask.ValueOr(
+            () => throw new MyThreadPoolException("ShutDown method was applied, adding a task is not possible")
+            );
     }
 
     /// <summary>
@@ -79,9 +91,18 @@ public sealed class MyThreadPool : IDisposable
     {
         lock (_locker)
         {
-            _cancellationTokenSource.Cancel();
+            if (!_isShutDown)
+            {
+                _queue.CompleteAdding();
+                _countdownEvent.Wait();
 
-            _countdownEvent.Wait();
+                foreach (var threadItem in _threads) // is it necessary ?
+                {
+                    threadItem.Join();
+                }
+
+                _isShutDown = true;
+            }
         }
     }
 
@@ -90,8 +111,11 @@ public sealed class MyThreadPool : IDisposable
     /// </summary>
     public void Dispose()
     {
-        ShutDown();
-        
+        if (!_isShutDown)
+        {
+            ShutDown();
+        }
+
         lock (_locker)
         {
             if (!_disposed)

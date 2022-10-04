@@ -36,29 +36,21 @@ internal class ThreadPoolItem
         _thread.Start();
     }
 
+    /// <summary>
+    /// Block current thread until <see cref="ThreadPoolItem"/> not completed.
+    /// </summary>
+    public void Join()
+    {
+        _thread.Join();
+    }
+
     private void ThreadWork()
     {
-        try
+        foreach (var action in _queue)
         {
-            while (true)
-            {
-                if (_token.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                var action = _queue.Take(_token);
-
-                action();
-            }
+            action();
         }
-        catch (OperationCanceledException _)
-        {
-            // In case of throwing an exit exception.
-        }
-        finally
-        {
-            _countdownEvent.Signal();
-        }
+        
+        _countdownEvent.Signal(); // is it enough for correct blocking in ShutDown?
     }
 }

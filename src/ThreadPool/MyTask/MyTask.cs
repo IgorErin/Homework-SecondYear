@@ -1,5 +1,3 @@
-using System.Data;
-using System.Net.Http.Headers;
 using ThreadPool.Exceptions;
 using ThreadPool.ResultCell;
 
@@ -19,6 +17,15 @@ public class MyTask<TResult> : IMyTask<TResult>
         get => _computationCell.IsComputed;
     }
     
+    /// <summary>
+    /// A property that returns the result of the evaluation or,
+    /// if it has not yet been evaluated,
+    /// blocks the calling thread until it is evaluated and returns the value.
+    /// </summary>
+    /// <exception cref="MyTaskException">Will be thrown on runtime error.</exception>
+    /// <exception cref="AggregateException">
+    /// Will be thrown at an exception in the computation, will contain it as inner exception.
+    /// </exception>
     public TResult Result
     {
         get

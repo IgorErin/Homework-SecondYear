@@ -4,15 +4,7 @@ namespace ThreadPool;
 
 public class MyTaskTest
 {
-    private const int ThreadsInThreadPoolCount = 8;
-    private MyThreadPool _threadPool = new (ThreadsInThreadPoolCount);
-
     private const int IterCount = 10;
-        [SetUp]
-    public void SetUp()
-    {
-        _threadPool = new MyThreadPool(ThreadsInThreadPoolCount);
-    }
 
     [TestCase(-1000)]
     [TestCase(-100)]
@@ -20,12 +12,13 @@ public class MyTaskTest
     [TestCase(1000)]
     public void CorrectValueGetResultTest(int expectedResultValue)
     {
-        var newTask = _threadPool.Submit(() => expectedResultValue);
+        using var threadPool = new MyThreadPool(Environment.ProcessorCount);
+        var newTask = threadPool.Submit(() => expectedResultValue);
 
         var result = newTask.Result;
         
-        _threadPool.ShutDown();
-        _threadPool.Dispose();
+        threadPool.ShutDown();
+        threadPool.Dispose();
         
         Assert.That(result, Is.EqualTo(expectedResultValue));
     }
@@ -33,14 +26,14 @@ public class MyTaskTest
     [Test]
     public void CorrectRefTypeGetResultTest()
     {
+        using var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var expectedResult = new object();
         
-        var newTask = _threadPool.Submit(() => expectedResult);
+        var newTask = threadPool.Submit(() => expectedResult);
         
         var result = newTask.Result;
         
-        _threadPool.ShutDown();
-        _threadPool.Dispose();
+        threadPool.ShutDown();
         
         Assert.That(result, Is.EqualTo(expectedResult));
     }
@@ -48,8 +41,9 @@ public class MyTaskTest
     [Test]
     public void TaskExceptionResultTest()
     {
+        using var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var testException = new TestException();
-        var newTestTask = _threadPool.Submit(() =>
+        var newTestTask = threadPool.Submit(() =>
         {
             throw testException;
             return 0;
@@ -67,14 +61,14 @@ public class MyTaskTest
         }
         finally
         {
-            _threadPool.ShutDown();
-            _threadPool.Dispose();
+            threadPool.ShutDown();
         }
     }
 
     [Test]
     public void ConcurrentResultsAreEqualTest()
     {
+        using var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var processorCount = Environment.ProcessorCount;
         var threads = new Thread[processorCount];
         
@@ -83,7 +77,7 @@ public class MyTaskTest
             var results = new object[processorCount];
             
             var testResultObject = new object();
-            var newTask = _threadPool.Submit(() => testResultObject);
+            var newTask = threadPool.Submit(() => testResultObject);
             
             for (var j = 0; j < processorCount; j++)
             {
@@ -100,13 +94,13 @@ public class MyTaskTest
             Assert.That(results.DuplicatesGroupCount(), Is.EqualTo(1));
         }
         
-        _threadPool.ShutDown();
-        _threadPool.Dispose();
+        threadPool.ShutDown();
     }
     
     [Test]
     public void ConcurrentExceptionResultsAreEqualTest()
     {
+        using var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var processorCount = Environment.ProcessorCount;
         var threads = new Thread[processorCount];
         
@@ -115,7 +109,7 @@ public class MyTaskTest
             var results = new Exception[processorCount];
             
             var testException = new TestException();
-            var newTask = _threadPool.Submit(() =>
+            var newTask = threadPool.Submit(() =>
             {
                 throw testException;
                 return 0;
@@ -143,8 +137,7 @@ public class MyTaskTest
             Assert.That(results.DuplicatesGroupCount(), Is.EqualTo(1));
         }
         
-        _threadPool.ShutDown();
-        _threadPool.Dispose();
+        threadPool.ShutDown();
     }
 
     [TestCase(-1000)]
@@ -153,14 +146,14 @@ public class MyTaskTest
     [TestCase(1000)]
     public void ContinuationValueResultTest(int firstTaskResultValue)
     {
-        var newTestTask = _threadPool.Submit(() => firstTaskResultValue);
+        using var threadPool = new MyThreadPool(Environment.ProcessorCount);
+        var newTestTask = threadPool.Submit(() => firstTaskResultValue);
         var testTaskContinuation = newTestTask.ContinueWith(result => GetContinuationIntResult(result));
 
         var result = testTaskContinuation.Result;
         var expectedResult = GetContinuationIntResult(firstTaskResultValue);
         
-        _threadPool.ShutDown();
-        _threadPool.Dispose();
+        threadPool.ShutDown();
         
         Assert.That(result, Is.EqualTo(expectedResult));
     }
@@ -197,8 +190,9 @@ public class MyTaskTest
     [Test]
     public void ExceptionInContinuationTaskTest()
     {
+        using var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var testException = new TestException();
-        var newTestTask = _threadPool.Submit(() => 0);
+        var newTestTask = threadPool.Submit(() => 0);
         var testTaskContinuation = newTestTask.ContinueWith(result =>
         {
             throw testException;
@@ -217,8 +211,7 @@ public class MyTaskTest
         }
         finally
         {
-            _threadPool.ShutDown();
-            _threadPool.Dispose();
+            threadPool.ShutDown();
         }
     }
 
