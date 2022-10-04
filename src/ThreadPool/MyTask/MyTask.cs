@@ -1,3 +1,5 @@
+using System.Data;
+using System.Net.Http.Headers;
 using ThreadPool.Exceptions;
 using ThreadPool.ResultCell;
 
@@ -21,20 +23,14 @@ public class MyTask<TResult> : IMyTask<TResult>
     {
         get
         {
-            if (!_computationCell.IsComputed)
-            {
-                _computationCell.Compute();
-            }
 
             try
             {
-                var result = _computationCell.Result;
-                
-                return result;
+                return GetResultFromComputationCell();
             }
             catch (ComputationCellException e)
             {
-                throw new MyTaskException($"computation error: {e.Message}", e);
+                throw new MyTaskException("computation error: \n", e);
             }
             catch (Exception e)
             {
@@ -74,18 +70,21 @@ public class MyTask<TResult> : IMyTask<TResult>
     {
         var newFunc = () =>
         {
-            try
-            {
-                var result = Result;
+            var result = GetResultFromComputationCell();
 
-                return continuation.Invoke(result);
-            }
-            catch (Exception e)
-            {
-                throw new AggregateException(e);
-            }
+            return continuation.Invoke(result);
         };
         
         return _threadPool.Submit(newFunc);
+    }
+
+    private TResult GetResultFromComputationCell()
+    {
+        if (!_computationCell.IsComputed)
+        {
+            _computationCell.Compute();
+        }
+        
+        return _computationCell.Result;
     }
 }

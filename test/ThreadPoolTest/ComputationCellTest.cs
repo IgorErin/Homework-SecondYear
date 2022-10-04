@@ -1,9 +1,10 @@
+using ThreadPool.Common;
 using ThreadPool.Exceptions;
 using ThreadPool.ResultCell;
 
 namespace ThreadPool;
 
-public class ComputationResultTest
+public class ComputationCellTest
 {
     private ComputationCell<int> _computationResulCell = new (() => 2 * 2);
     private ComputationCell<int> _computationCellWithExceptionResult = new (() => throw new TestException());
@@ -75,7 +76,8 @@ public class ComputationResultTest
 
         for (var i = 0; i < iterationNumber; i++)
         {
-            var newComputationCell = new ComputationCell<int>(() => FirstResult);
+            var testObject = new object();
+            var newComputationCell = new ComputationCell<object>(() => testObject);
 
             for (var j = 0; j < processorCount; j++)
             {
@@ -85,11 +87,11 @@ public class ComputationResultTest
                 });
             }
 
-            StartAndJoinAllThreads(threads);
+            threads.StartAndJoinAllThreads();
 
             var result = newComputationCell.Result;
             
-            Assert.That(result, Is.EqualTo(FirstResult));
+            Assert.That(result, Is.EqualTo(testObject));
         }
     }
 
@@ -129,8 +131,8 @@ public class ComputationResultTest
                     newComputationCell.Compute();
                 });
             }
-
-            StartAndJoinAllThreads(threads);
+            
+            threads.StartAndJoinAllThreads();
 
             try
             {
@@ -140,26 +142,6 @@ public class ComputationResultTest
             {
                 Assert.That(e, Is.InstanceOf(typeof(TestException)));
             }
-        }
-    }
-
-    private void StartAndJoinAllThreads(Thread[] threads)
-    {
-        foreach (var thread in threads)
-        {
-            thread.Start();
-        }
-
-        foreach (var thread in threads)
-        {
-            thread.Join();
-        }
-    }
-
-    private class TestException : Exception
-    {
-        public TestException()
-        {
         }
     }
 }
