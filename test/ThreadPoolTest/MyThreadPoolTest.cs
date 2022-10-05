@@ -3,6 +3,9 @@ using ThreadPool.Exceptions;
 
 namespace ThreadPool;
 
+/// <summary>
+/// <see cref="MyThreadPool"/> Nunit test class.
+/// </summary>
 public class MyThreadPoolTest
 {
     private readonly int _processorCount = Environment.ProcessorCount;

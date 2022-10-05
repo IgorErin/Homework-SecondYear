@@ -2,6 +2,9 @@ using ThreadPool.Common;
 
 namespace ThreadPool;
 
+/// <summary>
+/// <see cref="MyTask.MyTask{TResult}"/> Nunit test class.
+/// </summary>
 public class MyTaskTest
 {
     private const int IterCount = 10;
