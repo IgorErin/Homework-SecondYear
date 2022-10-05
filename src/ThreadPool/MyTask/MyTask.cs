@@ -1,5 +1,5 @@
 using ThreadPool.Exceptions;
-using ThreadPool.ResultCell;
+using ThreadPool;
 
 namespace ThreadPool.MyTask;
 

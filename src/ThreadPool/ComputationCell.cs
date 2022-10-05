@@ -1,7 +1,7 @@
 using Optional;
 using ThreadPool.Exceptions;
 
-namespace ThreadPool.ResultCell;
+namespace ThreadPool;
 
 /// <summary>
 /// The class encapsulates the calculation, its result and state.

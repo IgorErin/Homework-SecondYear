@@ -1,9 +1,11 @@
 using ThreadPool.Common;
 using ThreadPool.Exceptions;
-using ThreadPool.ResultCell;
 
 namespace ThreadPool;
 
+/// <summary>
+/// <see cref="ComputationCell{TResult}"/> nunit test class.
+/// </summary>
 public class ComputationCellTest
 {
     private ComputationCell<int> _computationResulCell = new (() => 2 * 2);
@@ -18,6 +20,10 @@ public class ComputationCellTest
         _computationCellWithExceptionResult = new ComputationCell<int>(() => throw new TestException());
     }
 
+    
+    /// <summary>
+    /// <see cref="ComputationCell{TResult}.Result"/> test.
+    /// </summary>
     [Test]
     public void GetResultTest()
     {
@@ -28,6 +34,10 @@ public class ComputationCellTest
         Assert.That(result, Is.EqualTo(FirstResult));
     }
     
+    /// <summary>
+    /// <see cref="ComputationCell{TResult}.Result"/> test without first calling
+    /// <see cref="ComputationCell{TResult}.Compute()"/>.
+    /// </summary>
     [Test]
     public void GetResultWithoutComputeMethod()
     {
@@ -43,6 +53,9 @@ public class ComputationCellTest
         }
     }
 
+    /// <summary>
+    /// <see cref="ComputationCell{TResult}.Compute()"/> in another thread test.
+    /// </summary>
     [Test]
     public void ComputationInAnotherThreadTest()
     {
@@ -66,6 +79,9 @@ public class ComputationCellTest
         Assert.That(result, Is.EqualTo(true));
     }
 
+    /// <summary>
+    /// Number of calling <see cref="ComputationCell{TResult}.Compute()"/> in another threads test.
+    /// </summary>
     [Test]
     public void NumberOfComputationInAnotherThreadsTest()
     {
@@ -95,6 +111,9 @@ public class ComputationCellTest
         }
     }
 
+    /// <summary>
+    /// <see cref="ComputationCell{TResult}.Result()"/> throw computed exception test.
+    /// </summary>
     [Test]
     public void ExceptionInComputationCellTest()
     {
@@ -111,7 +130,11 @@ public class ComputationCellTest
             Assert.That(e, Is.InstanceOf(typeof(TestException)));
         }
     }
-
+    
+    /// <summary>
+    /// The number of exceptions thrown by the <see cref="ComputationCell{TResult}.Result()"/> in other threads.
+    /// </summary>
+    /// <exception cref="TestException"></exception>
     [Test]
     public void NumberOfExceptionsInAnotherThreads()
     {

@@ -6,6 +6,11 @@ public class MyTaskTest
 {
     private const int IterCount = 10;
 
+    /// <summary>
+    /// Correct value <see cref="MyTask.MyTask{TResult}.Result"/> result before calling
+    /// <see cref="MyThreadPool.ShutDown()"/>.
+    /// </summary>
+    /// <param name="expectedResultValue">Expected <see cref="MyTask.MyTask{TResult}.Result"/> value.</param>
     [TestCase(-1000)]
     [TestCase(-100)]
     [TestCase(0)]
@@ -16,13 +21,15 @@ public class MyTaskTest
         var newTask = threadPool.Submit(() => expectedResultValue);
 
         var result = newTask.Result;
-        
         threadPool.ShutDown();
-        threadPool.Dispose();
         
         Assert.That(result, Is.EqualTo(expectedResultValue));
     }
 
+    /// <summary>
+    /// Correct reference type <see cref="MyTask.MyTask{TResult}.Result"/> result before calling
+    /// <see cref="MyThreadPool.ShutDown()"/>.
+    /// </summary>
     [Test]
     public void CorrectRefTypeGetResultTest()
     {
@@ -38,6 +45,10 @@ public class MyTaskTest
         Assert.That(result, Is.EqualTo(expectedResult));
     }
 
+    /// <summary>
+    /// <see cref="MyTask.MyTask{TResult}.Result"/> throws test exception.
+    /// </summary>
+    /// <exception cref="TestException">Exception that <see cref="MyTask.MyTask{TResult}.Result"/> thrown.</exception>
     [Test]
     public void TaskExceptionResultTest()
     {
@@ -65,6 +76,9 @@ public class MyTaskTest
         }
     }
 
+    /// <summary>
+    /// <see cref="MyTask.MyTask{TResult}.Result"/> gives the same object in other threads.
+    /// </summary>
     [Test]
     public void ConcurrentResultsAreEqualTest()
     {
@@ -96,6 +110,10 @@ public class MyTaskTest
         threadPool.ShutDown();
     }
     
+    /// <summary>
+    /// <see cref="MyTask.MyTask{TResult}.Result"/> gives the same exception in other threads.
+    /// </summary>
+    /// <exception cref="TestException"><see cref="MyTask.MyTask{TResult}.Result"/> exception.</exception>
     [Test]
     public void ConcurrentExceptionResultsAreEqualTest()
     {
@@ -138,6 +156,10 @@ public class MyTaskTest
         threadPool.ShutDown();
     }
 
+    /// <summary>
+    /// The correct result of the first task in the <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>
+    /// </summary>
+    /// <param name="firstTaskResultValue">Result value.</param>
     [TestCase(-1000)]
     [TestCase(-100)]
     [TestCase(0)]
@@ -146,16 +168,19 @@ public class MyTaskTest
     {
         using var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var newTestTask = threadPool.Submit(() => firstTaskResultValue);
-        var testTaskContinuation = newTestTask.ContinueWith(result => GetContinuationIntResult(result));
+        var testTaskContinuation = newTestTask.ContinueWith(result => result);
 
         var result = testTaskContinuation.Result;
-        var expectedResult = GetContinuationIntResult(firstTaskResultValue);
         
         threadPool.ShutDown();
         
-        Assert.That(result, Is.EqualTo(expectedResult));
+        Assert.That(result, Is.EqualTo(firstTaskResultValue));
     }
-
+    
+    /// <summary>
+    /// The correct exception of the base task in the <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>
+    /// </summary>
+    /// <exception cref="TestException">Base task exception.</exception>
     [Test]
     public void ExceptionInBaseTaskContinuationTest()
     {
@@ -167,7 +192,7 @@ public class MyTaskTest
             throw testException;
             return 0;
         });
-        var testTaskContinuation = newTestTask.ContinueWith(result => GetContinuationIntResult(result));
+        var testTaskContinuation = newTestTask.ContinueWith(result => result);
 
         try
         {
@@ -185,6 +210,10 @@ public class MyTaskTest
         }
     }
     
+    /// <summary>
+    ///  The correct exception of the continuation task in the <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>
+    /// </summary>
+    /// <exception cref="TestException">Result exception.</exception>
     [Test]
     public void ExceptionInContinuationTaskTest()
     {
@@ -212,7 +241,4 @@ public class MyTaskTest
             threadPool.ShutDown();
         }
     }
-
-    private int GetContinuationIntResult(int baseTaskResult)
-        => -baseTaskResult;
 }

@@ -1,5 +1,3 @@
-using ThreadPool.ResultCell;
-
 namespace ThreadPool.Exceptions;
 
 /// <summary>

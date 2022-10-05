@@ -7,6 +7,10 @@ public class MyThreadPoolTest
 {
     private readonly int _processorCount = Environment.ProcessorCount;
     
+    /// <summary>
+    /// <see cref="MyThreadPool"/> init threads count test.
+    /// </summary>
+    /// <param name="threadCount">Init thread count value</param>
     [TestCase(-1000)]
     [TestCase(-10)]
     [TestCase(0)]
@@ -24,6 +28,9 @@ public class MyThreadPoolTest
         }
     }
 
+    /// <summary>
+    /// <see cref="MyThreadPool.ShutDown()"/> iterative test.
+    /// </summary>
     [Test]
     public void ThreadShutDownTest()
     {
@@ -43,6 +50,9 @@ public class MyThreadPoolTest
         }
     }
 
+    /// <summary>
+    /// <see cref="MyThreadPool.ShutDown()"/> iterative test in number of threads.
+    /// </summary>
     [Test]
     public void ConcurrentThreadShotDownTest()
     {
@@ -69,6 +79,9 @@ public class MyThreadPoolTest
         Assert.True(results.IsAllEqualAndNotNull());
     }
 
+    /// <summary>
+    /// <see cref="MyThreadPool.Submit{TResult}"/> after <see cref="MyThreadPool.ShutDown()"/> calling test.
+    /// </summary>
     [Test]
     public void SubmitAfterShutDownTest()
     {
@@ -89,6 +102,10 @@ public class MyThreadPoolTest
         }
     }
     
+    /// <summary>
+    /// Calling <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>
+    /// after <see cref="MyThreadPool.ShutDown()"/> test.
+    /// </summary>
     [Test]
     public void ContinueAfterShutDownTest()
     {
@@ -97,8 +114,7 @@ public class MyThreadPoolTest
         var threadPool = new MyThreadPool(_processorCount);
         var testTask = threadPool.Submit(() => resultObject);
         threadPool.ShutDown();
-
-
+        
         try
         {
             var continueTask = testTask.ContinueWith(result =>

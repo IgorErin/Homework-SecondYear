@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using Optional;
 using ThreadPool.Exceptions;
 using ThreadPool.MyTask;
-using ThreadPool.ResultCell;
+using ThreadPool;
 
 namespace ThreadPool;
 
