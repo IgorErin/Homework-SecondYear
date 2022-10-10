@@ -1,4 +1,6 @@
-﻿namespace ThreadPool;
+﻿using System;
+
+namespace ThreadPool;
 
 class PoolMain
 {

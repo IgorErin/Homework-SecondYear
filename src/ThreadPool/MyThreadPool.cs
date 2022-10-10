@@ -77,7 +77,7 @@ public sealed class MyThreadPool : IDisposable
                 }
                 catch (Exception exception)
                 {
-                    submitOptionException = exception.Some<>();
+                    submitOptionException = exception.Some<Exception>();
                 }
             }
         }
