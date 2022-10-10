@@ -4,7 +4,6 @@ using System.Threading;
 using Optional;
 using ThreadPool.Exceptions;
 using ThreadPool.MyTask;
-using ThreadPool;
 
 namespace ThreadPool;
 
