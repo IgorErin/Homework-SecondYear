@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using Optional;
 using ThreadPool.Exceptions;
 using ThreadPool.MyTask;
@@ -14,8 +16,6 @@ public sealed class MyThreadPool : IDisposable
     private readonly ThreadPoolItem[] _threads;
 
     private readonly BlockingCollection<Action> _queue;
-
-    private readonly CancellationTokenSource _cancellationTokenSource;
 
     private readonly CountdownEvent _countdownEvent;
 
@@ -44,11 +44,10 @@ public sealed class MyThreadPool : IDisposable
         _threads = new ThreadPoolItem[threadCount];
         
         _countdownEvent = new CountdownEvent(threadCount);
-        _cancellationTokenSource = new CancellationTokenSource();
 
         for (var i = 0; i < threadCount; i++)
         {
-            _threads[i] = new ThreadPoolItem(_queue, _countdownEvent, _cancellationTokenSource.Token);
+            _threads[i] = new ThreadPoolItem(_queue, _countdownEvent);
         }
     }
     
@@ -62,24 +61,30 @@ public sealed class MyThreadPool : IDisposable
     {
         var newTask = Option.None<MyTask<TResult>>();
         
+        var submitOptionException = Option.None<Exception>();
+
         lock (_locker)
         {
-            if (!_isShutDown)
+            if (!_isShutDown && !_disposed)
             {
-                var newComputationCell = new ComputationCell<TResult>(func);
-                newTask = new MyTask<TResult>(this, newComputationCell).Some<MyTask<TResult>>();
-                var newAction = () => newComputationCell.Compute();
-
                 try
                 {
+                    var newComputationCell = new ComputationCell<TResult>(func);
+                    newTask = new MyTask<TResult>(this, newComputationCell).Some<MyTask<TResult>>();
+                    var newAction = () => newComputationCell.Compute();
+                    
                     _queue.Add(newAction);
                 }
-                catch (ObjectDisposedException e)
+                catch (Exception exception)
                 {
-                    throw new MyThreadPoolException("The ThreadPool has been disposed. Object name: MyThreadPool.\n", e);
+                    submitOptionException = exception.Some<>();
                 }
             }
         }
+
+        submitOptionException.MatchSome(exception => 
+            throw new MyThreadPoolException($"Submit error: {exception.Message}", exception)
+        );
 
         return newTask.ValueOr(
             () => throw new MyThreadPoolException("ShutDown method was applied, adding a task is not possible")

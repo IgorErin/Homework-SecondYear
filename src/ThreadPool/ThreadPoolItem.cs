@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace ThreadPool;
 
@@ -11,8 +13,6 @@ internal class ThreadPoolItem
 
     private readonly BlockingCollection<Action> _queue;
 
-    private readonly CancellationToken _token;
-
     private readonly CountdownEvent _countdownEvent;
 
     /// <summary>
@@ -24,13 +24,11 @@ internal class ThreadPoolItem
     /// <param name="countdown">
     /// Synchronization primitive for concurrent completion of threads, see <see cref="CountdownEvent"/>
     /// </param>
-    /// <param name="token">Token indicating completion, see <see cref="CancellationToken"/></param>
-    public ThreadPoolItem(BlockingCollection<Action> queue, CountdownEvent countdown, CancellationToken token)
+    public ThreadPoolItem(BlockingCollection<Action> queue, CountdownEvent countdown)
     {
         _queue = queue;
         
         _countdownEvent = countdown;
-        _token = token;
         
         _thread = new Thread(() => ThreadWork());
         _thread.Start();

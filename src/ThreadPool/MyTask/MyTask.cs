@@ -30,7 +30,6 @@ public class MyTask<TResult> : IMyTask<TResult>
     {
         get
         {
-
             try
             {
                 return GetResultFromComputationCell();

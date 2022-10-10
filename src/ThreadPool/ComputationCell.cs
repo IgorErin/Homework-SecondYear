@@ -1,3 +1,4 @@
+using System;
 using Optional;
 using ThreadPool.Exceptions;
 
@@ -17,7 +18,7 @@ public class ComputationCell<TResult>
 
     private volatile bool _funcIsComputed;
 
-    private readonly object _locker = new object();
+    private readonly object _locker = new ();
 
     /// <summary>
     /// Indicate state of computation.
