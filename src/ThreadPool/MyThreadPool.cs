@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using Optional;
 using ThreadPool.Exceptions;
 using ThreadPool.MyTask;
@@ -16,9 +14,9 @@ public sealed class MyThreadPool : IDisposable
 
     private readonly BlockingCollection<Action> _queue;
 
-    private readonly CountdownEvent _countdownEvent;
+    private readonly CountdownEvent _threadsCompletedEvent;
 
-    private volatile bool _disposed;
+    private volatile bool _isDisposed;
     private volatile bool _isShutDown;
 
     private readonly object _locker = new ();
@@ -42,11 +40,11 @@ public sealed class MyThreadPool : IDisposable
         
         _threads = new ThreadPoolItem[threadCount];
         
-        _countdownEvent = new CountdownEvent(threadCount);
+        _threadsCompletedEvent = new CountdownEvent(threadCount);
 
         for (var i = 0; i < threadCount; i++)
         {
-            _threads[i] = new ThreadPoolItem(_queue, _countdownEvent);
+            _threads[i] = new ThreadPoolItem(_queue, _threadsCompletedEvent);
         }
     }
     
@@ -64,7 +62,7 @@ public sealed class MyThreadPool : IDisposable
 
         lock (_locker)
         {
-            if (!_isShutDown && !_disposed)
+            if (!_isShutDown && !_isDisposed)
             {
                 try
                 {
@@ -103,7 +101,7 @@ public sealed class MyThreadPool : IDisposable
             if (!_isShutDown)
             {
                 _queue.CompleteAdding();
-                _countdownEvent.Wait();
+                _threadsCompletedEvent.Wait();
 
                 foreach (var threadItem in _threads) // is it necessary ?
                 {
@@ -127,12 +125,12 @@ public sealed class MyThreadPool : IDisposable
 
         lock (_locker)
         {
-            if (!_disposed)
+            if (!_isDisposed)
             {
                 _queue.Dispose();
             }
 
-            _disposed = true;
+            _isDisposed = true;
         }
     }
 }

@@ -1,4 +1,3 @@
-using System;
 using Optional;
 using ThreadPool.Exceptions;
 
