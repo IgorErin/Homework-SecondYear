@@ -1,6 +1,5 @@
-using System;
+using System.Collections.Concurrent;
 using ThreadPool.Exceptions;
-using ThreadPool;
 
 namespace ThreadPool.MyTask;
 
@@ -12,6 +11,8 @@ public class MyTask<TResult> : IMyTask<TResult>
 {
     private readonly ComputationCell<TResult> _computationCell;
     private readonly MyThreadPool _threadPool;
+
+    private readonly BlockingCollection<Action> _actions; 
 
     public bool IsCompleted
     {
@@ -51,10 +52,12 @@ public class MyTask<TResult> : IMyTask<TResult>
     /// </summary>
     /// <param name="threadPool">Thread pool that perform computations</param>
     /// <param name="computationCell">Cell that encapsulates calculation and state of result</param>
-    public MyTask(MyThreadPool threadPool, ComputationCell<TResult> computationCell)
+    public MyTask(MyThreadPool threadPool, ComputationCell<TResult> computationCell, BlockingCollection<Action> actions)
     {
         _computationCell = computationCell;
         _threadPool = threadPool;
+
+        _actions = actions;
     }
 
     /// <summary>
@@ -81,8 +84,39 @@ public class MyTask<TResult> : IMyTask<TResult>
 
             return continuation.Invoke(result);
         };
+
+        if (IsCompleted || _actions.IsAddingCompleted)
+        {
+            return _threadPool.Submit(newFunc);
+        }
+
+        try
+        {
+            Monitor.Enter(_actions);
+
+            if (IsCompleted || _actions.IsAddingCompleted)
+            {
+                return _threadPool.Submit(newFunc);
+            }
+
+            var (newTask, newCell) = MyTaskFactory.CreateNewTaskAndCell(newFunc, _threadPool);
+
+            _actions.Add(() => _threadPool.Enqueue(newCell));
+
+            return newTask;
+        }
+        catch (Exception e)
+        {
+            throw new MyTaskException("Continue add error: ", e);
+        }
+        finally
+        {
+            if (Monitor.IsEntered(_actions))
+            {
+                Monitor.Exit(_actions);
+            }
+        }
         
-        return _threadPool.Submit(newFunc);
     }
 
     private TResult GetResultFromComputationCell()

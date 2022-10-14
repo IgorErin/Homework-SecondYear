@@ -9,7 +9,12 @@ class PoolMain
     {
         using var threadPool = new MyThreadPool(4);
 
-        var myFunc = () => 2 * 2;
+        var myFunc = () =>
+        {
+            Console.WriteLine("lol");
+            return 2 * 2;
+        };
+
         var myContinuation = (int x) =>
         {
             Console.WriteLine($"Result = {x}");
@@ -17,9 +22,14 @@ class PoolMain
         };
 
         var firstTask = threadPool.Submit(myFunc);
+        
         firstTask.ContinueWith(myContinuation);
 
-        threadPool.ShutDown();
-        threadPool.Dispose();
+
+        for (var i = 0; i < 100000; i++)
+        {
+            Task.Delay(10000000);
+        }
+        Task.Delay(10000000);
     }
 }

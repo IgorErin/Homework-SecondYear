@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Data;
 using Optional;
 using ThreadPool.Exceptions;
 using ThreadPool.MyTask;
@@ -56,43 +57,41 @@ public sealed class MyThreadPool : IDisposable
     /// <returns>Abstraction over the task accepted for execution, see <see cref="IMyTask{TResult}"/></returns>
     public MyTask<TResult> Submit<TResult>(Func<TResult> func)
     {
-        var newTask = Option.None<MyTask<TResult>>();
-        
-        var submitOptionException = Option.None<Exception>();
+        var resultTask = Option.None<MyTask<TResult>>();
 
-        lock (_locker)
+        try
         {
-            if (!_isShutDown && !_isDisposed)
+            Monitor.Enter(_locker);
+
+            if (!_isShutDown)
             {
-                try
-                {
-                    var newComputationCell = new ComputationCell<TResult>(func);
-                    newTask = new MyTask<TResult>(this, newComputationCell).Some<MyTask<TResult>>();
-                    var newAction = () => newComputationCell.Compute();
-                    
-                    _queue.Add(newAction);
-                }
-                catch (Exception exception)
-                {
-                    submitOptionException = exception.Some<Exception>();
-                }
+                var (newTask, newCell) = MyTaskFactory.CreateNewTaskAndCell(func, this);
+
+                resultTask = newTask.Some<MyTask<TResult>>();
+
+                _queue.Add(() => newCell.Compute());
+            }
+        }
+        catch (Exception e)
+        {
+            throw new MyThreadPoolException($"submit error:{e.Message}", e);
+        }
+        finally
+        {
+            if (Monitor.IsEntered(_locker))
+            {
+                Monitor.Exit(_locker);
             }
         }
 
-        submitOptionException.MatchSome(exception => 
-            throw new MyThreadPoolException($"Submit error: {exception.Message}", exception)
-        );
-
-        return newTask.ValueOr(
-            () => throw new MyThreadPoolException("ShutDown method was applied, adding a task is not possible")
-            );
+        return resultTask.ValueOr(() => throw new MyThreadPoolException("TODO()")); // TODO()
     }
 
     /// <summary>
     /// The blocking thread method in which it will be called,
     /// stopping the work of threads,
     /// the tasks that have begun to be calculated will be completed,
-    /// other tasks will not be calculated.
+    /// other tasks will not be calculated. //TODO()
     /// </summary>
     public void ShutDown()
     {
@@ -131,6 +130,21 @@ public sealed class MyThreadPool : IDisposable
             }
 
             _isDisposed = true;
+        }
+    }
+
+    public void Enqueue<T>(ComputationCell<T> cell)
+    {
+        Monitor.Enter(_locker);
+        
+        if (!_isShutDown)
+        {
+            _queue.Add(() => cell.Compute()); //TODO if dispose ?
+        }
+
+        if (Monitor.IsEntered(_locker))
+        {
+            Monitor.Exit(_locker);
         }
     }
 }
