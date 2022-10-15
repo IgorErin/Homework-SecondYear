@@ -11,7 +11,7 @@ class PoolMain
 
         var myFunc = () =>
         {
-            Console.WriteLine("lol");
+            Console.WriteLine("LOL");
             return 2 * 2;
         };
 
@@ -22,14 +22,23 @@ class PoolMain
         };
 
         var firstTask = threadPool.Submit(myFunc);
+        firstTask = threadPool.Submit(myFunc);
+        firstTask = threadPool.Submit(myFunc);
+        firstTask = threadPool.Submit(myFunc);
+        firstTask = threadPool.Submit(myFunc);
+        firstTask = threadPool.Submit(myFunc);
+
+        firstTask = threadPool.Submit(myFunc);
+
+        firstTask = threadPool.Submit(myFunc);
+
+        firstTask = threadPool.Submit(myFunc);
+        firstTask = threadPool.Submit(myFunc);
+        firstTask = threadPool.Submit(myFunc);
+        firstTask = threadPool.Submit(myFunc);
+
         
-        firstTask.ContinueWith(myContinuation);
-
-
-        for (var i = 0; i < 100000; i++)
-        {
-            Task.Delay(10000000);
-        }
-        Task.Delay(10000000);
+        threadPool.ShutDown();
+        threadPool.Dispose();
     }
 }

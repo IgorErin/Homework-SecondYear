@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Data;
 using Optional;
 using ThreadPool.Exceptions;
 using ThreadPool.MyTask;
@@ -84,14 +83,13 @@ public sealed class MyThreadPool : IDisposable
             }
         }
 
-        return resultTask.ValueOr(() => throw new MyThreadPoolException("TODO()")); // TODO()
+        return resultTask.ValueOr(() => throw new MyThreadPoolException("submit error, task not added)")); // TODO()
     }
 
     /// <summary>
     /// The blocking thread method in which it will be called,
     /// stopping the work of threads,
-    /// the tasks that have begun to be calculated will be completed,
-    /// other tasks will not be calculated. //TODO()
+    /// all tasks accepted for execution are calculated.
     /// </summary>
     public void ShutDown()
     {
@@ -139,7 +137,7 @@ public sealed class MyThreadPool : IDisposable
         
         if (!_isShutDown)
         {
-            _queue.Add(() => cell.Compute()); //TODO if dispose ?
+            _queue.Add(() => cell.Compute());
         }
 
         if (Monitor.IsEntered(_locker))

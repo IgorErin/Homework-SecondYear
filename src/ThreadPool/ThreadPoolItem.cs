@@ -42,7 +42,7 @@ internal class ThreadPoolItem
 
     private void ThreadWork()
     {
-        foreach (var action in _queue)
+        foreach (var action in _queue.GetConsumingEnumerable())
         {
             action();
         }
