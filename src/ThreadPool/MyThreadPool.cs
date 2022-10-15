@@ -93,12 +93,13 @@ public sealed class MyThreadPool : IDisposable
     /// </summary>
     public void ShutDown()
     {
-        lock (_locker)
+        lock (_locker) //TODO()
         {
             if (!_isShutDown)
             {
                 _queue.CompleteAdding();
-                _threadsCompletedEvent.Wait();
+
+                _threadsCompletedEvent.Wait(); // TODO()
 
                 foreach (var threadItem in _threads) // is it necessary ?
                 {
@@ -131,18 +132,14 @@ public sealed class MyThreadPool : IDisposable
         }
     }
 
-    public void Enqueue<T>(ComputationCell<T> cell)
+    public void EnqueueAction(Action action)
     {
-        Monitor.Enter(_locker);
-        
-        if (!_isShutDown)
+        lock (_locker) //TODO()
         {
-            _queue.Add(() => cell.Compute());
-        }
-
-        if (Monitor.IsEntered(_locker))
-        {
-            Monitor.Exit(_locker);
+            if (!_isShutDown)
+            {
+                _queue.TryAdd(action);
+            }
         }
     }
 }

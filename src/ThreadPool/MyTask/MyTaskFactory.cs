@@ -18,8 +18,8 @@ public static class MyTaskFactory
             {
                 newCollection.CompleteAdding();
             }
-            
-            foreach (var action in newCollection)
+
+            foreach (var action in newCollection.GetConsumingEnumerable())
             {
                 action.Invoke();
             }

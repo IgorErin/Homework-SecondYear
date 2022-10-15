@@ -7,11 +7,14 @@ class PoolMain
     /// </summary>
     public static void Main()
     {
+        Console.WriteLine($"main thread: {Environment.CurrentManagedThreadId}");
+        Console.WriteLine($"main thread: {Environment.CurrentManagedThreadId}");
         using var threadPool = new MyThreadPool(4);
 
         var myFunc = () =>
         {
             Console.WriteLine("LOL");
+            Task.Delay(10000);
             return 2 * 2;
         };
 
@@ -27,17 +30,17 @@ class PoolMain
         firstTask = threadPool.Submit(myFunc);
         firstTask = threadPool.Submit(myFunc);
         firstTask = threadPool.Submit(myFunc);
-
-        firstTask = threadPool.Submit(myFunc);
-
-        firstTask = threadPool.Submit(myFunc);
-
         firstTask = threadPool.Submit(myFunc);
         firstTask = threadPool.Submit(myFunc);
         firstTask = threadPool.Submit(myFunc);
         firstTask = threadPool.Submit(myFunc);
-
+        firstTask = threadPool.Submit(myFunc);
         
+        var result = firstTask.Result;
+        var continuation = firstTask.ContinueWith(myContinuation);
+
+
+        Task.Delay(10000);
         threadPool.ShutDown();
         threadPool.Dispose();
     }

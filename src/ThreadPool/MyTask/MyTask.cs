@@ -101,7 +101,7 @@ public class MyTask<TResult> : IMyTask<TResult>
 
             var (newTask, newCell) = MyTaskFactory.CreateNewTaskAndCell(newFunc, _threadPool);
 
-            _actions.Add(() => _threadPool.Enqueue(newCell));
+            _actions.Add(() => _threadPool.EnqueueAction(() => newCell.Compute()));
 
             return newTask;
         }

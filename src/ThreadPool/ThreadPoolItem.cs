@@ -46,7 +46,7 @@ internal class ThreadPoolItem
         {
             action();
         }
-        
+
         _countdownEvent.Signal(); // is it enough for correct blocking in ShutDown?
     }
 }
