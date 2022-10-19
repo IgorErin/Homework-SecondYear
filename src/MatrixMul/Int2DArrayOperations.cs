@@ -42,8 +42,8 @@ public static class Int2DArrayOperations
         }
 
         var result = new int[leftRowCount, rightColumnCount];
-        var threads = new Thread[threadCount];
-
+        var countDown = new CountdownEvent(threadCount);
+        
         for (var threadIndex = 0; threadIndex < threadCount; threadIndex++)
         {
             var currentLowBound = forLoopRowBounds[threadIndex];
@@ -63,14 +63,16 @@ public static class Int2DArrayOperations
                             }
                         }
                     }
+                    
+                    countDown.Signal();
                 }
             );
 
-            threads[threadIndex] = currentThread;
+            currentThread.Start();
         }
 
-        StartAndJoinThreadArray(threads);
-
+        countDown.Wait();
+        
         return result;
     }
 

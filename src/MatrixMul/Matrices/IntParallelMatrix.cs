@@ -64,7 +64,7 @@ public class IntParallelMatrix : IntMatrix
         }
         
         var result = new int[leftRowCount, rightColumnCount];
-        var threads = new Thread[threadCount];
+        var countDown = new CountdownEvent(threadCount);
 
         for (var threadIndex = 0; threadIndex < threadCount; threadIndex++)
         {
@@ -81,33 +81,17 @@ public class IntParallelMatrix : IntMatrix
                             
                             result[leftRowIndex, rightColumnIndex] = resultItem;
                         }
-
                     }
+
+                    countDown.Signal();
                 }
             );
 
-        threads[threadIndex] = currentThread;
+        currentThread.Start();
         }
 
-        ExecuteArray(threads);
-
+        countDown.Wait();
+        
         return result;
     }
-    
-    /// <summary>
-    /// Start and join each thread in the array.
-    /// </summary>
-    /// <param name="threads">Array of Threads.</param>
-    private static void ExecuteArray(Thread[] threads)
-    {
-        foreach (var thread in threads)
-        {
-            thread.Start();
-        }
-
-        foreach (var thread in threads)
-        {
-            thread.Join();
-        }
-    } 
 }
