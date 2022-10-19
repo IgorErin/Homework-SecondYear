@@ -20,7 +20,7 @@ public class SeqTests
     {
         var resultArray = new object[ResultCount];
         
-        var seqLazy = new SequentialSafeLazy<object>(() => new object());
+        var seqLazy = new UnsafeLazy<object>(() => new object());
         
         for (var i = 0; i < ResultCount; i++)
         {
@@ -41,7 +41,7 @@ public class SeqTests
     {
         var exceptions = new Exception[ResultCount];
 
-        var parLazy = new ThreadSafeLazy<Exception>(() => throw new Exception());
+        var parLazy = new SafeLazy<Exception>(() => throw new Exception());
 
         for (var i = 0; i < ResultCount; i++)
         {
@@ -67,7 +67,7 @@ public class SeqTests
     [Test]
     public void LazyExceptionAreThrown()
     {
-        var parLazy = new ThreadSafeLazy<Exception>(() => throw new Exception());
+        var parLazy = new SafeLazy<Exception>(() => throw new Exception());
         
         var exceptionAreThrown = false;
 
@@ -108,7 +108,7 @@ public class SeqTests
 
         var simpleResult = func.Invoke();
         
-        var lazy = new SequentialSafeLazy<int>(func);
+        var lazy = new UnsafeLazy<int>(func);
         var lazyResult = lazy.Get();
         
         Assert.AreEqual(simpleResult, lazyResult);

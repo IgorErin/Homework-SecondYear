@@ -29,7 +29,7 @@ public class ParTests
     {
         var resultArray = new object[ThreadCount];
         
-        var parLazy = new ThreadSafeLazy<object>(() => new object());
+        var parLazy = new SafeLazy<object>(() => new object());
         
         for (var i = 0; i < ThreadCount; i++)
         {
@@ -60,7 +60,7 @@ public class ParTests
     {
         var exceptions = new Exception[ThreadCount];
 
-        var parLazy = new ThreadSafeLazy<object>(() => throw new Exception());
+        var parLazy = new SafeLazy<object>(() => throw new Exception());
         
         for (var i = 0; i < ThreadCount; i++)
         {
@@ -96,7 +96,7 @@ public class ParTests
     {
         var exceptions = new Exception[ThreadCount];
 
-        var parLazy = new ThreadSafeLazy<object>(() => throw new Exception());
+        var parLazy = new SafeLazy<object>(() => throw new Exception());
         
         for (var i = 0; i < ThreadCount; i++)
         {
@@ -134,7 +134,7 @@ public class ParTests
     {
         var resultArray = new object[ThreadCount];
         
-        var parLazy = new ThreadSafeLazy<object>(() => new object());
+        var parLazy = new SafeLazy<object>(() => new object());
         
         for (var i = 0; i < ThreadCount; i++)
         {

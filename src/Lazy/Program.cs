@@ -13,7 +13,7 @@ public static class LazyMain
     {
         Console.WriteLine("Lazy computation example: ");
         
-        var seqLazy = new SequentialSafeLazy<int>(() =>
+        var seqLazy = new UnsafeLazy<int>(() =>
         {
             Console.WriteLine("I computed in seqSafeLazy! Should be printed once...");
             
@@ -25,7 +25,7 @@ public static class LazyMain
             Console.WriteLine($"Computed and stored value: {seqLazy.Get()}");
         }
 
-        var parLazy = new ThreadSafeLazy<int>(() =>
+        var parLazy = new SafeLazy<int>(() =>
         {
             Console.WriteLine("I computed in parSafeLazy! Should be printed once...");
             

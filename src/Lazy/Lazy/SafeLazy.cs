@@ -4,19 +4,19 @@ using Optional;
 namespace Lazy.Lazy;
 
 /// <summary>
-/// lazy evaluation class for multi thread execution
+/// Lazy evaluation class for multi thread execution.
 /// <inheritdoc cref="Lazy{T}"/>
 /// </summary>
 /// <typeparam name="T">Result type of lazy computed expression, see <see cref="Lazy{T}"/></typeparam>
-public class ThreadSafeLazy<T> : Lazy<T>
+public class SafeLazy<T> : Lazy<T>
 {
     private readonly object _locker = new ();
 
     /// <summary>
-    /// Constructor for init lazy computation class, see <see cref="ThreadSafeLazy{T}"/>.
+    /// Constructor for init lazy computation class, see <see cref="SafeLazy{T}"/>.
     /// </summary>
     /// <param name="func">A function that will be lazily evaluated</param>
-    public ThreadSafeLazy(Func<T> func) : base(func)
+    public SafeLazy(Func<T> func) : base(func)
     {
     }
 
@@ -26,7 +26,6 @@ public class ThreadSafeLazy<T> : Lazy<T>
     /// Or thrown the same exception each time.
     /// </summary>
     /// <returns>Expression result</returns>
-    /// <exception cref="ComputedStatusNotMatchLazyException">Throws an exception on status mismatch</exception>
     public override T Get()
     {
         if (!ComputationCell.IsComputed)

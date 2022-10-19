@@ -1,7 +1,7 @@
 namespace Lazy.Lazy;
 
 /// <summary>
-/// A base class for <see cref="ThreadSafeLazy{T}"/> and <see cref="SequencePosition"/>
+/// A base class for <see cref="SafeLazy{T}"/> and <see cref="SequencePosition"/>
 /// That encapsulates the status of a computation <see cref="ComputationStatus"/>.
 /// Inherits <inheritdoc cref="ILazy{T}"/>
 /// See <see cref="ILazy{T}"/>
