@@ -10,11 +10,10 @@ namespace Lazy.Lazy;
 public abstract class Lazy<T> : ILazy<T>
 {
     public abstract T Get();
-    
-    protected enum ComputationStatus
+    protected readonly ComputationCell<T> ComputationCell;
+
+    protected Lazy(Func<T> func)
     {
-        NotComputedYet,
-        SuccessComputed,
-        ComputedWithException
+        ComputationCell = new ComputationCell<T>(func);
     }
 }
