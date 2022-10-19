@@ -8,7 +8,7 @@ namespace Lazy;
 /// <summary>
 /// Nunit test class with test methods.
 /// </summary>
-public class SeqTests
+public class UnsafeLazyTest
 {
     private const int ResultCount = 10;
 

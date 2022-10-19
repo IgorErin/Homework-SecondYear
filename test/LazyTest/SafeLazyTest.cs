@@ -10,7 +10,7 @@ namespace Lazy;
 /// <summary>
 /// Nunit test class with test methods.
 /// </summary>
-public class ParTests
+public class SafeLazyTest
 {
     private const int ThreadCount = 10;
     private Thread[] _threadArray = new Thread[ThreadCount];

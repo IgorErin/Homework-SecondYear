@@ -22,7 +22,7 @@ public class ComputationCell<T>
     {
         get
         {
-            if (_isComputed)
+            if (!_isComputed)
             {
                 Compute();
             }
