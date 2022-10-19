@@ -1,6 +1,3 @@
-using Lazy.LazyExceptions;
-using Optional;
-
 namespace Lazy.Lazy;
 
 /// <summary>

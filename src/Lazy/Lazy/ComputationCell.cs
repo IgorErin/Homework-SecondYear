@@ -1,3 +1,5 @@
+using Lazy.ComputationCellExceptions;
+
 namespace Lazy.Lazy;
 
 /// <summary>
@@ -8,7 +10,7 @@ namespace Lazy.Lazy;
 public class ComputationCell<T>
 {
     private readonly Func<T> _func;
-    private Func<T> _funcResult = () => throw new Exception();
+    private Func<T> _funcResult = () => throw new NotCachedResultComputationCellException();
 
     private volatile bool _isComputed;
     
