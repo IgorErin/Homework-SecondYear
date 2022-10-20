@@ -123,8 +123,26 @@ public sealed class MyThreadPool : IDisposable
         }
     }
 
+    /// <summary>
+    /// A method that allows you to put the calculation of the <see cref="ComputationCell{TResult}"/>
+    /// on the <see cref="MyThreadPool"/> without blocking.
+    /// 
+    /// </summary>
+    /// <param name="cell"><see cref="ComputationCell{TResult}"/> for calculations.</param>
+    /// <typeparam name="T">Type of ComputationCell</typeparam>
     public void EnqueueCell<T>(ComputationCell<T> cell)
     {
-        _queue.Add(() => cell.Compute());
+        try
+        {
+            _queue.Add(() => cell.Compute());
+        }
+        catch (ObjectDisposedException e)
+        {
+            throw new MyThreadPoolException("the shutdown is called, the task cannot be completed", e);
+        }
+        catch (InvalidOperationException e)
+        {
+            throw new MyThreadPoolException("the shutdown is called, the task cannot be completed", e);
+        }
     }
 }

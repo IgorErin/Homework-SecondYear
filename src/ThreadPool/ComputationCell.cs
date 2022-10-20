@@ -44,6 +44,13 @@ public class ComputationCell<TResult>
             );
     }
 
+    /// <summary>
+    /// Constructor of class <see cref="ComputationCell{TResult}"/> 
+    /// </summary>
+    /// <param name="func">Function that will be computed.</param>
+    /// <param name="prevAction">
+    /// Action that will be called in the event of a <see cref="Result"/> call before the <see cref="Compute"/>
+    /// </param>
     public ComputationCell(Func<TResult> func, Action prevAction)
     {
         _func = func;

@@ -1,11 +1,21 @@
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 using ThreadPool.Exceptions;
 
 namespace ThreadPool.MyTask;
 
+
+/// <summary>
+/// <see cref="MyTask{TResult}"/> factory.
+/// </summary>
 public static class MyTaskFactory
 {
+    /// <summary>
+    /// Method that allows you to create a new <see cref="ComputationCell{TResult}"/> and a
+    /// <see cref="MyTask{TResult}"/> from a <see cref="Func{TResult}"/>.
+    /// </summary>
+    /// <param name="newFunc">Function for abstracting</param>
+    /// <param name="threadPool"><see cref="MyThreadPool"/> on which the calculations will take place.</param>
+    /// <typeparam name="T">Result type of <see cref="Func{TResult}"/></typeparam>
     public static (MyTask<T>, ComputationCell<T>) CreateNewTaskAndCell<T>(Func<T> newFunc, MyThreadPool threadPool)
     {
         var newCollection = new BlockingCollection<Action>();
@@ -36,6 +46,13 @@ public static class MyTaskFactory
         return (newTask, newCell);
     }
 
+    /// <summary>
+    /// Method that allows you to create a new <see cref="ComputationCell{TResult}"/> and a
+    /// <see cref="MyTask{TResult}"/> from a <see cref="Func{TResult}"/> for continuation.
+    /// </summary>
+    /// <param name="func">Function for abstracting.</param>
+    /// <param name="threadPool"><see cref="MyThreadPool"/> on which the calculations will take place.</param>
+    /// <typeparam name="T">Type of <see cref="Func{TResult}"/> result.</typeparam>
     public static (MyTask<T>, ComputationCell<object>) CreateContinuation<T>(Func<T> func, MyThreadPool threadPool)
     {
         var newComputationCell = new ComputationCell<T>(func);
