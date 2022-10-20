@@ -33,25 +33,7 @@ public class ComputationCellTest
         
         Assert.That(result, Is.EqualTo(FirstResult));
     }
-    
-    /// <summary>
-    /// <see cref="ComputationCell{TResult}.Result"/> test without first calling
-    /// <see cref="ComputationCell{TResult}.Compute()"/>.
-    /// </summary>
-    [Test]
-    public void GetResultWithoutComputeMethod()
-    {
-        try
-        {
-            var result = _computationResulCell.Result;
-            
-            Assert.Fail();
-        }
-        catch (Exception e)
-        {
-            Assert.That(e, Is.InstanceOf(typeof(ComputationCellException)));
-        }
-    }
+
 
     /// <summary>
     /// <see cref="ComputationCell{TResult}.Compute()"/> in another thread test.

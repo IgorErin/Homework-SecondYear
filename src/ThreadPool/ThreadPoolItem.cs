@@ -7,8 +7,6 @@ namespace ThreadPool;
 /// </summary>
 internal class ThreadPoolItem
 {
-    private readonly Thread _thread;
-
     private readonly BlockingCollection<Action> _queue;
 
     private readonly CountdownEvent _countdownEvent;
@@ -28,16 +26,7 @@ internal class ThreadPoolItem
         
         _countdownEvent = countdown;
         
-        _thread = new Thread(() => ThreadWork());
-        _thread.Start();
-    }
-
-    /// <summary>
-    /// Block current thread until <see cref="ThreadPoolItem"/> not completed.
-    /// </summary>
-    public void Join()
-    {
-        _thread.Join();
+        new Thread(() => ThreadWork()).Start();
     }
 
     private void ThreadWork()

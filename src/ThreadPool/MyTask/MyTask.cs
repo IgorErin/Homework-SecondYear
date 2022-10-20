@@ -99,9 +99,9 @@ public class MyTask<TResult> : IMyTask<TResult>
                 return _threadPool.Submit(newFunc);
             }
 
-            var (newTask, newCell) = MyTaskFactory.CreateNewTaskAndCell(newFunc, _threadPool);
+            var (newTask, newCell) = MyTaskFactory.CreateContinuation(newFunc, _threadPool);
 
-            _actions.Add(() => _threadPool.EnqueueAction(() => newCell.Compute()));
+           _actions.Add(() => newCell.Compute());
 
             return newTask;
         }

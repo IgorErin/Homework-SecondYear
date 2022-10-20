@@ -14,12 +14,12 @@ class PoolMain
         var myFunc = () =>
         {
             Console.WriteLine("LOL");
-            Task.Delay(10000);
             return 2 * 2;
         };
 
         var myContinuation = (int x) =>
         {
+            Console.WriteLine($"core = {Environment.CurrentManagedThreadId}");
             Console.WriteLine($"Result = {x}");
             return x;
         };
@@ -36,12 +36,11 @@ class PoolMain
         firstTask = threadPool.Submit(myFunc);
         firstTask = threadPool.Submit(myFunc);
         
-        var result = firstTask.Result;
         var continuation = firstTask.ContinueWith(myContinuation);
 
-
-        Task.Delay(10000);
+        var _ = continuation.Result;
         threadPool.ShutDown();
+        
         threadPool.Dispose();
     }
 }

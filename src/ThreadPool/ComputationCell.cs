@@ -12,7 +12,9 @@ namespace ThreadPool;
 public class ComputationCell<TResult>
 {
     private readonly Func<TResult> _func;
-    
+
+    private readonly Action _prevAction;
+
     private Option<Func<TResult>> _optionResult = Option.None<Func<TResult>>();
 
     private volatile bool _funcIsComputed;
@@ -38,8 +40,14 @@ public class ComputationCell<TResult>
         get
             => _optionResult.Match(
                 some: result => result.Invoke(),
-                none: () => throw new ComputationCellException("result not init")
+                none: () => ComputeAndGetResult()
             );
+    }
+
+    public ComputationCell(Func<TResult> func, Action prevAction)
+    {
+        _func = func;
+        _prevAction = prevAction;
     }
 
     /// <summary>
@@ -48,9 +56,8 @@ public class ComputationCell<TResult>
     /// <param name="func">
     /// Function that will be computed.
     /// </param>
-    public ComputationCell(Func<TResult> func)
+    public ComputationCell(Func<TResult> func) : this(func, () => { })
     {
-        _func = func;
     }
 
     /// <summary>
@@ -82,5 +89,12 @@ public class ComputationCell<TResult>
                 }
             }
         }
+    }
+
+    private TResult ComputeAndGetResult()
+    {
+        Compute();
+
+        return Result;
     }
 }

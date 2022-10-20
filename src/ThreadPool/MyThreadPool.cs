@@ -10,8 +10,6 @@ namespace ThreadPool;
 /// </summary>
 public sealed class MyThreadPool : IDisposable
 {
-    private readonly ThreadPoolItem[] _threads;
-
     private readonly BlockingCollection<Action> _queue;
 
     private readonly CountdownEvent _threadsCompletedEvent;
@@ -38,13 +36,11 @@ public sealed class MyThreadPool : IDisposable
         
         _queue = new BlockingCollection<Action>();
         
-        _threads = new ThreadPoolItem[threadCount];
-        
         _threadsCompletedEvent = new CountdownEvent(threadCount);
 
         for (var i = 0; i < threadCount; i++)
         {
-            _threads[i] = new ThreadPoolItem(_queue, _threadsCompletedEvent);
+            var _ = new ThreadPoolItem(_queue, _threadsCompletedEvent);
         }
     }
     
@@ -101,11 +97,6 @@ public sealed class MyThreadPool : IDisposable
 
                 _threadsCompletedEvent.Wait(); // TODO()
 
-                foreach (var threadItem in _threads) // is it necessary ?
-                {
-                    threadItem.Join();
-                }
-
                 _isShutDown = true;
             }
         }
@@ -132,14 +123,8 @@ public sealed class MyThreadPool : IDisposable
         }
     }
 
-    public void EnqueueAction(Action action)
+    public void EnqueueCell<T>(ComputationCell<T> cell)
     {
-        lock (_locker) //TODO()
-        {
-            if (!_isShutDown)
-            {
-                _queue.TryAdd(action);
-            }
-        }
+        _queue.Add(() => cell.Compute());
     }
 }
