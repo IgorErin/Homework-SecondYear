@@ -1,7 +1,10 @@
-using System.Diagnostics;
-
 namespace MatrixMul.Extensions;
 
+using System.Diagnostics;
+
+/// <summary>
+/// <see cref="Stopwatch"/> extensions class.
+/// </summary>
 public static class StopWatchExtensions
 {
     /// <summary>

@@ -12,5 +12,5 @@ public static class IntExtension
     /// <param name="powValue">The power to which the number will be raised.</param>
     /// <returns>Int value - result of exponentiation</returns>
     public static int IntPow(this int number, int powValue)
-        => (int) Math.Pow(number, powValue);
+        => (int)Math.Pow(number, powValue);
 }

@@ -12,5 +12,5 @@ public static class DoubleArrayExtensions
     /// <returns>Double value - result of exponentiation.</returns>
     public static double GetDeviation(this double[] values)
         => Math.Sqrt(Enumerable.Average(values.Select(x => x * x)) -
-           Enumerable.Average(values) * Enumerable.Average(values));
+           Math.Pow(Enumerable.Average(values), 2.0));
 }
