@@ -20,11 +20,11 @@ public class ParallelStrategy : IMultiplicationStrategy
     /// <param name="leftMatrix">left matrix array representation.</param>
     /// <param name="rightMatrix">right matrix array representation.</param>
     /// <returns>Result of multiplication.</returns>
-    /// <exception cref="IntMatrixMultiplicationException">Was thrown when dimensions did not match for multiplication.</exception>
+    /// <exception cref="IntMatrixMultiplicationException">
+    /// Was thrown when dimensions did not match for multiplication.
+    /// </exception>
     public int[,] Multiply(int[,] leftMatrix, int[,] rightMatrix)
     {
-        var threadCount = Environment.ProcessorCount;
-
         var leftRowCount = leftMatrix.GetLength(0);
         var leftColumnCount = leftMatrix.GetLength(1);
 
@@ -36,28 +36,27 @@ public class ParallelStrategy : IMultiplicationStrategy
             throw new IntMatrixMultiplicationException(
                 $"matrix multiplication is not possible, wrong dimension: {leftColumnCount} != {rightRowCount}");
         }
+        
+        var threadCount = Math.Min(Environment.ProcessorCount, leftRowCount);
 
-        var forLoopRowBounds = new int[threadCount + 1];
-        forLoopRowBounds[threadCount] = leftRowCount;
-
-        var lenPiece = (int)Math.Ceiling(leftRowCount / (double)threadCount) - 1;
-
-        for (var threadIndex = 0; threadIndex < threadCount; threadIndex++) //TODO refactor;
-        {
-            forLoopRowBounds[threadIndex] = threadIndex * lenPiece;
-        }
+        var lengthPiece = (int)Math.Ceiling(leftRowCount / (double)threadCount) - 1;
 
         var result = new int[leftRowCount, rightColumnCount];
         var countDown = new CountdownEvent(threadCount);
 
         for (var threadIndex = 0; threadIndex < threadCount; threadIndex++)
         {
-            var currentLowBound = forLoopRowBounds[threadIndex];
-            var currentHighBound = forLoopRowBounds[threadIndex + 1];
+            var currentLowBound = threadIndex * lengthPiece;
+            var currentHighBound = (threadIndex + 1) * lengthPiece;
+
+            if (threadIndex == threadCount - 1)
+            {
+                currentHighBound = leftRowCount;
+            }
 
             var currentThread = new Thread(() =>
                 {
-                    for (var leftRowIndex = currentLowBound; leftRowIndex < currentHighBound; leftRowIndex++) 
+                    for (var leftRowIndex = currentLowBound; leftRowIndex < currentHighBound; leftRowIndex++)
                     {
                         for (var rightColumnIndex = 0; rightColumnIndex < rightColumnCount; rightColumnIndex++)
                         {
@@ -72,7 +71,7 @@ public class ParallelStrategy : IMultiplicationStrategy
 
                     countDown.Signal();
                 });
-
+            
             currentThread.Start();
         }
 

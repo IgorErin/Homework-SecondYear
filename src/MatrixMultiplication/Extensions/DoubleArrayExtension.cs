@@ -1,7 +1,7 @@
 namespace MatrixMultiplication.Extensions;
 
 /// <summary>
-/// Extension class for int.
+/// Extension class for double.
 /// </summary>
 public static class DoubleArrayExtensions
 {

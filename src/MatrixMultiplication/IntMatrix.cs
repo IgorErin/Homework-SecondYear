@@ -15,9 +15,7 @@ public class IntMatrix
     /// </summary>
     /// <param name="intArray">Int 2D array that will be wrapped.</param>
     public IntMatrix(int[,] intArray)
-    {
-        this.intArray = intArray;
-    }
+        => this.intArray = intArray;
     
     /// <summary>
     /// Gets array representation of matrix.

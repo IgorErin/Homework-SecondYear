@@ -18,7 +18,7 @@ public static class StopWatchExtensions
     /// <param name="leftMatrix">Array passed as left argument to function.</param>
     /// <param name="rightMatrix">Array passed as right argument to function.</param>
     /// <returns>The result of the passed function applied to the two passed arrays.</returns>
-    public static long ResetAndGetTimeOfIntMatrixMultiplication(
+    public static double ResetAndGetTimeOfIntMatrixMultiplication(
         this Stopwatch stopwatch,
         IMultiplicationStrategy strategy,
         IntMatrix leftMatrix,

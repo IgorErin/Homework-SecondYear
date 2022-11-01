@@ -28,35 +28,40 @@ public static class MatrixMain
     /// <summary>
     /// Start and delta values for test run. Used in <see cref="ExecuteTestMultiplications"/> method.
     /// </summary>
-    private const int StartTestElementsCount = 200;
-    private const int PoweredDelta = 2;
+    private const int StartTestElementsCount = 100;
     
     /// <summary>
     /// Default test run count. Used in <see cref="ExecuteTestMultiplications"/> method.
     /// </summary>
-    private const int DefaultRunWithFixedSizeCount = 10;
+    private const int DefaultRunWithFixedSizeCount = 5;
 
     private const int TestRunArgsLength = 2;
     private const int UserRunArgsLength = 5;
+
+    private const int RoundNumber = 3;
 
     /// <summary>
     /// Main function of a program.
     /// </summary>
     public static void Main(string[] args)
     {
-        Console.WriteLine("Welcome to high performance matrix multiplication...");
+
+        // D:\\Projects\\Homework-SecondYear\\src\\leftMatrix.txt
+        // D:\\Projects\\Homework-SecondYear\\src\\rightMatrix.txt
+        // D:\\Projects\\Homework-SecondYear\\src\\result.txt
 
         try
         {
             ParsArgs(args);
         }
-        catch (DirectoryNotFoundException exception)
-        {
-            Console.Write($"Incorrect file path: {exception.Message}");
-        }
         catch (Exception exception)
         {
             Console.WriteLine(exception.Message);
+            
+            Console.WriteLine("In the case of a test run, you must specify the 'test' and the number of test runs.");
+            Console.WriteLine("In the case of calculating your matrix, you must specify the 'user',");
+            Console.WriteLine("then the path to the left matrix, to the right,");
+            Console.WriteLine("the method of multiplying them [sequential/parallel] and the resulting path.");
         }
         finally
         {
@@ -69,14 +74,14 @@ public static class MatrixMain
         {
             TestRunArgsLength => TestRun(args),
             UserRunArgsLength => UserRun(args),
-            _ => throw new Exception()
+            _ => throw new ArgumentException("Incorrect number of arguments")
         };
 
     private static Unit TestRun(string[] args)
     {
         if (args[0] != "test")
         {
-            throw new ArgumentException("expected 'test' in first argument");
+            throw new ArgumentException("Expected 'test' in first argument");
         }
         
         if (int.TryParse(args[1], out var count))
@@ -141,7 +146,7 @@ public static class MatrixMain
             var parTimeArray = new double[runCount];
             var seqTimeArray = new double[runCount];
 
-            var elementCount = StartTestElementsCount + PoweredDelta.IntPow(globalRunIndex);
+            var elementCount = StartTestElementsCount * 2.IntPow(globalRunIndex);
 
             var parallelStrategy = new ParallelStrategy();
             var sequentialStrategy = new SequentialStrategy();
@@ -158,18 +163,21 @@ public static class MatrixMain
 
                 Console.WriteLine($"Executing multiplication #{runIndex} with {elementCount} elements");
 
-                var currentParTimeResult = stopWatch.ResetAndGetTimeOfIntMatrixMultiplication(parallelStrategy, leftMatrix, rightMatrix);
-                var currentSeqTimeResult = stopWatch.ResetAndGetTimeOfIntMatrixMultiplication(sequentialStrategy, leftMatrix, rightMatrix);
+                var currentParTimeResult =
+                    stopWatch.ResetAndGetTimeOfIntMatrixMultiplication(parallelStrategy, leftMatrix, rightMatrix);
+                
+                var currentSeqTimeResult =
+                    stopWatch.ResetAndGetTimeOfIntMatrixMultiplication(sequentialStrategy, leftMatrix, rightMatrix);
 
-                parTimeArray[runIndex] = currentParTimeResult;
-                seqTimeArray[runIndex] = currentSeqTimeResult;
+                parTimeArray[runIndex] = Math.Round(currentParTimeResult, RoundNumber);
+                seqTimeArray[runIndex] = Math.Round(currentSeqTimeResult, RoundNumber);
             }
 
             parResultTime[globalRunIndex] = Enumerable.Average(parTimeArray);
             seqResultTime[globalRunIndex] = Enumerable.Average(seqTimeArray);
             
-            parResultDeviation[globalRunIndex] = parTimeArray.GetDeviation();
-            seqResultDeviation[globalRunIndex] = seqTimeArray.GetDeviation();
+            parResultDeviation[globalRunIndex] = Math.Round(parTimeArray.GetDeviation(), RoundNumber);
+            seqResultDeviation[globalRunIndex] = Math.Round(seqTimeArray.GetDeviation(), RoundNumber);
             
             resultElementCounts[globalRunIndex] = elementCount;
         }
@@ -191,7 +199,6 @@ public static class MatrixMain
         IMultiplicationStrategy strategy,
         string resultPath)
     {
-
         var stopwatch = new Stopwatch();
 
         stopwatch.Start();
