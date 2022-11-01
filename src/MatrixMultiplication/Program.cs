@@ -1,10 +1,12 @@
-﻿using System.Diagnostics;
-using MatrixMultiplication.Extensions;
-using MatrixMul.Generators;
-using MatrixMultiplication.Readers;
-using MatrixMultiplication.Writers;
+﻿namespace MatrixMultiplication;
 
-namespace MatrixMultiplication;
+using Matrices;
+using Strategies;
+using System.Diagnostics;
+using Extensions;
+using Generators;
+using Readers;
+using Writers;
 
 public static class MatrixMain
 {
@@ -24,46 +26,29 @@ public static class MatrixMain
     private const string DevParTimeRowMessage = "standard deviation parallel time";
     
     /// <summary>
-    /// Start and delta values for test run. Used in <see cref="TestMatrixMul"/> method.
+    /// Start and delta values for test run. Used in <see cref="ExecuteTestMultiplications"/> method.
     /// </summary>
     private const int StartTestElementsCount = 200;
     private const int PoweredDelta = 2;
     
     /// <summary>
-    /// Default test run count. Used in <see cref="TestMatrixMul"/> method.
+    /// Default test run count. Used in <see cref="ExecuteTestMultiplications"/> method.
     /// </summary>
     private const int DefaultRunWithFixedSizeCount = 10;
+
+    private const int TestRunArgsLength = 2;
+    private const int UserRunArgsLength = 5;
 
     /// <summary>
     /// Main function of a program.
     /// </summary>
-    public static void Main()
+    public static void Main(string[] args)
     {
         Console.WriteLine("Welcome to high performance matrix multiplication...");
-        Console.Write("You want to multiply your matrices, otherwise a test measurement will be performed? [yes/no]: ");
-
-        var testRunOrCustomMulAnswer = Console.ReadLine();
-        var correctInput = IsCorrectAnswer(testRunOrCustomMulAnswer, "no", "yes");
-
-        while (!correctInput)
-        {
-            Console.Write("Incorrect answer, try again [yes/no]: ");
-
-            testRunOrCustomMulAnswer = Console.ReadLine();
-            
-            correctInput = IsCorrectAnswer(testRunOrCustomMulAnswer, "no", "yes");
-        }
 
         try
         {
-            if (testRunOrCustomMulAnswer == "yes")
-            {
-                UserMatrixMul();
-            }
-            else
-            {
-                TestMatrixMul();
-            }
+            ParsArgs(args);
         }
         catch (DirectoryNotFoundException exception)
         {
@@ -78,27 +63,69 @@ public static class MatrixMain
             Console.WriteLine("Please, restart the program");
         }
     }
+    
+    private static Unit ParsArgs(string[] args) =>
+        args.Length switch
+        {
+            TestRunArgsLength => TestRun(args),
+            UserRunArgsLength => UserRun(args),
+            _ => throw new Exception()
+        };
 
-    /// <summary>
-    /// Method that allows you to match the entered value with constant strings.
-    /// </summary>
-    /// <param name="answer">The string value to be found.</param>
-    /// <param name="correctAnswers">Strings among which the search will be carried out.</param>
-    /// <returns>true if the value is contained in the array otherwise false.</returns>
-    private static bool IsCorrectAnswer(string answer, params string[] correctAnswers)
-        => Array.Exists(correctAnswers, s => s == answer);
+    private static Unit TestRun(string[] args)
+    {
+        if (args[0] != "test")
+        {
+            throw new ArgumentException("expected 'test' in first argument");
+        }
+        
+        if (int.TryParse(args[1], out var count))
+        {
+            ExecuteTestMultiplications(count);
+        }
+        else
+        {
+            throw new ArgumentException("expected int value in second argument");
+        }
 
+        return new Unit();
+    }
+
+    private static Unit UserRun(string[] args)
+    {
+        var mode = args[0];
+        var pathToLeftMatrix = args[1];
+        var pathToRightMatrix = args[2];
+        var stringStrategy = args[3];
+        var outputPath = args[4];
+        
+        if (mode != "user")
+        {
+            throw new ArgumentException("expected 'user' in first argument");
+        }
+
+        var leftMatrix = GetMatrixFromPath(pathToLeftMatrix);
+        var rightMatrix = GetMatrixFromPath(pathToRightMatrix);
+
+        IMultiplicationStrategy strategy =
+            stringStrategy switch
+            {
+                "sequential" => new SequentialStrategy(),
+                "parallel" => new ParallelStrategy(),
+                _ => throw new ArgumentException("multiplication strategy not match (sequential/parallel)")
+            };
+        
+        ExecuteUserMultiplications(leftMatrix, rightMatrix, strategy, outputPath);
+
+        return new Unit();
+    }
+    
     /// <summary>
     /// Test run of multiplications with calculation of expectation and standard deviation
     /// And printing of a table with results.
     /// </summary>
-    private static void TestMatrixMul()
+    private static void ExecuteTestMultiplications(int runCount)
     {
-        var runCount = ReadInputCountWithMessage("Please enter the number of test runs with fixed matrix size: ");
-
-        var parMulFun = Int2DArrayOperations.Int2DArrayParallelMul;
-        var seqMulFun = Int2DArrayOperations.Int2DArraySequentialMul;
-
         var parResultTime = new double[DefaultRunWithFixedSizeCount];
         var seqResultTime = new double[DefaultRunWithFixedSizeCount];
         
@@ -116,6 +143,9 @@ public static class MatrixMain
 
             var elementCount = StartTestElementsCount + PoweredDelta.IntPow(globalRunIndex);
 
+            var parallelStrategy = new ParallelStrategy();
+            var sequentialStrategy = new SequentialStrategy();
+
             for (var runIndex = 0; runIndex < runCount; runIndex++)
             {
                 Console.WriteLine("Gen arrays...");
@@ -123,10 +153,13 @@ public static class MatrixMain
                 var leftInt2DArray = IntArrayGenerator.Generate2DIntArray(elementCount, elementCount);
                 var rightInt2DArray = IntArrayGenerator.Generate2DIntArray(elementCount, elementCount);
 
+                var leftMatrix = new IntMatrix(leftInt2DArray);
+                var rightMatrix = new IntMatrix(rightInt2DArray);
+
                 Console.WriteLine($"Executing multiplication #{runIndex} with {elementCount} elements");
 
-                var currentParTimeResult = stopWatch.ResetAndGetTimeOfMult(parMulFun, leftInt2DArray, rightInt2DArray);
-                var currentSeqTimeResult = stopWatch.ResetAndGetTimeOfMult(seqMulFun, leftInt2DArray, rightInt2DArray);
+                var currentParTimeResult = stopWatch.ResetAndGetTimeOfIntMatrixMultiplication(parallelStrategy, leftMatrix, rightMatrix);
+                var currentSeqTimeResult = stopWatch.ResetAndGetTimeOfIntMatrixMultiplication(sequentialStrategy, leftMatrix, rightMatrix);
 
                 parTimeArray[runIndex] = currentParTimeResult;
                 seqTimeArray[runIndex] = currentSeqTimeResult;
@@ -152,124 +185,54 @@ public static class MatrixMain
     /// <summary>
     /// Script with reading two matrices from files by multiplying them and saving the result to a file.
     /// </summary>
-    private static void UserMatrixMul()
+    private static void ExecuteUserMultiplications(
+        IntMatrix leftMatrix,
+        IntMatrix rightMatrix,
+        IMultiplicationStrategy strategy,
+        string resultPath)
     {
-        var leftMatrixPath = GetPathFromClI("Please enter the path to the left matrix: ");
-        var rightMatrixPath = GetPathFromClI("Please enter the path to the right matrix: ");
-        var resultPath = GetPathFromClI("Please enter the path to the result file: ");
-        
-        var left2DArray = TextFileToInt2DArrayReader.Read(leftMatrixPath);
-        var right2DArray = TextFileToInt2DArrayReader.Read(rightMatrixPath); 
 
-        Console.WriteLine("Perform parallel multiplication or sequential multiplication");
-        Console.Write("Enter \"par\" for parallel and \"seq\" for sequential respectively [par/Seq]: ");
-
-        var parallelOrSequentialMulAnswer = Console.ReadLine();
-        var correctInput = IsCorrectAnswer(parallelOrSequentialMulAnswer, "par", "seq");
-
-        while (!correctInput)
-        {
-            Console.Write("Incorrect answer, try again");
-
-            parallelOrSequentialMulAnswer = Console.ReadLine();
-            correctInput = IsCorrectAnswer(parallelOrSequentialMulAnswer, "par", "seq");
-        }
-
-        var mulFun = GetMulFun(parallelOrSequentialMulAnswer ?? "seq");
         var stopwatch = new Stopwatch();
 
         stopwatch.Start();
-        var result = mulFun(left2DArray, right2DArray);
+        var result = leftMatrix.MultiplyWithStrategy(rightMatrix, strategy);
         stopwatch.Stop();
 
-        Int2DArrayToTextFileWriter.Write(resultPath, result);
+        Int2DArrayToTextFileWriter.Write(resultPath, result.ToArray);
 
         Console.WriteLine($"Multiplication done in {stopwatch.ElapsedMilliseconds} milliseconds");
         Console.WriteLine($"the result is written in {resultPath}");
     }
 
     /// <summary>
-    /// a method that tries to read the path from the console, displaying messages
+    /// a method that tries to read the path from the console, displaying messages.
     /// </summary>
-    /// <param name="message">message printed on first try</param>
-    /// <returns>file path as a string</returns>
-    /// <exception cref="IOException">An exception will be thrown if the arrays have different lengths</exception>
-    private static string GetPathFromClI(string message)
+    /// <param name="path">message printed on first try.</param>
+    /// <returns>file path as a string.</returns>
+    /// <exception cref="IOException">An exception will be thrown if the arrays have different lengths.</exception>
+    private static IntMatrix GetMatrixFromPath(string path)
     {
-        Console.Write(message);
-        
-        var inputCount = 0;
-        var matrixPath = Console.ReadLine();
-        
-        while (!File.Exists(matrixPath))
+        if (File.Exists(path))
         {
-            Console.Write("Incorrect path, try again: ");
+            var array = TextFileToInt2DArrayReader.Read(path);
 
-            matrixPath = Console.ReadLine();
-            inputCount++;
-
-            if (inputCount >= 10)
-            {
-                throw new IOException("Too many attempts to enter a value, please try again later");
-            }
+            return new IntMatrix(array);
         }
 
-        return matrixPath;
-    }
-    
-
-    /// <summary>
-    /// A function that returns one possible multiplication as a function based on a string value.
-    /// If the parameter is equal to "par", the function will return a parallel multiplication, otherwise - sequential.
-    /// </summary>
-    /// <param name="parallelRunOrSequentialMulAnswer">name of multiplication function way: "par" or "seq".</param>
-    /// <returns>Multiplication function.</returns>
-    private static Func<int[,], int[,], int[,]> GetMulFun(string parallelRunOrSequentialMulAnswer)
-        => parallelRunOrSequentialMulAnswer switch
-        {
-            "par" => Int2DArrayOperations.Int2DArrayParallelMul,
-            _ => Int2DArrayOperations.Int2DArraySequentialMul,
-        };
-    
-    /// <summary>
-    /// Print parameter message and try to read input int value in while loop.
-    /// If there are too many attempts, an exception will be thrown.
-    /// </summary>
-    /// <param name="message">The message that will be printed as a string.</param>
-    /// <returns>The int value of what was read.</returns>
-    /// <exception cref="IOException">Exception thrown on high number of failed attempts.</exception>
-    private static int ReadInputCountWithMessage(string message)
-    {
-        int localCount;
-        var readCount = 0;
-
-        Console.Write(message);
-
-        while (!int.TryParse(Console.ReadLine(), out localCount))
-        {
-            Console.Write("incorrect value. " + message);
-            readCount++;
-            
-            if (readCount >= 10)
-            {
-                throw new IOException("Too many attempts to enter a value, please try again later");
-            }
-        }
-
-        return localCount;
+        throw new ArgumentException($"file does not exist in {path} ");
     }
 
     /// <summary>
     /// A function that builds a table with values passed as parameters.
     /// With the same length.
     /// </summary>
-    /// <param name="itemCount">An array of int values located in the first row of the table</param>
-    /// <param name="seqDeviation">An array of double values located in the second row of the table</param>
-    /// <param name="parDeviation">An array of double values located in the third row of the table</param>
-    /// <param name="seqTimes">An array of double values located in the four row of the table</param>
-    /// <param name="parTimes">An array of double values located in the five row of the table</param>
-    /// <returns>String representation of a table</returns>
-    /// <exception cref="ArgumentException">An exception will be thrown if the arrays have different lengths</exception>
+    /// <param name="itemCount">An array of int values located in the first row of the table.</param>
+    /// <param name="seqDeviation">An array of double values located in the second row of the table.</param>
+    /// <param name="parDeviation">An array of double values located in the third row of the table.</param>
+    /// <param name="seqTimes">An array of double values located in the four row of the table.</param>
+    /// <param name="parTimes">An array of double values located in the five row of the table.</param>
+    /// <returns>String representation of a table.</returns>
+    /// <exception cref="ArgumentException">An exception will be thrown if the arrays have different lengths.</exception>
     private static string ConvertArraysToString(
         int[] itemCount,
         double[] seqDeviation,

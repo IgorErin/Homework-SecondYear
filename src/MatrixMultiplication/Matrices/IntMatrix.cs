@@ -22,9 +22,10 @@ public class IntMatrix
     /// <summary>
     /// Gets array representation of matrix.
     /// </summary>
-    public int[,] ToArray //TODO() encapsulate field.
+    public int[,] ToArray
     {
-        get => this.intArray;
+        get => this.intArray.Clone() as int[,]
+               ?? throw new NullReferenceException("Method ToArray trying to return null");
     }
     
     /// <summary>

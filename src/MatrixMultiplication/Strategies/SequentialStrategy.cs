@@ -8,6 +8,13 @@ using MatrixExceptions;
 public class SequentialStrategy : IMultiplicationStrategy
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="SequentialStrategy"/> class.
+    /// </summary>
+    public SequentialStrategy()
+    {
+    }
+    
+    /// <summary>
     /// Sequential multiplication method.
     /// </summary>
     /// <param name="leftMatrix">left matrix array representation.</param>

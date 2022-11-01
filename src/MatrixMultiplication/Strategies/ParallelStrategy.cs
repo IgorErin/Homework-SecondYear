@@ -8,6 +8,13 @@ using MatrixExceptions;
 public class ParallelStrategy : IMultiplicationStrategy
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="ParallelStrategy"/> class.
+    /// </summary>
+    public ParallelStrategy()
+    {
+    }
+    
+    /// <summary>
     /// Parallel multiplication method.
     /// </summary>
     /// <param name="leftMatrix">left matrix array representation.</param>
