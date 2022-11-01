@@ -1,5 +1,4 @@
-namespace MatrixMul.Writers;
-
+namespace MatrixMultiplication.Writers;
 
 /// <summary>
 /// Static class.

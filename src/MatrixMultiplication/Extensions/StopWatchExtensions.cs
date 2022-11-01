@@ -1,4 +1,4 @@
-namespace MatrixMul.Extensions;
+namespace MatrixMultiplication.Extensions;
 
 using System.Diagnostics;
 
@@ -10,7 +10,7 @@ public static class StopWatchExtensions
     /// <summary>
     /// Function to get time of mul execution.
     /// </summary>
-    /// <param name="stopwatch"></param>
+    /// <param name="stopwatch"><see cref="Stopwatch"/> instance.</param>
     /// <param name="mulFunc">Function whose execution time will be calculated.</param>
     /// <param name="left2DArray">Array passed as left argument to function.</param>
     /// <param name="right2DArray">Array passed as right argument to function.</param>
@@ -18,7 +18,7 @@ public static class StopWatchExtensions
     public static long ResetAndGetTimeOfMult(
         this Stopwatch stopwatch,
         Func<int[,], int[,], int[,]> mulFunc,
-        int[,] left2DArray, 
+        int[,] left2DArray,
         int[,] right2DArray)
     {
         stopwatch.Reset();

@@ -1,4 +1,4 @@
-namespace MatrixMul.Readers;
+namespace MatrixMultiplication.Readers;
 
 /// <summary>
 /// Static class.
@@ -33,6 +33,11 @@ public static class TextFileToInt2DArrayReader
         for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
         {
             var textLine = textLines[rowIndex].Split(" ");
+
+            if (textLine.Length != columnCount)
+            {
+                throw new ArgumentException("the input data structure does not match the matrix");
+            }
             
             for (var columnIndex = 0; columnIndex < columnCount; columnIndex++)
             {

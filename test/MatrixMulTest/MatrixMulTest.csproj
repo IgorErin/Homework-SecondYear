@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MatrixMul\MatrixMul.csproj" />
+    <ProjectReference Include="..\..\src\MatrixMultiplication\MatrixMultiplication.csproj" />
   </ItemGroup>
 
 </Project>

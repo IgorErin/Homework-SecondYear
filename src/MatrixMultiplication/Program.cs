@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics;
-using MatrixMul.Extensions;
+using MatrixMultiplication.Extensions;
 using MatrixMul.Generators;
-using MatrixMul.Readers;
-using MatrixMul.Writers;
+using MatrixMultiplication.Readers;
+using MatrixMultiplication.Writers;
 
-namespace MatrixMul;
+namespace MatrixMultiplication;
 
 public static class MatrixMain
 {

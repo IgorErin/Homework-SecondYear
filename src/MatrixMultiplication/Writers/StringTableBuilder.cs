@@ -1,8 +1,7 @@
-using System;
+namespace MatrixMultiplication.Writers;
+
 using System.Collections.Generic;
 using System.Text;
-
-namespace MatrixMul.Writers;
 
 /// <summary>
 /// Class that builds tables in string format.
@@ -13,20 +12,21 @@ public class StringTableBuilder
     /// <summary>
     /// StringBuilder storing a table as a string.
     /// </summary>
-    private readonly StringBuilder _stringBuilder;
+    private readonly StringBuilder stringBuilder;
 
     /// <summary>
-    /// Table cell lengt.
+    /// Table cell length.
     /// </summary>
-    private readonly int _cellLength;
-
+    private readonly int cellLength;
+    
     /// <summary>
-    /// Constructor initializing StringBuilder.
+    /// Initializes a new instance of the <see cref="StringTableBuilder"/> class.
     /// </summary>
+    /// <param name="cellLength">The result length of cell.</param>
     public StringTableBuilder(int cellLength)
     {
-        _stringBuilder = new StringBuilder();
-        _cellLength = cellLength;
+        this.stringBuilder = new StringBuilder();
+        this.cellLength = cellLength;
     }
     
     /// <summary>
@@ -36,15 +36,15 @@ public class StringTableBuilder
     /// <param name="messageDelta">Increase for name cell</param>
     public void WriteBound(int length, int messageDelta = 0)
     {
-        _stringBuilder.AppendFormat("+{0}", new String('-', _cellLength + messageDelta));
+        this.stringBuilder.AppendFormat("+{0}", new string('-', this.cellLength + messageDelta));
 
         for (var i = 1; i < length; i++)
         {
-            _stringBuilder.AppendFormat("+{0}", new String('-', _cellLength));
+            this.stringBuilder.AppendFormat("+{0}", new string('-', this.cellLength));
         }
 
-        _stringBuilder.Append("+");
-        _stringBuilder.AppendLine();
+        this.stringBuilder.Append("+");
+        this.stringBuilder.AppendLine();
     }
     
     /// <summary>
@@ -56,16 +56,23 @@ public class StringTableBuilder
     /// <typeparam name="T">Elements row type</typeparam>
     public void WriteRow<T>(IEnumerable<T> elements, string name, int messageDelta = 0)
     {
-        _stringBuilder.AppendFormat("|{0}", GetAlignString(name ?? "", _cellLength + messageDelta));
+        this.stringBuilder.AppendFormat("|{0}", GetAlignString(name, this.cellLength + messageDelta));
         
-        foreach(var element in elements)
+        foreach (var element in elements)
         {
-            _stringBuilder.AppendFormat("|{0}", GetAlignString(element?.ToString() ?? "", _cellLength));
+            this.stringBuilder.AppendFormat("|{0}", GetAlignString(element?.ToString() ?? string.Empty, this.cellLength));
         }
 
-        _stringBuilder.Append("|");
-        _stringBuilder.AppendLine();
+        this.stringBuilder.Append("|");
+        this.stringBuilder.AppendLine();
     }
+    
+    /// <summary>
+    /// Method returning a string representation of a table.
+    /// </summary>
+    /// <returns>String representation of a table.</returns>
+    public override string ToString()
+        => this.stringBuilder.ToString();
 
     /// <summary>
     /// Gives aligned string on the right and left.
@@ -73,7 +80,7 @@ public class StringTableBuilder
     /// <param name="stringElement">A string value written to an aligned string.</param>
     /// <param name="cellLengthToAlign">Length of cell</param>
     /// <returns>Aligned string</returns>
-    private string GetAlignString(string stringElement, int cellLengthToAlign)
+    private static string GetAlignString(string stringElement, int cellLengthToAlign)
     {
         if (stringElement.Length >= cellLengthToAlign)
         {
@@ -85,11 +92,4 @@ public class StringTableBuilder
         
         return new string(' ', leftPadding) + stringElement + new string(' ', rightPadding);
     }
-
-    /// <summary>
-    /// Method returning a string representation of a table.
-    /// </summary>
-    /// <returns>String representation of a table.</returns>
-    public override string ToString()
-        => _stringBuilder.ToString();
 }
