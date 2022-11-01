@@ -1,4 +1,4 @@
-namespace MatrixMultiplication.Matrices;
+namespace MatrixMultiplication;
 
 using Strategies;
 
@@ -9,14 +9,14 @@ using Strategies;
 public class IntMatrix
 {
     private readonly int[,] intArray;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="IntMatrix"/> class.
     /// </summary>
     /// <param name="intArray">Int 2D array that will be wrapped.</param>
     public IntMatrix(int[,] intArray)
         => this.intArray = intArray;
-    
+
     /// <summary>
     /// Gets array representation of matrix.
     /// </summary>
@@ -25,7 +25,7 @@ public class IntMatrix
         get => this.intArray.Clone() as int[,]
                ?? throw new NullReferenceException("Method ToArray trying to return null");
     }
-    
+
     /// <summary>
     /// Method that allows you to multiply two <see cref="IntMatrix"/>.
     /// </summary>

@@ -1,6 +1,5 @@
 namespace MatrixMultiplication.Extensions;
 
-using Matrices;
 using Strategies;
 
 using System.Diagnostics;

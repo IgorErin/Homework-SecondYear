@@ -13,7 +13,7 @@ public class ParallelStrategy : IMultiplicationStrategy
     public ParallelStrategy()
     {
     }
-    
+
     /// <summary>
     /// Parallel multiplication method.
     /// </summary>
@@ -36,7 +36,7 @@ public class ParallelStrategy : IMultiplicationStrategy
             throw new IntMatrixMultiplicationException(
                 $"matrix multiplication is not possible, wrong dimension: {leftColumnCount} != {rightRowCount}");
         }
-        
+
         var threadCount = Math.Min(Environment.ProcessorCount, leftRowCount);
 
         var lengthPiece = (int)Math.Ceiling(leftRowCount / (double)threadCount) - 1;
@@ -71,7 +71,7 @@ public class ParallelStrategy : IMultiplicationStrategy
 
                     countDown.Signal();
                 });
-            
+
             currentThread.Start();
         }
 

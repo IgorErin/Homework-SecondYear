@@ -13,7 +13,7 @@ public static class Int2DArrayToTextFileWriter
     /// <param name="matrix">2D array to be written.</param>
     public static void Write(string pathToFile, int[,] matrix)
     {
-        using var writer = File.CreateText(pathToFile);;
+        using var writer = File.CreateText(pathToFile);
 
         var rowCount = matrix.GetLength(0);
         var columnCount = matrix.GetLength(1);
@@ -23,7 +23,7 @@ public static class Int2DArrayToTextFileWriter
             for (var columnIndex = 0; columnIndex < columnCount; columnIndex++)
             {
                 writer.Write(matrix[rowIndex, columnIndex]);
-                
+
                 if (columnIndex < columnCount - 1)
                 {
                     writer.Write(" ");

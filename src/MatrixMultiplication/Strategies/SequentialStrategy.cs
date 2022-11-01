@@ -13,7 +13,7 @@ public class SequentialStrategy : IMultiplicationStrategy
     public SequentialStrategy()
     {
     }
-    
+
     /// <summary>
     /// Sequential multiplication method.
     /// </summary>

@@ -1,6 +1,5 @@
 ﻿namespace MatrixMultiplication;
 
-using Matrices;
 using Strategies;
 using System.Diagnostics;
 using Extensions;
@@ -8,6 +7,9 @@ using Generators;
 using Readers;
 using Writers;
 
+/// <summary>
+/// Main class.
+/// </summary>
 public static class MatrixMain
 {
     /// <summary>
@@ -24,12 +26,12 @@ public static class MatrixMain
     private const string AverParTimeRowMessage = "average parallel time";
     private const string DevSeqTimeRowMessage = "standard deviation sequential time";
     private const string DevParTimeRowMessage = "standard deviation parallel time";
-    
+
     /// <summary>
     /// Start and delta values for test run. Used in <see cref="ExecuteTestMultiplications"/> method.
     /// </summary>
     private const int StartTestElementsCount = 100;
-    
+
     /// <summary>
     /// Default test run count. Used in <see cref="ExecuteTestMultiplications"/> method.
     /// </summary>
@@ -43,13 +45,9 @@ public static class MatrixMain
     /// <summary>
     /// Main function of a program.
     /// </summary>
+    /// <param name="args">CLI args.</param>
     public static void Main(string[] args)
     {
-
-        // D:\\Projects\\Homework-SecondYear\\src\\leftMatrix.txt
-        // D:\\Projects\\Homework-SecondYear\\src\\rightMatrix.txt
-        // D:\\Projects\\Homework-SecondYear\\src\\result.txt
-
         try
         {
             ParsArgs(args);
@@ -57,7 +55,7 @@ public static class MatrixMain
         catch (Exception exception)
         {
             Console.WriteLine(exception.Message);
-            
+
             Console.WriteLine("In the case of a test run, you must specify the 'test' and the number of test runs.");
             Console.WriteLine("In the case of calculating your matrix, you must specify the 'user',");
             Console.WriteLine("then the path to the left matrix, to the right,");
@@ -68,7 +66,7 @@ public static class MatrixMain
             Console.WriteLine("Please, restart the program");
         }
     }
-    
+
     private static Unit ParsArgs(string[] args) =>
         args.Length switch
         {
@@ -83,7 +81,7 @@ public static class MatrixMain
         {
             throw new ArgumentException("Expected 'test' in first argument");
         }
-        
+
         if (int.TryParse(args[1], out var count))
         {
             ExecuteTestMultiplications(count);
@@ -103,7 +101,7 @@ public static class MatrixMain
         var pathToRightMatrix = args[2];
         var stringStrategy = args[3];
         var outputPath = args[4];
-        
+
         if (mode != "user")
         {
             throw new ArgumentException("expected 'user' in first argument");
@@ -119,12 +117,12 @@ public static class MatrixMain
                 "parallel" => new ParallelStrategy(),
                 _ => throw new ArgumentException("multiplication strategy not match (sequential/parallel)")
             };
-        
+
         ExecuteUserMultiplications(leftMatrix, rightMatrix, strategy, outputPath);
 
         return new Unit();
     }
-    
+
     /// <summary>
     /// Test run of multiplications with calculation of expectation and standard deviation
     /// And printing of a table with results.
@@ -133,10 +131,10 @@ public static class MatrixMain
     {
         var parResultTime = new double[DefaultRunWithFixedSizeCount];
         var seqResultTime = new double[DefaultRunWithFixedSizeCount];
-        
+
         var parResultDeviation = new double[DefaultRunWithFixedSizeCount];
         var seqResultDeviation = new double[DefaultRunWithFixedSizeCount];
-        
+
         var resultElementCounts = new int[DefaultRunWithFixedSizeCount];
 
         var stopWatch = new Stopwatch();
@@ -165,7 +163,7 @@ public static class MatrixMain
 
                 var currentParTimeResult =
                     stopWatch.ResetAndGetTimeOfIntMatrixMultiplication(parallelStrategy, leftMatrix, rightMatrix);
-                
+
                 var currentSeqTimeResult =
                     stopWatch.ResetAndGetTimeOfIntMatrixMultiplication(sequentialStrategy, leftMatrix, rightMatrix);
 
@@ -175,13 +173,13 @@ public static class MatrixMain
 
             parResultTime[globalRunIndex] = Enumerable.Average(parTimeArray);
             seqResultTime[globalRunIndex] = Enumerable.Average(seqTimeArray);
-            
+
             parResultDeviation[globalRunIndex] = Math.Round(parTimeArray.GetDeviation(), RoundNumber);
             seqResultDeviation[globalRunIndex] = Math.Round(seqTimeArray.GetDeviation(), RoundNumber);
-            
+
             resultElementCounts[globalRunIndex] = elementCount;
         }
-        
+
         Console.WriteLine(ConvertArraysToString(
             resultElementCounts,
             seqResultDeviation,
@@ -189,7 +187,7 @@ public static class MatrixMain
             seqResultTime,
             parResultTime));
     }
-    
+
     /// <summary>
     /// Script with reading two matrices from files by multiplying them and saving the result to a file.
     /// </summary>
@@ -259,19 +257,19 @@ public static class MatrixMain
         var length = parTimes.Length + 1;
 
         var tableWriter = new StringTableBuilder(MaxLength);
-        
+
         tableWriter.WriteBound(length, MessageDelta);
         tableWriter.WriteRow(itemCount, ElementCountRowMessage, MessageDelta);
-        
+
         tableWriter.WriteBound(length, MessageDelta);
         tableWriter.WriteRow(seqTimes, AverSeqTimeRowMessage, MessageDelta);
 
         tableWriter.WriteBound(length, MessageDelta);
         tableWriter.WriteRow(parTimes, AverParTimeRowMessage, MessageDelta);
-        
+
         tableWriter.WriteBound(length, MessageDelta);
         tableWriter.WriteRow(parDeviation, DevSeqTimeRowMessage, MessageDelta);
-        
+
         tableWriter.WriteBound(length, MessageDelta);
         tableWriter.WriteRow(seqDeviation, DevParTimeRowMessage, MessageDelta);
 

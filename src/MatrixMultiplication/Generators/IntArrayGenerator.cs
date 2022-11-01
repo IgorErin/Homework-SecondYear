@@ -22,7 +22,7 @@ public static class IntArrayGenerator
     public static int[,] Generate2DIntArray(int rowCount, int columnCount)
     {
         var new2DArray = new int[rowCount, columnCount];
-        
+
         for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
         {
             for (var columnIndex = 0; columnIndex < columnCount; columnIndex++)

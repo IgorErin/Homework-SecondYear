@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatrixMultiplication", "src
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{F3EB1358-82DB-47E5-A5F3-3E9019B3E6DE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatrixMulTest", "test\MatrixMulTest\MatrixMulTest.csproj", "{B21CB09C-7CE9-40C2-B508-D3B883615043}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatrixMultiplicationTest", "test\MatrixMultiplicationTest\MatrixMultiplicationTest.csproj", "{B21CB09C-7CE9-40C2-B508-D3B883615043}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
