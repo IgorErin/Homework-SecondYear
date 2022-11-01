@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>MatrixMultiplication</RootNamespace>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn),SA1633</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

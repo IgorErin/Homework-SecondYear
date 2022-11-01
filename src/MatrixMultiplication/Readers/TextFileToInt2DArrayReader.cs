@@ -36,7 +36,7 @@ public static class TextFileToInt2DArrayReader
 
             if (textLine.Length != columnCount)
             {
-                throw new ArgumentException("the input data structure does not match the matrix");
+                throw new ArgumentException("the file data structure does not match the matrix");
             }
 
             for (var columnIndex = 0; columnIndex < columnCount; columnIndex++)
