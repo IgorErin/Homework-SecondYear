@@ -163,7 +163,7 @@ public class SafeLazyTest
         var countEvent = new CountdownEvent(currentThreadCount);
 
         var incrementValue = 0;
-        var lazy = new SafeLazy<int>(() => incrementValue++);
+        var lazy = new SafeLazy<int>(() => Interlocked.Increment(ref incrementValue));
 
         for (var i = 0; i < currentThreadCount; i++)
         {
