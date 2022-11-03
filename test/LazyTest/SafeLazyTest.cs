@@ -32,7 +32,7 @@ public class SafeLazyTest
     {
         var resultArray = new object[ThreadCount];
 
-        var parLazy = new SafeLazy<object>(() => new object());
+        var lazy = new SafeLazy<object>(() => new object());
 
         for (var i = 0; i < ThreadCount; i++)
         {
@@ -40,7 +40,7 @@ public class SafeLazyTest
 
             this.threadArray[i] = new Thread(() =>
             {
-                var result = parLazy.Get();
+                var result = lazy.Get();
 
                 resultArray[localIndex] = result;
             });
@@ -61,7 +61,7 @@ public class SafeLazyTest
     {
         var exceptions = new Exception[ThreadCount];
 
-        var parLazy = new SafeLazy<object>(() => throw new Exception());
+        var lazy = new SafeLazy<object>(() => throw new Exception());
 
         for (var i = 0; i < ThreadCount; i++)
         {
@@ -71,7 +71,7 @@ public class SafeLazyTest
             {
                 try
                 {
-                    parLazy.Get();
+                    lazy.Get();
                 }
                 catch (Exception currentException)
                 {
@@ -95,7 +95,7 @@ public class SafeLazyTest
     {
         var exceptions = new Exception[ThreadCount];
 
-        var parLazy = new SafeLazy<object>(() => throw new Exception());
+        var lazy = new SafeLazy<object>(() => throw new Exception());
 
         for (var i = 0; i < ThreadCount; i++)
         {
@@ -110,7 +110,7 @@ public class SafeLazyTest
                         Task.Delay(1000000);
                     }
 
-                    var _ = parLazy.Get();
+                    var _ = lazy.Get();
                 }
                 catch (Exception currentException)
                 {
@@ -133,7 +133,7 @@ public class SafeLazyTest
     {
         var resultArray = new object[ThreadCount];
 
-        var parLazy = new SafeLazy<object>(() => new object());
+        var lazy = new SafeLazy<object>(() => new object());
 
         for (var i = 0; i < ThreadCount; i++)
         {
@@ -141,7 +141,7 @@ public class SafeLazyTest
 
             this.threadArray[i] = new Thread(() =>
             {
-                var result = parLazy.Get();
+                var result = lazy.Get();
 
                 resultArray[localIndex] = result;
             });

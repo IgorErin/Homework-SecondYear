@@ -2,7 +2,7 @@
 
 Console.WriteLine("Lazy computation example: ");
 
-var seqLazy = new UnsafeLazy<int>(() =>
+var unsafeLazy = new UnsafeLazy<int>(() =>
 {
     Console.WriteLine("I computed in UnsafeLazy! Should be printed once...");
 
@@ -11,10 +11,10 @@ var seqLazy = new UnsafeLazy<int>(() =>
 
 for (var tryIndex = 0; tryIndex < 3; tryIndex++)
 {
-    Console.WriteLine($"Computed and stored value: {seqLazy.Get()}");
+    Console.WriteLine($"Computed and stored value: {unsafeLazy.Get()}");
 }
 
-var parLazy = new SafeLazy<int>(() =>
+var safeLazy = new SafeLazy<int>(() =>
 {
     Console.WriteLine("I computed in SafeLazy! Should be printed once...");
 
@@ -23,5 +23,5 @@ var parLazy = new SafeLazy<int>(() =>
 
 for (var tryIndex = 0; tryIndex < 3; tryIndex++)
 {
-    Console.WriteLine($"Computed and stored: {parLazy.Get()}");
+    Console.WriteLine($"Computed and stored: {safeLazy.Get()}");
 }

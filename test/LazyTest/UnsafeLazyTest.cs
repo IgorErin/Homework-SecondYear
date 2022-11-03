@@ -39,13 +39,13 @@ public class UnsafeLazyTest
     {
         var exceptions = new Exception[ResultCount];
 
-        var parLazy = new SafeLazy<Exception>(() => throw new Exception());
+        var lazy = new SafeLazy<Exception>(() => throw new Exception());
 
         for (var i = 0; i < ResultCount; i++)
         {
             try
             {
-                parLazy.Get();
+                lazy.Get();
             }
             catch (Exception exception)
             {
@@ -63,9 +63,9 @@ public class UnsafeLazyTest
     [Test]
     public void LazyExceptionAreThrown()
     {
-        var parLazy = new SafeLazy<Exception>(() => throw new TestException());
+        var lazy = new SafeLazy<Exception>(() => throw new TestException());
 
-        Assert.Throws<TestException>(() => parLazy.Get());
+        Assert.Throws<TestException>(() => lazy.Get());
     }
 
     /// <summary>
