@@ -20,7 +20,7 @@ public class ParallelStrategy : IMultiplicationStrategy
     /// <param name="leftMatrix">left matrix array representation.</param>
     /// <param name="rightMatrix">right matrix array representation.</param>
     /// <returns>Result of multiplication.</returns>
-    /// <exception cref="IntMatrixMultiplicationException">
+    /// <exception cref="IntMatrixException">
     /// Was thrown when dimensions did not match for multiplication.
     /// </exception>
     public int[,] Multiply(int[,] leftMatrix, int[,] rightMatrix)
@@ -33,13 +33,13 @@ public class ParallelStrategy : IMultiplicationStrategy
 
         if (leftColumnCount != rightRowCount)
         {
-            throw new IntMatrixMultiplicationException(
+            throw new IntMatrixException(
                 $"matrix multiplication is not possible, wrong dimension: {leftColumnCount} != {rightRowCount}");
         }
 
         var threadCount = Math.Min(Environment.ProcessorCount, leftRowCount);
 
-        var lengthPiece = (int)Math.Ceiling(leftRowCount / (double)threadCount) - 1;
+        var lengthPiece = (int)Math.Ceiling(leftRowCount / (double)threadCount);
 
         var result = new int[leftRowCount, rightColumnCount];
         var countDown = new CountdownEvent(threadCount);
@@ -60,11 +60,11 @@ public class ParallelStrategy : IMultiplicationStrategy
                     {
                         for (var rightColumnIndex = 0; rightColumnIndex < rightColumnCount; rightColumnIndex++)
                         {
-                            for (var currentItemIndex = 0; currentItemIndex < leftColumnCount; currentItemIndex++)
+                            for (var currentIndex = 0; currentIndex < leftColumnCount; currentIndex++)
                             {
                                 result[leftRowIndex, rightColumnIndex] +=
-                                    leftMatrix[leftRowIndex, currentItemIndex] *
-                                    rightMatrix[currentItemIndex, rightColumnIndex];
+                                    leftMatrix[leftRowIndex, currentIndex] *
+                                    rightMatrix[currentIndex, rightColumnIndex];
                             }
                         }
                     }

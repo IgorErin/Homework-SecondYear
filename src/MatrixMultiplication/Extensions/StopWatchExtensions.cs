@@ -1,7 +1,6 @@
 namespace MatrixMultiplication.Extensions;
 
 using Strategies;
-
 using System.Diagnostics;
 
 /// <summary>

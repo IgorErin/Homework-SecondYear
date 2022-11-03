@@ -33,7 +33,7 @@ public class IntMatrix
     /// <param name="strategy">Multiplication strategy.</param>
     /// <returns><see cref="IntMatrix"/> that represent result of multiplication.</returns>
     public IntMatrix MultiplyWithStrategy(IntMatrix rightMatrix, IMultiplicationStrategy strategy)
-        => new IntMatrix(strategy.Multiply(this.intArray, rightMatrix.intArray));
+        => new (strategy.Multiply(this.intArray, rightMatrix.intArray));
 
     /// <summary>
     /// Method returning the dimension by the passed dimension.

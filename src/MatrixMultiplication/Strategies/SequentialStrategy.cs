@@ -31,7 +31,7 @@ public class SequentialStrategy : IMultiplicationStrategy
 
         if (leftColumnCount != rightRowCount)
         {
-            throw new IntMatrixMultiplicationException(
+            throw new IntMatrixException(
                 $"matrix multiplication is not possible, wrong dimension: {leftColumnCount} != {rightRowCount}");
         }
 
@@ -41,10 +41,10 @@ public class SequentialStrategy : IMultiplicationStrategy
         {
             for (var rightColumnIndex = 0; rightColumnIndex < rightColumnCount; rightColumnIndex++)
             {
-                for (var currentItemIndex = 0; currentItemIndex < leftColumnCount; currentItemIndex++)
+                for (var currentIndex = 0; currentIndex < leftColumnCount; currentIndex++)
                 {
                     result[leftRowIndex, rightColumnIndex] +=
-                        leftMatrix[leftRowIndex, currentItemIndex] * rightMatrix[currentItemIndex, rightColumnIndex];
+                        leftMatrix[leftRowIndex, currentIndex] * rightMatrix[currentIndex, rightColumnIndex];
                 }
             }
         }

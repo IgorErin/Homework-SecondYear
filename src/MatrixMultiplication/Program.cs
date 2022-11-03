@@ -60,10 +60,7 @@ public static class MatrixMain
             Console.WriteLine("In the case of calculating your matrix, you must specify the 'user',");
             Console.WriteLine("then the path to the left matrix, to the right,");
             Console.WriteLine("the method of multiplying them [sequential/parallel] and the resulting path.");
-        }
-        finally
-        {
-            Console.WriteLine("Please, restart the program");
+            Console.WriteLine("Please, restart the program.");
         }
     }
 
@@ -72,14 +69,14 @@ public static class MatrixMain
         {
             TestRunArgsLength => TestRun(args),
             UserRunArgsLength => UserRun(args),
-            _ => throw new ArgumentException("Incorrect number of arguments")
+            _ => throw new ArgumentException("Incorrect number of arguments.")
         };
 
     private static Unit TestRun(string[] args)
     {
         if (args[0] != "test")
         {
-            throw new ArgumentException("Expected 'test' in first argument");
+            throw new ArgumentException("Expected 'test' in first argument.");
         }
 
         if (int.TryParse(args[1], out var count))
@@ -88,7 +85,7 @@ public static class MatrixMain
         }
         else
         {
-            throw new ArgumentException("expected int value in second argument");
+            throw new ArgumentException("expected int value in second argument.");
         }
 
         return new Unit();
@@ -144,14 +141,14 @@ public static class MatrixMain
             var parTimeArray = new double[runCount];
             var seqTimeArray = new double[runCount];
 
-            var elementCount = StartTestElementsCount * 2.IntPow(globalRunIndex);
+            var elementCount = StartTestElementsCount * 2.Pow(globalRunIndex);
 
             var parallelStrategy = new ParallelStrategy();
             var sequentialStrategy = new SequentialStrategy();
 
             for (var runIndex = 0; runIndex < runCount; runIndex++)
             {
-                Console.WriteLine("Gen arrays...");
+                Console.WriteLine("Generating arrays...");
 
                 var leftInt2DArray = IntArrayGenerator.Generate2DIntArray(elementCount, elementCount);
                 var rightInt2DArray = IntArrayGenerator.Generate2DIntArray(elementCount, elementCount);
@@ -210,21 +207,21 @@ public static class MatrixMain
     }
 
     /// <summary>
-    /// a method that tries to read the path from the console, displaying messages.
+    /// a method that tries to read the matrix from the path, displaying messages.
     /// </summary>
-    /// <param name="path">message printed on first try.</param>
-    /// <returns>file path as a string.</returns>
-    /// <exception cref="IOException">An exception will be thrown if the arrays have different lengths.</exception>
+    /// <param name="path">Path to matrix file.</param>
+    /// <returns><see cref="IntMatrix"/> representation of file data.</returns>
+    /// <exception cref="ArgumentException">An exception will be thrown if file does not exist in path.</exception>
     private static IntMatrix GetMatrixFromPath(string path)
     {
-        if (File.Exists(path))
+        if (!File.Exists(path))
         {
-            var array = TextFileToInt2DArrayReader.Read(path);
-
-            return new IntMatrix(array);
+            throw new ArgumentException($"file does not exist in {path}");
         }
 
-        throw new ArgumentException($"file does not exist in {path} ");
+        var array = TextFileToInt2DArrayReader.Read(path);
+
+        return new IntMatrix(array);
     }
 
     /// <summary>

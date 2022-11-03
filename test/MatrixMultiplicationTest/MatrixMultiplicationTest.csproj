@@ -2,11 +2,14 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <Nullable>disable</Nullable>
+    <Nullable>enable</Nullable>
 
     <IsPackable>false</IsPackable>
 
-    <RootNamespace>MatrixMulTest</RootNamespace>
+    <RootNamespace>MatrixMultiplicationTest</RootNamespace>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn),SA1633</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

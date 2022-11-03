@@ -1,4 +1,4 @@
-namespace MatrixMulTest;
+namespace MatrixMultiplicationTest;
 
 using MatrixMultiplication;
 using MatrixMultiplication.Strategies;
