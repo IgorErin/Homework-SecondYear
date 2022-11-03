@@ -90,7 +90,7 @@ public sealed class MyThreadPool : IDisposable
     {
         lock (this.locker)
         {
-            if (!this.isShutDown)
+            if (this.isShutDown)
             {
                 return;
             }

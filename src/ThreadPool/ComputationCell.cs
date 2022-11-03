@@ -15,6 +15,8 @@ public class ComputationCell<TResult>
 
     private readonly object locker = new ();
 
+    private readonly Action prevAction;
+
     private Option<Func<TResult>> optionResult = Option.None<Func<TResult>>();
 
     private volatile bool funcIsComputed;
@@ -23,7 +25,21 @@ public class ComputationCell<TResult>
     /// Initializes a new instance of the <see cref="ComputationCell{TResult}"/> class.
     /// </summary>
     /// <param name="func">Function that will be computed.</param>
+    /// <param name="prevAction">
+    /// Action that will be called in the event of a <see cref="Result"/> call before the <see cref="Compute"/>
+    /// </param>
+    public ComputationCell(Func<TResult> func, Action prevAction)
+    {
+        this.func = func;
+        this.prevAction = prevAction;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ComputationCell{TResult}"/> class.
+    /// </summary>
+    /// <param name="func">Function that will be computed.</param>
     public ComputationCell(Func<TResult> func)
+        : this(func, () => { })
     {
         this.func = func;
     }
@@ -54,7 +70,7 @@ public class ComputationCell<TResult>
     {
         lock (this.locker)
         {
-            if (!this.funcIsComputed)
+            if (this.funcIsComputed)
             {
                 return;
             }
