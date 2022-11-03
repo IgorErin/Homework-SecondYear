@@ -1,11 +1,11 @@
+namespace LazyTest;
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Lazy.Lazy;
-using Lazy.Utils;
+using Utils;
 using NUnit.Framework;
-
-namespace Lazy;
 
 /// <summary>
 /// Nunit test class with test methods.
@@ -13,44 +13,47 @@ namespace Lazy;
 public class SafeLazyTest
 {
     private const int ThreadCount = 10;
-    private Thread[] _threadArray = new Thread[ThreadCount];
+    private Thread[] threadArray = new Thread[ThreadCount];
 
+    /// <summary>
+    /// SetUp method.
+    /// </summary>
     [SetUp]
     public void SetUp()
     {
-        _threadArray = new Thread[ThreadCount];
+        this.threadArray = new Thread[ThreadCount];
     }
-    
+
     /// <summary>
-    /// Test method checking that the value is evaluated once and always the same
+    /// Test method checking that the value is evaluated once and always the same.
     /// </summary>
     [Test]
     public void MultipleLazyGetResultAreEqualsTest()
     {
         var resultArray = new object[ThreadCount];
-        
+
         var parLazy = new SafeLazy<object>(() => new object());
-        
+
         for (var i = 0; i < ThreadCount; i++)
         {
             var localIndex = i;
-            
-            _threadArray[i] = new Thread(() =>
+
+            this.threadArray[i] = new Thread(() =>
             {
                 var result = parLazy.Get();
 
                 resultArray[localIndex] = result;
             });
         }
-        
-        _threadArray.StartAll();
-        _threadArray.JoinAll();
+
+        this.threadArray.StartAll();
+        this.threadArray.JoinAll();
 
         var groupsCount = resultArray.DuplicatesGroupCount();
 
         Assert.AreEqual(1, groupsCount);
     }
-    
+
     /// <summary>
     /// Method checking for throwing an exception: the calculation is unique and the exception is always the same.
     /// </summary>
@@ -61,12 +64,12 @@ public class SafeLazyTest
         var exceptions = new Exception[ThreadCount];
 
         var parLazy = new SafeLazy<object>(() => throw new Exception());
-        
+
         for (var i = 0; i < ThreadCount; i++)
         {
             var localIndex = i;
-            
-            _threadArray[i] = new Thread(() =>
+
+            this.threadArray[i] = new Thread(() =>
             {
                 try
                 {
@@ -78,9 +81,9 @@ public class SafeLazyTest
                 }
             });
         }
-        
-        _threadArray.StartAll();
-        _threadArray.JoinAll();
+
+        this.threadArray.StartAll();
+        this.threadArray.JoinAll();
 
         var groupsCount = exceptions.DuplicatesGroupCount();
 
@@ -90,28 +93,28 @@ public class SafeLazyTest
     /// <summary>
     /// Test method that check for throwing an exception in parallel lazy evaluation.
     /// </summary>
-    /// <exception cref="Exception"></exception>
+    /// <exception cref="Exception">Test exception.</exception>
     [Test]
     public void ExceptionIsThrownInParallelTest()
     {
         var exceptions = new Exception[ThreadCount];
 
         var parLazy = new SafeLazy<object>(() => throw new Exception());
-        
+
         for (var i = 0; i < ThreadCount; i++)
         {
             var localIndex = i;
-            
-            _threadArray[i] = new Thread(() =>
+
+            this.threadArray[i] = new Thread(() =>
             {
                 try
                 {
-                    for (int i = 0; i < 100000; i++)
+                    for (var j = 0; j < 100000; j++)
                     {
                         Task.Delay(1000000);
                     }
-                    
-                    var result = parLazy.Get();
+
+                    var _ = parLazy.Get();
                 }
                 catch (Exception currentException)
                 {
@@ -119,13 +122,13 @@ public class SafeLazyTest
                 }
             });
         }
-        
-        _threadArray.StartAll();
-        _threadArray.JoinAll();
+
+        this.threadArray.StartAll();
+        this.threadArray.JoinAll();
 
         Assert.False(exceptions.HaveNullItem());
     }
-    
+
     /// <summary>
     /// Test method checking that the value is evaluated in threads.
     /// </summary>
@@ -133,24 +136,51 @@ public class SafeLazyTest
     public void MultipleLazyGetResultTest()
     {
         var resultArray = new object[ThreadCount];
-        
+
         var parLazy = new SafeLazy<object>(() => new object());
-        
+
         for (var i = 0; i < ThreadCount; i++)
         {
             var localIndex = i;
-            
-            _threadArray[i] = new Thread(() =>
+
+            this.threadArray[i] = new Thread(() =>
             {
                 var result = parLazy.Get();
 
                 resultArray[localIndex] = result;
             });
         }
-        
-        _threadArray.StartAll();
-        _threadArray.JoinAll();
+
+        this.threadArray.StartAll();
+        this.threadArray.JoinAll();
 
         Assert.False(resultArray.HaveNullItem());
+    }
+
+    /// <summary>
+    /// Number of increment thread test.
+    /// </summary>
+    [Test]
+    public void NumberOfIncrementThreadTest()
+    {
+        const int currentThreadCount = 100;
+        var countEvent = new CountdownEvent(currentThreadCount);
+
+        var incrementValue = 0;
+        var lazy = new SafeLazy<int>(() => incrementValue++);
+
+        for (var i = 0; i < currentThreadCount; i++)
+        {
+            new Thread(() =>
+            {
+                var _ = lazy.Get();
+
+                countEvent.Signal();
+            }).Start();
+        }
+
+        countEvent.Wait();
+
+        Assert.That(1, Is.EqualTo(incrementValue));
     }
 }

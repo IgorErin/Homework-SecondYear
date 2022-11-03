@@ -1,9 +1,9 @@
+namespace LazyTest;
+
 using System;
 using Lazy.Lazy;
-using Lazy.Utils;
+using Utils;
 using NUnit.Framework;
-
-namespace Lazy;
 
 /// <summary>
 /// Nunit test class with test methods.
@@ -13,15 +13,15 @@ public class UnsafeLazyTest
     private const int ResultCount = 10;
 
     /// <summary>
-    /// Test method checking that the value is evaluated once and always the same
+    /// Test method checking that the value is evaluated once and always the same.
     /// </summary>
     [Test]
     public void MultipleLazyGetResultsAreEqualsTest()
     {
         var resultArray = new object[ResultCount];
-        
+
         var seqLazy = new UnsafeLazy<object>(() => new object());
-        
+
         for (var i = 0; i < ResultCount; i++)
         {
             resultArray[i] = seqLazy.Get();
@@ -56,19 +56,19 @@ public class UnsafeLazyTest
         }
 
         var groupsCount = exceptions.DuplicatesGroupCount();
-        
+
         Assert.AreEqual(1, groupsCount);
     }
 
     /// <summary>
     /// Test method for checking if an exception is thrown in lazy computation.
     /// </summary>
-    /// <exception cref="Exception">Checked exception</exception>
+    /// <exception cref="Exception">Checked exception.</exception>
     [Test]
     public void LazyExceptionAreThrown()
     {
         var parLazy = new SafeLazy<Exception>(() => throw new Exception());
-        
+
         var exceptionAreThrown = false;
 
         for (var i = 0; i < ResultCount; i++)
@@ -85,18 +85,17 @@ public class UnsafeLazyTest
 
         Assert.True(exceptionAreThrown);
     }
-    
+
     /// <summary>
     /// Test method for checking the identity of lazy evaluation and regular evaluation.
     /// </summary>
-    
     [Test]
     public void LazyAndSimpleLoopSumResultAreEqualsTest()
     {
         var func = () =>
         {
             var sum = 0;
-            var sumCount = 10;
+            const int sumCount = 10;
 
             for (var i = 0; i < sumCount; i++)
             {
@@ -107,10 +106,10 @@ public class UnsafeLazyTest
         };
 
         var simpleResult = func.Invoke();
-        
+
         var lazy = new UnsafeLazy<int>(func);
         var lazyResult = lazy.Get();
-        
+
         Assert.AreEqual(simpleResult, lazyResult);
     }
 }

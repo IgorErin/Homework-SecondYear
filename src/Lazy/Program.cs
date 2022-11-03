@@ -1,40 +1,27 @@
 ﻿using Lazy.Lazy;
 
-namespace Lazy;
+Console.WriteLine("Lazy computation example: ");
 
-/// <summary>
-/// Main class in Lazy proj with Main method with lazy examples.
-/// </summary>
-public static class LazyMain
+var seqLazy = new UnsafeLazy<int>(() =>
 {
-    private const int TryCount = 3;
-    
-    public static void Main()
-    {
-        Console.WriteLine("Lazy computation example: ");
-        
-        var seqLazy = new UnsafeLazy<int>(() =>
-        {
-            Console.WriteLine("I computed in seqSafeLazy! Should be printed once...");
-            
-            return 1;
-        });
+    Console.WriteLine("I computed in UnsafeLazy! Should be printed once...");
 
-        for (var tryIndex = 0; tryIndex < TryCount; tryIndex++)
-        {
-            Console.WriteLine($"Computed and stored value: {seqLazy.Get()}");
-        }
+    return 1;
+});
 
-        var parLazy = new SafeLazy<int>(() =>
-        {
-            Console.WriteLine("I computed in parSafeLazy! Should be printed once...");
-            
-            return 1;
-        });
+for (var tryIndex = 0; tryIndex < 3; tryIndex++)
+{
+    Console.WriteLine($"Computed and stored value: {seqLazy.Get()}");
+}
 
-        for (var tryIndex = 0; tryIndex < TryCount; tryIndex++)
-        {
-            Console.WriteLine($"Computed and stored: {parLazy.Get()}");
-        }
-    }
+var parLazy = new SafeLazy<int>(() =>
+{
+    Console.WriteLine("I computed in SafeLazy! Should be printed once...");
+
+    return 1;
+});
+
+for (var tryIndex = 0; tryIndex < 3; tryIndex++)
+{
+    Console.WriteLine($"Computed and stored: {parLazy.Get()}");
 }
