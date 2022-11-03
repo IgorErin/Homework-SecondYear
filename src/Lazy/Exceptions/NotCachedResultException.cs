@@ -1,4 +1,4 @@
-namespace Lazy.ComputationCellExceptions;
+namespace Lazy.Exceptions;
 
 /// <summary>
 /// Exception thrown on mismatch on exception cache error in <see cref="Lazy{T}"/>.

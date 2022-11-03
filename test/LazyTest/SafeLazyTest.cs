@@ -49,9 +49,7 @@ public class SafeLazyTest
         this.threadArray.StartAll();
         this.threadArray.JoinAll();
 
-        var groupsCount = resultArray.DuplicatesGroupCount();
-
-        Assert.AreEqual(1, groupsCount);
+        Assert.IsTrue(resultArray.EveryoneIsTheSame());
     }
 
     /// <summary>
@@ -85,9 +83,7 @@ public class SafeLazyTest
         this.threadArray.StartAll();
         this.threadArray.JoinAll();
 
-        var groupsCount = exceptions.DuplicatesGroupCount();
-
-        Assert.AreEqual(1, groupsCount);
+        Assert.IsTrue(exceptions.EveryoneIsTheSame());
     }
 
     /// <summary>

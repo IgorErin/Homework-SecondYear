@@ -1,13 +1,13 @@
 namespace Lazy.Lazy;
 
-using ComputationCellExceptions;
+using Exceptions;
 using Optional;
 
 /// <summary>
 /// Lazy evaluation class for multi thread execution.
 /// <inheritdoc cref="Lazy{T}"/>
 /// </summary>
-/// <typeparam name="T">Result type of lazy computed expression, see <see cref="Lazy{T}"/></typeparam>
+/// <typeparam name="T">Result type of lazy computed expression, see <see cref="Lazy{T}"/>.</typeparam>
 public class SafeLazy<T> : Lazy<T>
 {
     private readonly object locker = new ();

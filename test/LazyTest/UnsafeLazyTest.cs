@@ -27,9 +27,7 @@ public class UnsafeLazyTest
             resultArray[i] = seqLazy.Get();
         }
 
-        var groupsCount = resultArray.DuplicatesGroupCount();
-
-        Assert.AreEqual(1, groupsCount);
+        Assert.IsTrue(resultArray.EveryoneIsTheSame());
     }
 
     /// <summary>
@@ -55,9 +53,7 @@ public class UnsafeLazyTest
             }
         }
 
-        var groupsCount = exceptions.DuplicatesGroupCount();
-
-        Assert.AreEqual(1, groupsCount);
+        Assert.IsTrue(exceptions.EveryoneIsTheSame());
     }
 
     /// <summary>
@@ -67,23 +63,9 @@ public class UnsafeLazyTest
     [Test]
     public void LazyExceptionAreThrown()
     {
-        var parLazy = new SafeLazy<Exception>(() => throw new Exception());
+        var parLazy = new SafeLazy<Exception>(() => throw new TestException());
 
-        var exceptionAreThrown = false;
-
-        for (var i = 0; i < ResultCount; i++)
-        {
-            try
-            {
-                parLazy.Get();
-            }
-            catch (Exception _)
-            {
-                exceptionAreThrown = true;
-            }
-        }
-
-        Assert.True(exceptionAreThrown);
+        Assert.Throws<TestException>(() => parLazy.Get());
     }
 
     /// <summary>

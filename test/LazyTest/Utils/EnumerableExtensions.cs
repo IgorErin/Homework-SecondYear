@@ -18,6 +18,15 @@ public static class EnumerableExtensions
         => groups.GroupBy(x => x).Count();
 
     /// <summary>
+    /// Lets you find out if the items in the collection are the same.
+    /// </summary>
+    /// <param name="collection">Collection to check.</param>
+    /// <typeparam name="T">Type of items.</typeparam>
+    /// <returns>True if all the elements of the collection are the same, otherwise - false.</returns>
+    public static bool EveryoneIsTheSame<T>(this IEnumerable<T> collection)
+        => collection.DuplicatesGroupCount() == 1;
+
+    /// <summary>
     /// Function - predicate.
     /// </summary>
     /// <param name="elements">Collection to search for zero.</param>

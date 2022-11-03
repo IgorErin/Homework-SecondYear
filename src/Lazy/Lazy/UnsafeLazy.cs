@@ -1,6 +1,6 @@
 namespace Lazy.Lazy;
 
-using ComputationCellExceptions;
+using Exceptions;
 using Optional;
 
 /// <summary>
