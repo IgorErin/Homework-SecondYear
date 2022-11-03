@@ -41,7 +41,7 @@ public class ComputationCellTest
     [Test]
     public void ComputationInAnotherThreadTest()
     {
-        var localComputationCell = new ComputationCell<int>(() => FirstResult);
+        var localComputationCell = new ComputationCell<int>(() => 1);
         var thread = new Thread(() =>
             {
                 localComputationCell.Compute();
@@ -61,10 +61,9 @@ public class ComputationCellTest
     [Test]
     public void NumberOfComputationInAnotherThreadsTest()
     {
-        var processorCount = Environment.ProcessorCount;
-        var threads = new Thread[processorCount];
-
         const int iterationNumber = 100;
+
+        var threads = new Thread[iterationNumber];
 
         for (var i = 0; i < iterationNumber; i++)
         {
@@ -107,10 +106,9 @@ public class ComputationCellTest
     [Test]
     public void NumberOfExceptionsInAnotherThreads()
     {
-        var processorCount = Environment.ProcessorCount;
-        var threads = new Thread[processorCount];
-
         const int iterationNumber = 100;
+
+        var threads = new Thread[iterationNumber];
 
         for (var i = 0; i < iterationNumber; i++)
         {

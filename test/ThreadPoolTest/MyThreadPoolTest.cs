@@ -33,16 +33,13 @@ public class MyThreadPoolTest
     {
         var expectedResult = new object();
 
-        for (var i = 0; i < 100; i++)
-        {
-            using var threadPool = new MyThreadPool(this.processorCount);
+        using var threadPool = new MyThreadPool(this.processorCount);
 
-            var testTask = threadPool.Submit(() => expectedResult);
+        var testTask = threadPool.Submit(() => expectedResult);
 
-            threadPool.ShutDown();
+        threadPool.ShutDown();
 
-            Assert.That(testTask.Result, Is.EqualTo(expectedResult));
-        }
+        Assert.That(testTask.Result, Is.EqualTo(expectedResult));
     }
 
     /// <summary>
@@ -106,7 +103,7 @@ public class MyThreadPoolTest
         var testTask = threadPool.Submit(() => resultObject);
         threadPool.ShutDown();
 
-        Assert.Throws<MyTaskException>(() =>
+        Assert.Throws<MyThreadPoolException>(() =>
         {
             var _ = testTask.ContinueWith(result => result);
         });
