@@ -1,33 +1,25 @@
-﻿namespace ThreadPool;
+﻿using ThreadPool;
 
-class PoolMain
+Console.WriteLine($"main thread: {Environment.CurrentManagedThreadId}");
+using var threadPool = new MyThreadPool(4);
+
+var myFunc = () =>
 {
-    /// <summary>
-    /// <see cref="MyThreadPool"/> use case.
-    /// </summary>
-    public static void Main()
-    {
-        Console.WriteLine($"main thread: {Environment.CurrentManagedThreadId}");
-        using var threadPool = new MyThreadPool(4);
+    Console.WriteLine($"FirstTask core = {Environment.CurrentManagedThreadId}");
 
-        var myFunc = () =>
-        {
-            Console.WriteLine($"FirstTask core = {Environment.CurrentManagedThreadId}");
-            
-            return 2 * 2;
-        };
+    return 2 * 2;
+};
 
-        var myContinuation = (int x) =>
-        {
-            Console.WriteLine($"Continuation core = {Environment.CurrentManagedThreadId}");
-            Console.WriteLine($"Result = {x}");
-            
-            return x;
-        };
+var myContinuation = (int x) =>
+{
+    Console.WriteLine($"Continuation core = {Environment.CurrentManagedThreadId}");
+    Console.WriteLine($"Result = {x}");
 
-        var firstTask = threadPool.Submit(myFunc);
-        var _ = firstTask.ContinueWith(myContinuation);
-        
-        var __ = firstTask.Result;
-    }
-}
+    return x;
+};
+
+var firstTask = threadPool.Submit(myFunc);
+var _ = firstTask.ContinueWith(myContinuation);
+
+var __ = firstTask.Result;
+

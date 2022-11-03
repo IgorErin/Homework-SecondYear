@@ -1,6 +1,6 @@
-using ThreadPool.Common;
-
 namespace ThreadPool;
+
+using Common;
 
 /// <summary>
 /// <see cref="MyTask.MyTask{TResult}"/> Nunit test class.
@@ -25,7 +25,7 @@ public class MyTaskTest
 
         var result = newTask.Result;
         threadPool.ShutDown();
-        
+
         Assert.That(result, Is.EqualTo(expectedResultValue));
     }
 
@@ -38,45 +38,14 @@ public class MyTaskTest
     {
         using var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var expectedResult = new object();
-        
+
         var newTask = threadPool.Submit(() => expectedResult);
-        
+
         var result = newTask.Result;
-        
+
         threadPool.ShutDown();
-        
+
         Assert.That(result, Is.EqualTo(expectedResult));
-    }
-
-    /// <summary>
-    /// <see cref="MyTask.MyTask{TResult}.Result"/> throws test exception.
-    /// </summary>
-    /// <exception cref="TestException">Exception that <see cref="MyTask.MyTask{TResult}.Result"/> thrown.</exception>
-    [Test]
-    public void TaskExceptionResultTest()
-    {
-        using var threadPool = new MyThreadPool(Environment.ProcessorCount);
-        var testException = new TestException();
-        var newTestTask = threadPool.Submit(() =>
-        {
-            throw testException;
-            return 0;
-        });
-
-        try
-        {
-            var result = newTestTask.Result;
-
-            Assert.Fail();
-        }
-        catch (AggregateException e)
-        {
-            Assert.That(e.InnerException, Is.EqualTo(testException));
-        }
-        finally
-        {
-            threadPool.ShutDown();
-        }
     }
 
     /// <summary>
@@ -88,31 +57,29 @@ public class MyTaskTest
         using var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var processorCount = Environment.ProcessorCount;
         var threads = new Thread[processorCount];
-        
+
         for (var i = 0; i < IterCount; i++)
         {
             var results = new object[processorCount];
-            
-            var testResultObject = new object();
-            var newTask = threadPool.Submit(() => testResultObject);
-            
+
+            var newTask = threadPool.Submit(() => new object());
+
             for (var j = 0; j < processorCount; j++)
             {
                 var localIndex = j;
+
                 threads[j] = new Thread(() =>
                 {
                     results[localIndex] = newTask.Result;
                 });
             }
-            
+
             threads.StartAndJoinAllThreads();
-            
-            Assert.True(results.IsAllEqualAndNotNull());
+
+            Assert.That(results.IsAllTheSameAndNotNull, Is.True);
         }
-        
-        threadPool.ShutDown();
     }
-    
+
     /// <summary>
     /// <see cref="MyTask.MyTask{TResult}.Result"/> gives the same exception in other threads.
     /// </summary>
@@ -123,44 +90,37 @@ public class MyTaskTest
         using var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var processorCount = Environment.ProcessorCount;
         var threads = new Thread[processorCount];
-        
+
         for (var i = 0; i < IterCount; i++)
         {
-            var results = new Exception[processorCount];
-            
+            var results = new Exception?[processorCount];
+
             var testException = new TestException();
-            var newTask = threadPool.Submit(() =>
-            {
-                throw testException;
-                return 0;
-            });
-            
+            var newTask = threadPool.Submit<int>(() => throw testException);
+
             for (var j = 0; j < processorCount; j++)
             {
                 var localIndex = j;
+
                 threads[j] = new Thread(() =>
                 {
-                    try
+                    var aggregateException = Assert.Throws<AggregateException>(() =>
                     {
-                        var result = newTask.Result;
-                    }
-                    catch (AggregateException e)
-                    {
-                        results[localIndex] = e.InnerException;
-                    }
+                        var _ = newTask.Result;
+                    });
+
+                    results[localIndex] = aggregateException!.InnerException;
                 });
             }
-            
+
             threads.StartAndJoinAllThreads();
-            
-            Assert.True(results.IsAllEqualAndNotNull());
+
+            MyAssert.NotNullAndAllEqualsTo(results, testException);
         }
-        
-        threadPool.ShutDown();
     }
 
     /// <summary>
-    /// The correct result of the first task in the <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>
+    /// The correct result of the first task in the <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>.
     /// </summary>
     /// <param name="firstTaskResultValue">Result value.</param>
     [TestCase(-1000)]
@@ -171,17 +131,17 @@ public class MyTaskTest
     {
         using var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var newTestTask = threadPool.Submit(() => firstTaskResultValue);
-        var testTaskContinuation = newTestTask.ContinueWith(result => result);
+        var testTaskContinuation = newTestTask.ContinueWith(result => -result);
 
         var result = testTaskContinuation.Result;
-        
+
         threadPool.ShutDown();
-        
-        Assert.That(result, Is.EqualTo(firstTaskResultValue));
+
+        Assert.That(result, Is.EqualTo(-firstTaskResultValue));
     }
-    
+
     /// <summary>
-    /// The correct exception of the base task in the <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>
+    /// The correct exception of the base task in the <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>.
     /// </summary>
     /// <exception cref="TestException">Base task exception.</exception>
     [Test]
@@ -189,32 +149,20 @@ public class MyTaskTest
     {
         using var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var testException = new TestException();
-        
-        var newTestTask = threadPool.Submit(() =>
-        {
-            throw testException;
-            return 0;
-        });
+
+        var newTestTask = threadPool.Submit<int>(() => throw testException);
         var testTaskContinuation = newTestTask.ContinueWith(result => result);
 
-        try
+        var aggregateException = Assert.Throws<AggregateException>(() =>
         {
-            var result = testTaskContinuation.Result;
-
-            Assert.Fail();
-        }
-        catch (AggregateException e)
-        {
-            Assert.That(e.InnerException, Is.EqualTo(testException));
-        }
-        finally
-        {
-            threadPool.ShutDown();
-        }
+            var _ = testTaskContinuation.Result;
+        });
+        Assert.That(aggregateException!.InnerException, Is.EqualTo(testException));
     }
-    
+
     /// <summary>
-    ///  The correct exception of the continuation task in the <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>
+    ///  The correct exception of the continuation task in the
+    /// <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>.
     /// </summary>
     /// <exception cref="TestException">Result exception.</exception>
     [Test]
@@ -222,26 +170,14 @@ public class MyTaskTest
     {
         using var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var testException = new TestException();
+
         var newTestTask = threadPool.Submit(() => 0);
-        var testTaskContinuation = newTestTask.ContinueWith(result =>
+        var testTaskContinuation = newTestTask.ContinueWith<int>(_ => throw testException);
+
+        var aggregateException = Assert.Throws<AggregateException>(() =>
         {
-            throw testException;
-            return 0;
+            var _ = testTaskContinuation.Result;
         });
-
-        try
-        {
-            var result = testTaskContinuation.Result;
-
-            Assert.Fail();
-        }
-        catch (AggregateException e)
-        {
-            Assert.That(e.InnerException, Is.EqualTo(testException));
-        }
-        finally
-        {
-            threadPool.ShutDown();
-        }
+        Assert.That(aggregateException!.InnerException, Is.EqualTo(testException));
     }
 }

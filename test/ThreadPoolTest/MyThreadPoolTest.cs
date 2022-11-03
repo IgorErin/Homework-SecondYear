@@ -1,34 +1,28 @@
-using ThreadPool.Common;
-using ThreadPool.Exceptions;
-
 namespace ThreadPool;
+
+using Common;
+using Exceptions;
 
 /// <summary>
 /// <see cref="MyThreadPool"/> Nunit test class.
 /// </summary>
 public class MyThreadPoolTest
 {
-    private readonly int _processorCount = Environment.ProcessorCount;
-    
+    private readonly int processorCount = Environment.ProcessorCount;
+
     /// <summary>
     /// <see cref="MyThreadPool"/> init threads count test.
     /// </summary>
-    /// <param name="threadCount">Init thread count value</param>
+    /// <param name="threadCount">Init thread count value.</param>
     [TestCase(-1000)]
     [TestCase(-10)]
     [TestCase(0)]
     public void ThreadsCountTest(int threadCount)
     {
-        try
+        Assert.Throws<MyThreadPoolException>(() =>
         {
-            using var threadPool = new MyThreadPool(threadCount);
-            
-            Assert.Fail();
-        }
-        catch (MyThreadPoolException e)
-        {
-            Assert.Pass();
-        }
+            var _ = new MyThreadPool(threadCount);
+        });
     }
 
     /// <summary>
@@ -38,18 +32,16 @@ public class MyThreadPoolTest
     public void ThreadShutDownTest()
     {
         var expectedResult = new object();
-        
+
         for (var i = 0; i < 100; i++)
         {
-            using var threadPool = new MyThreadPool(_processorCount);
+            using var threadPool = new MyThreadPool(this.processorCount);
 
             var testTask = threadPool.Submit(() => expectedResult);
-            
+
             threadPool.ShutDown();
 
-            var taskResult = testTask.Result;
-            
-            Assert.That(taskResult, Is.EqualTo(expectedResult));
+            Assert.That(testTask.Result, Is.EqualTo(expectedResult));
         }
     }
 
@@ -59,27 +51,29 @@ public class MyThreadPoolTest
     [Test]
     public void ConcurrentThreadShotDownTest()
     {
-        var threads = new Thread[_processorCount];
-        var results = new object[_processorCount];
+        const int arrayLenght = 100;
+
+        var threads = new Thread[arrayLenght];
+        var results = new object[arrayLenght];
         var newResult = new object();
 
-        for (var i = 0; i < _processorCount; i++)
+        for (var i = 0; i < arrayLenght; i++)
         {
             var localResultIndex = i;
-            
+
             threads[i] = new Thread(() =>
             {
-                using var threadPool = new MyThreadPool(_processorCount);
+                using var threadPool = new MyThreadPool(this.processorCount);
                 var task = threadPool.Submit(() => newResult);
-                
+
                 threadPool.ShutDown();
                 results[localResultIndex] = task.Result;
             });
         }
-        
+
         threads.StartAndJoinAllThreads();
-        
-        Assert.True(results.IsAllEqualAndNotNull());
+
+        Assert.That(results.IsAllTheSameAndNotNull(), Is.True);
     }
 
     /// <summary>
@@ -89,22 +83,16 @@ public class MyThreadPoolTest
     public void SubmitAfterShutDownTest()
     {
         var resultObject = new object();
-        
-        var threadPool = new MyThreadPool(_processorCount);
+
+        var threadPool = new MyThreadPool(this.processorCount);
         threadPool.ShutDown();
 
-        try
+        Assert.Throws<MyThreadPoolException>(() =>
         {
-            var testTask = threadPool.Submit(() => resultObject);
-            
-            Assert.Fail();
-        }
-        catch (MyThreadPoolException e)
-        {
-            Assert.Pass();
-        }
+            var _ = threadPool.Submit(() => resultObject);
+        });
     }
-    
+
     /// <summary>
     /// Calling <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>
     /// after <see cref="MyThreadPool.ShutDown()"/> test.
@@ -113,24 +101,14 @@ public class MyThreadPoolTest
     public void ContinueAfterShutDownTest()
     {
         var resultObject = new object();
-        
-        var threadPool = new MyThreadPool(_processorCount);
+
+        var threadPool = new MyThreadPool(this.processorCount);
         var testTask = threadPool.Submit(() => resultObject);
         threadPool.ShutDown();
-        
-        try
+
+        Assert.Throws<MyTaskException>(() =>
         {
-            var continueTask = testTask.ContinueWith(result =>
-            {
-                Console.Write(result);
-                return 1;
-            });
-            
-            Assert.Fail();
-        }
-        catch (MyThreadPoolException e)
-        {
-            Assert.Pass();
-        }
+            var _ = testTask.ContinueWith(result => result);
+        });
     }
 }

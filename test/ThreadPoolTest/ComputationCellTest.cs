@@ -1,39 +1,39 @@
-using ThreadPool.Common;
-using ThreadPool.Exceptions;
-
 namespace ThreadPool;
+
+using Common;
 
 /// <summary>
 /// <see cref="ComputationCell{TResult}"/> nunit test class.
 /// </summary>
 public class ComputationCellTest
 {
-    private ComputationCell<int> _computationResulCell = new (() => 2 * 2);
-    private ComputationCell<int> _computationCellWithExceptionResult = new (() => throw new TestException());
-
     private const int FirstResult = 4;
 
+    private ComputationCell<int> computationResulCell = new (() => 2 * 2);
+    private ComputationCell<int> computationCellWithExceptionResult = new (() => throw new TestException());
+
+    /// <summary>
+    /// Set up method.
+    /// </summary>
     [SetUp]
     public void SetUp()
     {
-        _computationResulCell = new ComputationCell<int>(() => FirstResult);
-        _computationCellWithExceptionResult = new ComputationCell<int>(() => throw new TestException());
+        this.computationResulCell = new ComputationCell<int>(() => FirstResult);
+        this.computationCellWithExceptionResult = new ComputationCell<int>(() => throw new TestException());
     }
 
-    
     /// <summary>
     /// <see cref="ComputationCell{TResult}.Result"/> test.
     /// </summary>
     [Test]
     public void GetResultTest()
     {
-        _computationResulCell.Compute();
-            
-        var result = _computationResulCell.Result;
-        
+        this.computationResulCell.Compute();
+
+        var result = this.computationResulCell.Result;
+
         Assert.That(result, Is.EqualTo(FirstResult));
     }
-
 
     /// <summary>
     /// <see cref="ComputationCell{TResult}.Compute()"/> in another thread test.
@@ -44,25 +44,19 @@ public class ComputationCellTest
         var localComputationCell = new ComputationCell<int>(() => FirstResult);
         var thread = new Thread(() =>
             {
-                lock (localComputationCell)
-                {
-                    if (!localComputationCell.IsComputed)
-                    {
-                        localComputationCell.Compute();
-                    }
-                }
+                localComputationCell.Compute();
             });
-        
+
         thread.Start();
         thread.Join();
 
         var result = localComputationCell.IsComputed;
-        
-        Assert.That(result, Is.EqualTo(true));
+
+        Assert.That(result, Is.True);
     }
 
     /// <summary>
-    /// Number of calling <see cref="ComputationCell{TResult}.Compute()"/> in another threads test.
+    /// Number of calling <see cref="ComputationCell{TResult}.Result"/> in another threads test.
     /// </summary>
     [Test]
     public void NumberOfComputationInAnotherThreadsTest()
@@ -74,22 +68,22 @@ public class ComputationCellTest
 
         for (var i = 0; i < iterationNumber; i++)
         {
-            var testObject = new object();
-            var newComputationCell = new ComputationCell<object>(() => testObject);
+            var newComputationCell = new ComputationCell<object>(() => new object());
+            var results = new object[iterationNumber];
 
-            for (var j = 0; j < processorCount; j++)
+            for (var j = 0; j < iterationNumber; j++)
             {
+                var localIndex = j;
+
                 threads[j] = new Thread(() =>
                 {
-                    newComputationCell.Compute();
+                    results[localIndex] = newComputationCell.Result;
                 });
             }
 
             threads.StartAndJoinAllThreads();
 
-            var result = newComputationCell.Result;
-            
-            Assert.That(result, Is.EqualTo(testObject));
+            Assert.That(results.IsAllTheSameAndNotNull, Is.True);
         }
     }
 
@@ -99,24 +93,17 @@ public class ComputationCellTest
     [Test]
     public void ExceptionInComputationCellTest()
     {
-        try
+        this.computationCellWithExceptionResult.Compute();
+
+        Assert.Throws<TestException>(() =>
         {
-            _computationCellWithExceptionResult.Compute();
-            
-            var result = _computationCellWithExceptionResult.Result;
-            
-            Assert.Fail();
-        }
-        catch (Exception e)
-        {
-            Assert.That(e, Is.InstanceOf(typeof(TestException)));
-        }
+            var _ = this.computationCellWithExceptionResult.Result;
+        });
     }
-    
+
     /// <summary>
     /// The number of exceptions thrown by the <see cref="ComputationCell{TResult}.Result()"/> in other threads.
     /// </summary>
-    /// <exception cref="TestException"></exception>
     [Test]
     public void NumberOfExceptionsInAnotherThreads()
     {
@@ -129,24 +116,28 @@ public class ComputationCellTest
         {
             var newComputationCell = new ComputationCell<int>(() => throw new TestException());
 
-            for (var j = 0; j < processorCount; j++)
+            var exceptions = new Exception[iterationNumber];
+
+            for (var j = 0; j < iterationNumber; j++)
             {
+                var localIndex = j;
+
                 threads[j] = new Thread(() =>
                 {
-                    newComputationCell.Compute();
+                    try
+                    {
+                        var _ = newComputationCell.Result;
+                    }
+                    catch (TestException currentException)
+                    {
+                        exceptions[localIndex] = currentException;
+                    }
                 });
             }
-            
+
             threads.StartAndJoinAllThreads();
 
-            try
-            {
-                var result = newComputationCell.Result;
-            }
-            catch (Exception e)
-            {
-                Assert.That(e, Is.InstanceOf(typeof(TestException)));
-            }
+            Assert.That(exceptions.IsAllTheSameAndNotNull(), Is.True);
         }
     }
 }

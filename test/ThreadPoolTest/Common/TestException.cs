@@ -1,19 +1,15 @@
-using System;
-
 namespace ThreadPool.Common;
 
+/// <summary>
+/// Exception for tests.
+/// </summary>
 [Serializable]
 public class TestException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestException"/> class.
+    /// </summary>
     public TestException()
-    {
-    }
-
-    public TestException(string message) : base(message)
-    {
-    }
-
-    public TestException(string messge, Exception inner) : base(messge, inner)
     {
     }
 }

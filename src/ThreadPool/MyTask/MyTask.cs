@@ -1,27 +1,40 @@
-using System.Collections.Concurrent;
-using ThreadPool.Exceptions;
-
 namespace ThreadPool.MyTask;
 
+using System.Collections.Concurrent;
+using Exceptions;
+
 /// <summary>
-/// Class that implement <see cref="IMyTask{TResult}"/>, <inheritdoc cref="IMyTask{TResult}"/>
+/// Class that implement <see cref="IMyTask{TResult}"/>.<inheritdoc cref="IMyTask{TResult}"/>
 /// </summary>
 /// <typeparam name="TResult">Result type.</typeparam>
 public class MyTask<TResult> : IMyTask<TResult>
 {
-    private readonly ComputationCell<TResult> _computationCell;
-    private readonly MyThreadPool _threadPool;
+    private readonly ComputationCell<TResult> computationCell;
+    private readonly MyThreadPool threadPool;
 
-    private readonly BlockingCollection<Action> _actions; 
+    private readonly BlockingCollection<Action> actions;
 
-    public bool IsCompleted
-    {
-        get => _computationCell.IsComputed;
-    }
-    
     /// <summary>
-    /// A property that returns the result of the evaluation or,
-    /// if it has not yet been evaluated,
+    /// Initializes a new instance of the <see cref="MyTask{TResult}"/> class.
+    /// </summary>
+    /// <param name="threadPool">Thread pool that perform computations.</param>
+    /// <param name="computationCell">Cell that encapsulates calculation and state of result.</param>
+    /// <param name="actions">Actions that will be performed immediately after the completion of the task.</param>
+    public MyTask(MyThreadPool threadPool, ComputationCell<TResult> computationCell, BlockingCollection<Action> actions)
+    {
+        this.computationCell = computationCell;
+        this.threadPool = threadPool;
+
+        this.actions = actions;
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether task is completed.
+    /// </summary>
+    public bool IsCompleted => this.computationCell.IsComputed;
+
+    /// <summary>
+    /// Gets the result of the evaluation or, if it has not yet been evaluated,
     /// blocks the calling thread until it is evaluated and returns the value.
     /// </summary>
     /// <exception cref="MyTaskException">Will be thrown on runtime error.</exception>
@@ -34,7 +47,7 @@ public class MyTask<TResult> : IMyTask<TResult>
         {
             try
             {
-                return GetResultFromComputationCell();
+                return this.GetResultFromComputationCell();
             }
             catch (ComputationCellException e)
             {
@@ -45,19 +58,6 @@ public class MyTask<TResult> : IMyTask<TResult>
                 throw new AggregateException(e);
             }
         }
-    }
-    
-    /// <summary>
-    /// Class constructor.
-    /// </summary>
-    /// <param name="threadPool">Thread pool that perform computations</param>
-    /// <param name="computationCell">Cell that encapsulates calculation and state of result</param>
-    public MyTask(MyThreadPool threadPool, ComputationCell<TResult> computationCell, BlockingCollection<Action> actions)
-    {
-        _computationCell = computationCell;
-        _threadPool = threadPool;
-
-        _actions = actions;
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ public class MyTask<TResult> : IMyTask<TResult>
     /// Result type of curried function.
     /// </typeparam>
     /// <returns>
-    /// Abstraction over computation in form of <see cref="IMyTask{TResult}"/>
+    /// Abstraction over computation in form of <see cref="IMyTask{TResult}"/>.
     /// </returns>
     /// <exception cref="AggregateException">
     /// An exception will be thrown when the exception is thrown in the original task
@@ -80,28 +80,28 @@ public class MyTask<TResult> : IMyTask<TResult>
     {
         var newFunc = () =>
         {
-            var result = GetResultFromComputationCell();
+            var result = this.GetResultFromComputationCell();
 
             return continuation.Invoke(result);
         };
 
-        if (IsCompleted || _actions.IsAddingCompleted)
+        if (this.IsCompleted || this.actions.IsAddingCompleted)
         {
-            return _threadPool.Submit(newFunc);
+            return this.threadPool.Submit(newFunc);
         }
 
         try
         {
-            Monitor.Enter(_actions);
+            Monitor.Enter(this.actions);
 
-            if (IsCompleted || _actions.IsAddingCompleted)
+            if (this.IsCompleted || this.actions.IsAddingCompleted)
             {
-                return _threadPool.Submit(newFunc);
+                return this.threadPool.Submit(newFunc);
             }
 
-            var (newTask, newCell) = MyTaskFactory.CreateContinuation(newFunc, _threadPool);
+            var (newTask, newCell) = MyTaskFactory.CreateContinuation(newFunc, this.threadPool);
 
-           _actions.Add(() => newCell.Compute());
+            this.actions.Add(() => newCell.Compute());
 
             return newTask;
         }
@@ -111,21 +111,20 @@ public class MyTask<TResult> : IMyTask<TResult>
         }
         finally
         {
-            if (Monitor.IsEntered(_actions))
+            if (Monitor.IsEntered(this.actions))
             {
-                Monitor.Exit(_actions);
+                Monitor.Exit(this.actions);
             }
         }
-        
     }
 
     private TResult GetResultFromComputationCell()
     {
-        if (!_computationCell.IsComputed)
+        if (!this.computationCell.IsComputed)
         {
-            _computationCell.Compute();
+            this.computationCell.Compute();
         }
-        
-        return _computationCell.Result;
+
+        return this.computationCell.Result;
     }
 }

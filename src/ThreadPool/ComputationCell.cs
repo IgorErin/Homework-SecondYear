@@ -1,7 +1,7 @@
-using Optional;
-using ThreadPool.Exceptions;
-
 namespace ThreadPool;
+
+using Optional;
+using Exceptions;
 
 /// <summary>
 /// The class encapsulates the calculation, its result and state.
@@ -11,60 +11,39 @@ namespace ThreadPool;
 /// </typeparam>
 public class ComputationCell<TResult>
 {
-    private readonly Func<TResult> _func;
+    private readonly Func<TResult> func;
 
-    private readonly Action _prevAction;
+    private readonly object locker = new ();
 
-    private Option<Func<TResult>> _optionResult = Option.None<Func<TResult>>();
+    private Option<Func<TResult>> optionResult = Option.None<Func<TResult>>();
 
-    private volatile bool _funcIsComputed;
-
-    private readonly object _locker = new ();
+    private volatile bool funcIsComputed;
 
     /// <summary>
-    /// Indicate state of computation.
+    /// Initializes a new instance of the <see cref="ComputationCell{TResult}"/> class.
     /// </summary>
-    public bool IsComputed
+    /// <param name="func">Function that will be computed.</param>
+    public ComputationCell(Func<TResult> func)
     {
-        get => _funcIsComputed;
+        this.func = func;
     }
 
     /// <summary>
-    /// Property that allows you to get the result of a calculation.
+    /// Gets a value indicating whether result is computed.
+    /// </summary>
+    public bool IsComputed => this.funcIsComputed;
+
+    /// <summary>
+    /// Gets the result of a calculation.
     /// </summary>
     /// <exception cref="ComputationCellException">
     /// If the result is not calculated, an exception will be thrown, see <see cref="ComputationCellException"/>.
     /// </exception>
     public TResult Result
     {
-        get
-            => _optionResult.Match(
+        get => this.optionResult.Match(
                 some: result => result.Invoke(),
-                none: () => ComputeAndGetResult()
-            );
-    }
-
-    /// <summary>
-    /// Constructor of class <see cref="ComputationCell{TResult}"/> 
-    /// </summary>
-    /// <param name="func">Function that will be computed.</param>
-    /// <param name="prevAction">
-    /// Action that will be called in the event of a <see cref="Result"/> call before the <see cref="Compute"/>
-    /// </param>
-    public ComputationCell(Func<TResult> func, Action prevAction)
-    {
-        _func = func;
-        _prevAction = prevAction;
-    }
-
-    /// <summary>
-    /// Constructor of class <see cref="ComputationCell{TResult}"/> 
-    /// </summary>
-    /// <param name="func">
-    /// Function that will be computed.
-    /// </param>
-    public ComputationCell(Func<TResult> func) : this(func, () => { })
-    {
+                none: () => this.ComputeAndGetResult());
     }
 
     /// <summary>
@@ -73,35 +52,37 @@ public class ComputationCell<TResult>
     /// </summary>
     public void Compute()
     {
-        lock (_locker)
+        lock (this.locker)
         {
-            if (!_funcIsComputed)
+            if (!this.funcIsComputed)
             {
-                try
-                {
-                    var result = _func.Invoke();
-                    var newResultFunc = () => result;
+                return;
+            }
 
-                    _optionResult = (newResultFunc).Some();
-                }
-                catch (Exception exceptionResult)
-                {
-                    var newExceptionFunc = new Func<TResult>(() => throw exceptionResult);
+            try
+            {
+                var result = this.func.Invoke();
+                var newResultFunc = () => result;
 
-                    _optionResult = newExceptionFunc.Some();
-                }
-                finally
-                {
-                    _funcIsComputed = true;
-                }
+                this.optionResult = newResultFunc.Some();
+            }
+            catch (Exception exceptionResult)
+            {
+                var newExceptionFunc = new Func<TResult>(() => throw exceptionResult);
+
+                this.optionResult = newExceptionFunc.Some();
+            }
+            finally
+            {
+                this.funcIsComputed = true;
             }
         }
     }
 
     private TResult ComputeAndGetResult()
     {
-        Compute();
+        this.Compute();
 
-        return Result;
+        return this.Result;
     }
 }

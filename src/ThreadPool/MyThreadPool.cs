@@ -1,26 +1,26 @@
+namespace ThreadPool;
+
 using System.Collections.Concurrent;
 using Optional;
-using ThreadPool.Exceptions;
-using ThreadPool.MyTask;
-
-namespace ThreadPool;
+using Exceptions;
+using MyTask;
 
 /// <summary>
 /// Thread pool that implement <see cref="IDisposable"/>.
 /// </summary>
 public sealed class MyThreadPool : IDisposable
 {
-    private readonly BlockingCollection<Action> _queue;
+    private readonly BlockingCollection<Action> queue;
 
-    private readonly CountdownEvent _threadsCompletedEvent;
+    private readonly CountdownEvent threadsCompletedEvent;
 
-    private volatile bool _isDisposed;
-    private volatile bool _isShutDown;
+    private readonly object locker = new ();
 
-    private readonly object _locker = new ();
+    private volatile bool isDisposed;
+    private volatile bool isShutDown;
 
     /// <summary>
-    /// Class constructor.
+    /// Initializes a new instance of the <see cref="MyThreadPool"/> class.
     /// </summary>
     /// <param name="threadCount">
     /// Number strictly greater than zero - number of threads processing tasks.
@@ -30,41 +30,40 @@ public sealed class MyThreadPool : IDisposable
         if (threadCount <= 0)
         {
             throw new MyThreadPoolException(
-                $"the number of threads must be greater than 0, but was = {threadCount}"
-                );
+                $"the number of threads must be greater than 0, but was = {threadCount}");
         }
-        
-        _queue = new BlockingCollection<Action>();
-        
-        _threadsCompletedEvent = new CountdownEvent(threadCount);
+
+        this.queue = new BlockingCollection<Action>();
+
+        this.threadsCompletedEvent = new CountdownEvent(threadCount);
 
         for (var i = 0; i < threadCount; i++)
         {
-            var _ = new ThreadPoolItem(_queue, _threadsCompletedEvent);
+            var _ = new ThreadPoolItem(this.queue, this.threadsCompletedEvent);
         }
     }
-    
+
     /// <summary>
-    /// A method that allows you to add a task for execution in the form of <see cref="Func{TResult}"/>
+    /// A method that allows you to add a task for execution in the form of <see cref="Func{TResult}"/>.
     /// </summary>
     /// <param name="func">Function whose value will be computed as one.</param>
     /// <typeparam name="TResult">Function result type.</typeparam>
-    /// <returns>Abstraction over the task accepted for execution, see <see cref="IMyTask{TResult}"/></returns>
+    /// <returns>Abstraction over the task accepted for execution, see <see cref="IMyTask{TResult}"/>.</returns>
     public MyTask<TResult> Submit<TResult>(Func<TResult> func)
     {
         var resultTask = Option.None<MyTask<TResult>>();
 
         try
         {
-            Monitor.Enter(_locker);
+            Monitor.Enter(this.locker);
 
-            if (!_isShutDown)
+            if (!this.isShutDown)
             {
                 var (newTask, newCell) = MyTaskFactory.CreateNewTaskAndCell(func, this);
 
                 resultTask = newTask.Some<MyTask<TResult>>();
 
-                _queue.Add(() => newCell.Compute());
+                this.queue.Add(() => newCell.Compute());
             }
         }
         catch (Exception e)
@@ -73,13 +72,13 @@ public sealed class MyThreadPool : IDisposable
         }
         finally
         {
-            if (Monitor.IsEntered(_locker))
+            if (Monitor.IsEntered(this.locker))
             {
-                Monitor.Exit(_locker);
+                Monitor.Exit(this.locker);
             }
         }
 
-        return resultTask.ValueOr(() => throw new MyThreadPoolException("submit error, task not added)")); // TODO()
+        return resultTask.ValueOr(() => throw new MyThreadPoolException("submit error, task not added)"));
     }
 
     /// <summary>
@@ -89,16 +88,18 @@ public sealed class MyThreadPool : IDisposable
     /// </summary>
     public void ShutDown()
     {
-        lock (_locker) //TODO()
+        lock (this.locker)
         {
-            if (!_isShutDown)
+            if (!this.isShutDown)
             {
-                _queue.CompleteAdding();
-
-                _threadsCompletedEvent.Wait(); // TODO()
-
-                _isShutDown = true;
+                return;
             }
+
+            this.queue.CompleteAdding();
+
+            this.threadsCompletedEvent.Wait();
+
+            this.isShutDown = true;
         }
     }
 
@@ -107,34 +108,34 @@ public sealed class MyThreadPool : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (!_isShutDown)
+        if (!this.isShutDown)
         {
-            ShutDown();
+            this.ShutDown();
         }
 
-        lock (_locker)
+        lock (this.locker)
         {
-            if (!_isDisposed)
+            if (!this.isDisposed)
             {
-                _queue.Dispose();
+                this.queue.Dispose();
             }
 
-            _isDisposed = true;
+            this.isDisposed = true;
         }
     }
 
     /// <summary>
     /// A method that allows you to put the calculation of the <see cref="ComputationCell{TResult}"/>
     /// on the <see cref="MyThreadPool"/> without blocking.
-    /// 
+    ///
     /// </summary>
     /// <param name="cell"><see cref="ComputationCell{TResult}"/> for calculations.</param>
-    /// <typeparam name="T">Type of ComputationCell</typeparam>
+    /// <typeparam name="T">Type of ComputationCell.</typeparam>
     public void EnqueueCell<T>(ComputationCell<T> cell)
     {
         try
         {
-            _queue.Add(() => cell.Compute());
+            this.queue.Add(() => cell.Compute());
         }
         catch (ObjectDisposedException e)
         {

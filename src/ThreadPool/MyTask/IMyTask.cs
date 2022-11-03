@@ -1,5 +1,3 @@
-using System;
-
 namespace ThreadPool.MyTask;
 
 /// <summary>
@@ -11,7 +9,7 @@ namespace ThreadPool.MyTask;
 public interface IMyTask<out TResult>
 {
     /// <summary>
-    /// A property indicating whether the calculation was performed or not.
+    /// Gets a value indicating whether task is completed.
     /// </summary>
     public bool IsCompleted
     {
@@ -19,8 +17,7 @@ public interface IMyTask<out TResult>
     }
 
     /// <summary>
-    /// A property that returns the result of the evaluation or,
-    /// if it has not yet been evaluated,
+    /// Gets the result of the evaluation or, if it has not yet been evaluated,
     /// blocks the calling thread until it is evaluated and returns the value.
     /// </summary>
     public TResult Result
@@ -38,7 +35,7 @@ public interface IMyTask<out TResult>
     /// Result type of curried function.
     /// </typeparam>
     /// <returns>
-    /// Abstraction over computation in form of <see cref="IMyTask{TResult}"/>
+    /// Abstraction over computation in form of <see cref="IMyTask{TResult}"/>.
     /// </returns>
     public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> continuation);
 }
