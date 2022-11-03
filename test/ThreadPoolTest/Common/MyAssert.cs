@@ -1,7 +1,7 @@
 namespace ThreadPool.Common;
 
 /// <summary>
-/// Class containing methods - compositions from methods of the <see cref="Assert"/> class
+/// Class containing methods - compositions from methods of the <see cref="Assert"/> class.
 /// </summary>
 public static class MyAssert
 {

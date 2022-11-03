@@ -70,8 +70,7 @@ public static class MyTaskFactory
             return new object();
         };
 
-        var exception = new MyTaskException();
-        var enqueueCell = new ComputationCell<object>(enqueueFun, () => throw exception); //TODO()
+        var enqueueCell = new ComputationCell<object>(enqueueFun);
 
         var newTaskFun = () =>
         {
