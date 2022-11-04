@@ -22,11 +22,9 @@ public class UnsafeLazy<T> : Lazy<T>
     /// </summary>
     /// <param name="func">A function that will be lazily evaluated.</param>
     public UnsafeLazy(Func<T> func)
-    {
-        this.func = func;
-    }
+        => this.func = func;
 
-    /// <summary>
+        /// <summary>
     /// A method that returns a lazily evaluated value or throws an exception.
     /// Returning the same object each time in the case of a reference type.
     /// Or thrown the same exception each time.
