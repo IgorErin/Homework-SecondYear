@@ -3,8 +3,7 @@ namespace MatrixMultiplication;
 using Strategies;
 
 /// <summary>
-/// Abstract class.
-/// Base class for implementing int matrices. Wrap over 2D int array.
+/// Base class for implementing int matrices.
 /// </summary>
 public class IntMatrix
 {
