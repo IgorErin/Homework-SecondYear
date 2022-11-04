@@ -20,11 +20,9 @@ public class IntMatrix
     /// <summary>
     /// Gets array representation of matrix.
     /// </summary>
-    public int[,] ToArray
-    {
-        get => this.intArray.Clone() as int[,]
+    public int[,] ToArray =>
+        this.intArray.Clone() as int[,]
                ?? throw new NullReferenceException("Method ToArray trying to return null");
-    }
 
     /// <summary>
     /// Method that allows you to multiply two <see cref="IntMatrix"/>.

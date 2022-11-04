@@ -50,7 +50,7 @@ public static class MatrixMain
     {
         try
         {
-            ParsArgs(args);
+            ParseArgs(args);
         }
         catch (Exception exception)
         {
@@ -64,7 +64,7 @@ public static class MatrixMain
         }
     }
 
-    private static Unit ParsArgs(string[] args) =>
+    private static Unit ParseArgs(string[] args) =>
         args.Length switch
         {
             TestRunArgsLength => TestRun(args),

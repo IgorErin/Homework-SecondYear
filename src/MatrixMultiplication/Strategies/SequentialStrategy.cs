@@ -1,19 +1,12 @@
 namespace MatrixMultiplication.Strategies;
 
-using MatrixExceptions;
+using Exceptions;
 
 /// <summary>
 /// Class that implements the parallel multiplication strategy.
 /// </summary>
 public class SequentialStrategy : IMultiplicationStrategy
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SequentialStrategy"/> class.
-    /// </summary>
-    public SequentialStrategy()
-    {
-    }
-
     /// <summary>
     /// Sequential multiplication method.
     /// </summary>

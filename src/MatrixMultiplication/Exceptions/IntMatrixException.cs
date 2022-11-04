@@ -1,4 +1,4 @@
-namespace MatrixMultiplication.MatrixExceptions;
+namespace MatrixMultiplication.Exceptions;
 
 /// <summary>
 /// Int matrix exception.
