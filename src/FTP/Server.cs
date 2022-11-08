@@ -3,19 +3,32 @@ namespace FTP;
 using System.Net;
 using System.Net.Sockets;
 
+/// <summary>
+/// Server class for <see cref="Client"/>.
+/// </summary>
 public class Server
 {
+    private const int GetAnswerSizeBuffer = 8;
+    private const int ListAnswerSizeBuffer = 4;
+    private const int IncorrectRequestLengthAnswer = -1;
+
     private readonly int port;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Server"/> class.
+    /// </summary>
+    /// <param name="port">Port for communicating with the server.</param>
     public Server(int port)
         => this.port = port;
 
+    /// <summary>
+    /// The method whose call starts listening on the specified port.
+    /// </summary>
+    /// <param name="token">Token to stop listening.</param>
     public async Task Start(CancellationToken token)
     {
         var listener = new TcpListener(IPAddress.Any, this.port);
         listener.Start();
-
-        Console.WriteLine($"Listening on port {this.port}");
 
         var taskList = new LinkedList<Task>();
 
@@ -30,21 +43,22 @@ public class Server
                     break;
                 }
 
-                taskList.AddLast(Task.Run(async () => await this.ReadAndExecuteRequests(socket, token), CancellationToken.None));
+                taskList.AddLast(
+                    Task.Run(async () => await this.ReadAndExecuteRequests(socket).ConfigureAwait(false)));
             }
         }
         finally
         {
             foreach (var task in taskList)
             {
-                await task;
+                await task.ConfigureAwait(false);
             }
 
             listener.Stop();
         }
     }
 
-    private async Task List(string path, StreamWriter writer)
+    private async Task ListAsync(string path, NetworkStream stream)
     {
         Console.WriteLine("in List");
 
@@ -52,93 +66,96 @@ public class Server
 
         if (!currentDirectory.Exists)
         {
-            await writer.WriteLineAsync("-1 ");
-            await writer.FlushAsync();
+            await stream.WriteAsync(
+                BitConverter.GetBytes(IncorrectRequestLengthAnswer), 0, ListAnswerSizeBuffer).ConfigureAwait(false);
 
-            Console.WriteLine("Flush -1 in List");
+            await stream.FlushAsync().ConfigureAwait(false);
+
+            Console.WriteLine("Flush -1 in List"); // TODO() remove
 
             return;
         }
 
         var size = currentDirectory.GetFiles().Length + currentDirectory.GetDirectories().Length;
 
-        await writer.WriteAsync($"{size} ");
+        await stream.WriteAsync(BitConverter.GetBytes(IncorrectRequestLengthAnswer), 0, size).ConfigureAwait(false);
 
-        foreach (var file in currentDirectory.EnumerateFiles())
-        {
-            await writer.WriteAsync($"{file.Name}, {false} ");
-        }
+        // foreach (var file in currentDirectory.EnumerateFiles())
+        // {
+        //     await stream.WriteAsync($"{file.Name}, {false} ").ConfigureAwait(false);
+        // }
+        //
+        // foreach (var directory in currentDirectory.EnumerateDirectories())
+        // {
+        //     await stream.WriteAsync($"{directory.Name} {true} ").ConfigureAwait(false); //TODO()
+        // }
 
-        foreach (var directory in currentDirectory.EnumerateDirectories())
-        {
-            await writer.WriteAsync($"{directory.Name} {true} ");
-        }
-
-        await writer.WriteLineAsync();
-        await writer.FlushAsync();
+        await stream.FlushAsync().ConfigureAwait(false);
 
         Console.WriteLine("Flush data in List");
     }
 
-    private async Task Get(string path, StreamWriter writer)
+    private async Task GetAsync(string path, NetworkStream writer)
     {
-        var file = new FileInfo(path);
-
-        if (!file.Exists)
+        if (!File.Exists(path))
         {
-            await writer.WriteLineAsync("-1");
-            await writer.FlushAsync();
+            await writer.WriteAsync(
+                BitConverter.GetBytes(IncorrectRequestLengthAnswer), 0, GetAnswerSizeBuffer).ConfigureAwait(false);
+
+            await writer.FlushAsync().ConfigureAwait(false);
 
             return;
         }
 
-        await writer.WriteAsync($"{file.Length} ");
+        var file = new FileInfo(path);
 
-        await file.Create().CopyToAsync(writer.BaseStream);
+        await writer.WriteAsync(
+            BitConverter.GetBytes(file.Length), 0, GetAnswerSizeBuffer).ConfigureAwait(false);
 
-        await writer.FlushAsync();
+        var fileStream = file.Open(FileMode.Open);
+
+        await fileStream.CopyToAsync(writer).ConfigureAwait(false);
+
+        fileStream.Close();
+
+        await writer.FlushAsync().ConfigureAwait(false);
     }
 
-    private async Task ReadAndExecuteRequests(Socket socket, CancellationToken token)
+    private async Task ReadAndExecuteRequests(Socket socket)
     {
         var stream = new NetworkStream(socket);
 
-        var reader = new StreamReader(stream);
-        var writer = new StreamWriter(stream);
+        using var reader = new StreamReader(stream);
 
         try
         {
             while (true)
             {
-                var command = await reader.ReadLineAsync();
-                Console.WriteLine($"read Line in server");
+                var command = await reader.ReadLineAsync().ConfigureAwait(false);
 
-                var dividedCommand = command?.Split() ?? Array.Empty<string>(); // TODO() null
+                var dividedCommand = command?.Split() ?? Array.Empty<string>();
 
                 if (dividedCommand.Length != 2)
                 {
-                    continue; // TODO()
+                    continue;
                 }
 
                 var (commandType, path) = (dividedCommand[0], dividedCommand[1]);
 
-                Console.WriteLine($"Command type = {commandType}, path = {path}");
-
                 var _ = commandType switch
                 {
-                    "1" => Task.Run(async () => await this.List(path, writer), CancellationToken.None),
-                    "2" => Task.Run(async () => await this.Get(path, writer), CancellationToken.None),
-                    _ => throw new Exception() //TODO() message
+                    "1" => Task.Run(
+                        async () => await this.ListAsync(path, stream).ConfigureAwait(false), CancellationToken.None),
+                    "2" => Task.Run(
+                        async () => await this.GetAsync(path, stream).ConfigureAwait(false), CancellationToken.None),
+                    _ => Task.Run(async () => await stream.WriteAsync(BitConverter.GetBytes(-1), 0, ListAnswerSizeBuffer))
                 };
             }
         }
         finally
         {
-            Console.WriteLine("socket closed");
-
             reader.Close();
-            writer.Close();
-
+            stream.Close();
             socket.Close();
         }
     }
