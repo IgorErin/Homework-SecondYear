@@ -21,9 +21,15 @@ public class ParallelHash
         throw new DirectoryNotFoundException("file or directory not found");
     }
 
-    private static Task<byte[]> GetFromFile(FileInfo fileInfo)
+    private static async Task<byte[]> GetFromFile(FileInfo fileInfo)
     {
-        return Hash.getSum(fileInfo.FullName);
+        var size = fileInfo.Length;
+
+        var buffer = new byte[size + 1];
+
+        await fileInfo.Open(FileMode.Open).WriteAsync(buffer);
+
+        return System.Security.Cryptography.MD5.HashData(buffer);
     }
 
     private static async Task<byte[]> GetFromDir(DirectoryInfo directoryInfo)
@@ -41,7 +47,7 @@ public class ParallelHash
 
         for (var i = directoryInfo.GetFiles().Length; i < size; i++)
         {
-           taskList[i] = GetFromDir(directoryInfo.GetDirectories()[i]);
+           taskList[i] = GetFromDir(directoryInfo.GetDirectories()[i - directoryInfo.GetFiles().Length]);
         }
 
         foreach (var task in taskList)
