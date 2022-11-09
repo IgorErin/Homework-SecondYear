@@ -21,7 +21,7 @@ public class Hash
         throw new DirectoryNotFoundException("file or directory not found");
     }
 
-    private static async Task<byte[]> GetFromFile(FileInfo fileInfo)
+    public static async Task<byte[]> GetFromFile(FileInfo fileInfo)
     {
         try
         {
