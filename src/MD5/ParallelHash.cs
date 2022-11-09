@@ -23,13 +23,22 @@ public class ParallelHash
 
     private static async Task<byte[]> GetFromFile(FileInfo fileInfo)
     {
-        var size = fileInfo.Length;
+        try
+        {
+            var size = fileInfo.Length;
 
-        var buffer = new byte[size + 1];
+            var buffer = new byte[size + 1];
 
-        await fileInfo.Open(FileMode.Open).WriteAsync(buffer);
+            await fileInfo.Open(FileMode.Open).WriteAsync(buffer);
 
-        return System.Security.Cryptography.MD5.HashData(buffer);
+            return System.Security.Cryptography.MD5.HashData(buffer);
+        }
+        catch (System.IO.IOException exception)
+        {
+            Console.WriteLine($"Cannot get hash from {fileInfo.Name}");
+        }
+
+        return new Byte[0];
     }
 
     private static async Task<byte[]> GetFromDir(DirectoryInfo directoryInfo)

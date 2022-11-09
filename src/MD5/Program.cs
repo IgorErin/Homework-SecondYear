@@ -13,19 +13,19 @@ class MDMain
 
         watch.Start();
 
-        var _ = Hash.getSum("D:\\Projects\\Practic").GetAwaiter().GetResult();
+        var _ = Hash.getSum(Directory.GetCurrentDirectory()).GetAwaiter().GetResult();
 
         watch.Stop();
 
-        Console.Write($"result = {watch.ElapsedMilliseconds}");
+        Console.WriteLine($"result = {watch.ElapsedMilliseconds}");
 
         watch.Reset();
         watch.Start();
 
-        _ = ParallelHash.getSum("D:\\Projects\\Practic").GetAwaiter().GetResult();
+        _ = ParallelHash.getSum(Directory.GetCurrentDirectory()).GetAwaiter().GetResult();
 
         watch.Stop();
 
-        Console.Write($"parallel result = {watch.ElapsedMilliseconds}");
+        Console.WriteLine($"parallel result = {watch.ElapsedMilliseconds}");
     }
 }
