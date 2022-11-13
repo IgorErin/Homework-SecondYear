@@ -1,14 +1,18 @@
 namespace FTP;
 
 using System.Net.Sockets;
+using System.Text;
 using Exceptions;
+using Extensions;
 
 /// <summary>
 /// Client class for <see cref="Server"/>
 /// </summary>
-public class Client : IDisposable
+public sealed class Client : IDisposable
 {
     private const int SizeLengthInBytes = 8;
+    private const int StringCharSizeInBytes = 2;
+    private const int BoolSizeInBytes = 1;
 
     private readonly TcpClient client;
 
@@ -16,6 +20,11 @@ public class Client : IDisposable
     private readonly StreamReader reader;
 
     private readonly NetworkStream stream;
+
+    private readonly byte[] charBuffer = new byte[StringCharSizeInBytes];
+    private readonly byte[] boolBuffer = new byte[BoolSizeInBytes];
+
+    private bool disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Client"/> class.
@@ -50,26 +59,29 @@ public class Client : IDisposable
 
         var size = await this.GetSizeAsync();
 
-        var data = await this.reader.ReadLineAsync();
-        var splitData = data?.Split(" ") ?? throw new ClientException("null response from the server");
-
-        var resultList = new List<(string, bool)>();
-
-        var index = 1;
-
-        while (index + 1 < splitData.Length)
+        if (size == -1)
         {
-            if (!bool.TryParse(splitData[index + 1], out var flag))
-            {
-                throw new ClientException("data transmission protocol violation, unreadable value");
-            }
-
-            resultList.Add((splitData[index], flag));
-
-            index += 2;
+            return (-1, new List<(string, bool)>());
         }
 
-        return ((int)size, resultList);
+        if (size < 0)
+        {
+            throw new ClientException();
+        }
+
+        var directoryDataList = new List<(string, bool)>((int)size);
+
+        for (var i = 0; i < size; i++)
+        {
+            var name = await this.GetNameAsync();
+            var isDirectory = await this.GetDirectoryFlagAsync();
+
+            directoryDataList[i] = (name, isDirectory);
+
+            await this.ReadWhiteSpaceAsync();
+        }
+
+        return ((int)size, directoryDataList);
     }
 
     /// <summary>
@@ -101,6 +113,49 @@ public class Client : IDisposable
         return (fileSize, fileBuffer);
     }
 
+    public void Dispose()
+    {
+        this.reader.Dispose();
+        this.writer.Dispose();
+        this.stream.Dispose();
+    }
+
+    private async Task ReadWhiteSpaceAsync()
+    {
+        var charWhiteSpaceBuffer = new byte[StringCharSizeInBytes];
+        await this.stream.ConfigureReadAsyncWhithCheck(charWhiteSpaceBuffer);
+
+        if (Encoding.Unicode.GetString(charWhiteSpaceBuffer) != " ")
+        {
+            throw new Exception();
+        }
+    }
+
+    private async Task<string> GetNameAsync()
+    {
+        await this.stream.ConfigureReadAsyncWhithCheck(charBuffer);
+
+        var charList = new LinkedList<string>();
+        var symbol = Encoding.Unicode.GetString(this.charBuffer);
+
+        while (symbol != " ")
+        {
+            charList.AddLast(symbol);
+
+            await this.stream.ConfigureReadAsyncWhithCheck(this.charBuffer);
+            symbol = Encoding.Unicode.GetString(this.charBuffer);
+        }
+
+        return string.Join(string.Empty, charList);
+    }
+
+    private async Task<bool> GetDirectoryFlagAsync()
+    {
+        await this.stream.ConfigureReadAsyncWhithCheck(this.boolBuffer);
+
+        return System.Convert.ToBoolean(this.boolBuffer);
+    }
+
     private async Task<long> GetSizeAsync()
     {
         var sizeInBytes = new byte[SizeLengthInBytes];
@@ -113,15 +168,5 @@ public class Client : IDisposable
         }
 
         return BitConverter.ToInt64(sizeInBytes);
-    }
-
-    /// <summary>
-    /// Method for releasing unmanaged resources.
-    /// </summary>
-    public void Dispose() //TODO()
-    {
-        this.writer.Dispose();
-        this.reader.Dispose();
-        this.client.Dispose();
     }
 }

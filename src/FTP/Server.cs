@@ -2,14 +2,15 @@ namespace FTP;
 
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
+using Extensions;
 
 /// <summary>
 /// Server class for <see cref="Client"/>.
 /// </summary>
 public class Server
 {
-    private const int GetAnswerSizeBuffer = 8;
-    private const int ListAnswerSizeBuffer = 4;
+    private const int AnswerSizeBuffer = 8;
     private const int IncorrectRequestLengthAnswer = -1;
 
     private readonly int port;
@@ -60,37 +61,43 @@ public class Server
 
     private async Task ListAsync(string path, NetworkStream stream)
     {
-        Console.WriteLine("in List");
+        Console.WriteLine("In List");
 
-        var currentDirectory = new DirectoryInfo(path);
+        var currentDirectoryPath = Directory.GetCurrentDirectory();
+        var currentDirectory = new DirectoryInfo(currentDirectoryPath + path);
 
         if (!currentDirectory.Exists)
         {
-            await stream.WriteAsync(
-                BitConverter.GetBytes(IncorrectRequestLengthAnswer), 0, ListAnswerSizeBuffer).ConfigureAwait(false);
+            await stream.ConfigureWriteAsync(BitConverter.GetBytes(IncorrectRequestLengthAnswer), 0, AnswerSizeBuffer);
 
-            await stream.FlushAsync().ConfigureAwait(false);
-
-            Console.WriteLine("Flush -1 in List"); // TODO() remove
+            await stream.ConfigureFlushAsync();
 
             return;
         }
 
         var size = currentDirectory.GetFiles().Length + currentDirectory.GetDirectories().Length;
 
-        await stream.WriteAsync(BitConverter.GetBytes(IncorrectRequestLengthAnswer), 0, size).ConfigureAwait(false);
+        await stream.ConfigureWriteAsync(BitConverter.GetBytes(size), 0, AnswerSizeBuffer);
 
-        // foreach (var file in currentDirectory.EnumerateFiles())
-        // {
-        //     await stream.WriteAsync($"{file.Name}, {false} ").ConfigureAwait(false);
-        // }
-        //
-        // foreach (var directory in currentDirectory.EnumerateDirectories())
-        // {
-        //     await stream.WriteAsync($"{directory.Name} {true} ").ConfigureAwait(false); //TODO()
-        // }
+        foreach (var file in currentDirectory.EnumerateFiles())
+        {
+            await stream.ConfigureWriteAsync(Encoding.Unicode.GetBytes(file.Name));
+            await stream.ConfigureWriteWhiteSpaceAsync();
 
-        await stream.FlushAsync().ConfigureAwait(false);
+            await stream.ConfigureWriteFalse();
+            await stream.ConfigureWriteWhiteSpaceAsync();
+        }
+
+        foreach (var directory in currentDirectory.EnumerateDirectories())
+        {
+            await stream.ConfigureWriteAsync(Encoding.Unicode.GetBytes(directory.Name));
+            await stream.ConfigureWriteWhiteSpaceAsync();
+
+            await stream.ConfigureWriteTrue();
+            await stream.ConfigureWriteWhiteSpaceAsync();
+        }
+
+        await stream.ConfigureFlushAsync();
 
         Console.WriteLine("Flush data in List");
     }
@@ -99,18 +106,16 @@ public class Server
     {
         if (!File.Exists(path))
         {
-            await writer.WriteAsync(
-                BitConverter.GetBytes(IncorrectRequestLengthAnswer), 0, GetAnswerSizeBuffer).ConfigureAwait(false);
+            await writer.ConfigureWriteAsync(BitConverter.GetBytes(IncorrectRequestLengthAnswer), 0, AnswerSizeBuffer);
 
-            await writer.FlushAsync().ConfigureAwait(false);
+            await writer.ConfigureFlushAsync();
 
             return;
         }
 
         var file = new FileInfo(path);
 
-        await writer.WriteAsync(
-            BitConverter.GetBytes(file.Length), 0, GetAnswerSizeBuffer).ConfigureAwait(false);
+        await writer.ConfigureWriteAsync(BitConverter.GetBytes(file.Length), 0, AnswerSizeBuffer);
 
         var fileStream = file.Open(FileMode.Open);
 
@@ -118,7 +123,7 @@ public class Server
 
         fileStream.Close();
 
-        await writer.FlushAsync().ConfigureAwait(false);
+        await writer.ConfigureFlushAsync();
     }
 
     private async Task ReadAndExecuteRequests(Socket socket)
@@ -131,7 +136,7 @@ public class Server
         {
             while (true)
             {
-                var command = await reader.ReadLineAsync().ConfigureAwait(false);
+                var command = await reader.ConfigureReadLineAsync();
 
                 var dividedCommand = command?.Split() ?? Array.Empty<string>();
 
@@ -148,7 +153,7 @@ public class Server
                         async () => await this.ListAsync(path, stream).ConfigureAwait(false), CancellationToken.None),
                     "2" => Task.Run(
                         async () => await this.GetAsync(path, stream).ConfigureAwait(false), CancellationToken.None),
-                    _ => Task.Run(async () => await stream.WriteAsync(BitConverter.GetBytes(-1), 0, ListAnswerSizeBuffer))
+                    _ => Task.Run(async () => await stream.WriteAsync(BitConverter.GetBytes(-1), 0, AnswerSizeBuffer))
                 };
             }
         }
