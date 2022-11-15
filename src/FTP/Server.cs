@@ -10,7 +10,8 @@ using Extensions;
 /// </summary>
 public class Server
 {
-    private const int AnswerSizeBuffer = 8;
+    private const int GetAnswerBufferSize = 8;
+    private const int ListAnswerBufferSize = 4;
     private const int IncorrectRequestLengthAnswer = -1;
 
     private readonly int port;
@@ -61,30 +62,27 @@ public class Server
 
     private async Task ListAsync(string path, NetworkStream stream)
     {
-        Console.WriteLine("In List");
+        var currentDirectoryPath = Directory.GetCurrentDirectory(); // TODO() to server dir path !!!
 
-        var currentDirectoryPath = Directory.GetCurrentDirectory();
-        var currentDirectory = new DirectoryInfo(currentDirectoryPath + path);
+        var currentDirectory = new DirectoryInfo(path); //TODO()
 
         if (!currentDirectory.Exists)
         {
-            await stream.ConfigureWriteAsync(BitConverter.GetBytes(IncorrectRequestLengthAnswer), 0, AnswerSizeBuffer);
-
+            await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(IncorrectRequestLengthAnswer),  ListAnswerBufferSize);
             await stream.ConfigureFlushAsync();
 
             return;
         }
 
         var size = currentDirectory.GetFiles().Length + currentDirectory.GetDirectories().Length;
-
-        await stream.ConfigureWriteAsync(BitConverter.GetBytes(size), 0, AnswerSizeBuffer);
+        await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(size), ListAnswerBufferSize);
 
         foreach (var file in currentDirectory.EnumerateFiles())
         {
             await stream.ConfigureWriteAsync(Encoding.Unicode.GetBytes(file.Name));
             await stream.ConfigureWriteWhiteSpaceAsync();
 
-            await stream.ConfigureWriteFalse();
+            await stream.ConfigureWriteFalseAsync();
             await stream.ConfigureWriteWhiteSpaceAsync();
         }
 
@@ -93,20 +91,18 @@ public class Server
             await stream.ConfigureWriteAsync(Encoding.Unicode.GetBytes(directory.Name));
             await stream.ConfigureWriteWhiteSpaceAsync();
 
-            await stream.ConfigureWriteTrue();
+            await stream.ConfigureWriteTrueAsync();
             await stream.ConfigureWriteWhiteSpaceAsync();
         }
 
         await stream.ConfigureFlushAsync();
-
-        Console.WriteLine("Flush data in List");
     }
 
     private async Task GetAsync(string path, NetworkStream writer)
     {
         if (!File.Exists(path))
         {
-            await writer.ConfigureWriteAsync(BitConverter.GetBytes(IncorrectRequestLengthAnswer), 0, AnswerSizeBuffer);
+            await writer.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(IncorrectRequestLengthAnswer), GetAnswerBufferSize);
 
             await writer.ConfigureFlushAsync();
 
@@ -115,12 +111,10 @@ public class Server
 
         var file = new FileInfo(path);
 
-        await writer.ConfigureWriteAsync(BitConverter.GetBytes(file.Length), 0, AnswerSizeBuffer);
+        await writer.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(file.Length), GetAnswerBufferSize);
 
         var fileStream = file.Open(FileMode.Open);
-
         await fileStream.CopyToAsync(writer).ConfigureAwait(false);
-
         fileStream.Close();
 
         await writer.ConfigureFlushAsync();
@@ -129,7 +123,6 @@ public class Server
     private async Task ReadAndExecuteRequests(Socket socket)
     {
         var stream = new NetworkStream(socket);
-
         using var reader = new StreamReader(stream);
 
         try
@@ -137,7 +130,6 @@ public class Server
             while (true)
             {
                 var command = await reader.ConfigureReadLineAsync();
-
                 var dividedCommand = command?.Split() ?? Array.Empty<string>();
 
                 if (dividedCommand.Length != 2)
@@ -150,10 +142,11 @@ public class Server
                 var _ = commandType switch
                 {
                     "1" => Task.Run(
-                        async () => await this.ListAsync(path, stream).ConfigureAwait(false), CancellationToken.None),
+                        async () => await this.ListAsync(path, stream).ConfigureAwait(false)),
                     "2" => Task.Run(
-                        async () => await this.GetAsync(path, stream).ConfigureAwait(false), CancellationToken.None),
-                    _ => Task.Run(async () => await stream.WriteAsync(BitConverter.GetBytes(-1), 0, AnswerSizeBuffer))
+                        async () => await this.GetAsync(path, stream).ConfigureAwait(false)),
+                    _ => Task.Run(async () =>
+                        await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(-1), GetAnswerBufferSize))
                 };
             }
         }

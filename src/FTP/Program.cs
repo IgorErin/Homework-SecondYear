@@ -14,13 +14,13 @@ public static class FTPMain
 
         var tokenSource = new CancellationTokenSource();
 
-        Task.Run(async () => await server.Start(tokenSource.Token));
+        var serverTask = Task.Run(async () => await server.Start(tokenSource.Token));
 
         var client1 = new Client(8888);
 
-        var result = await client1.List("D:\\Projects");
+        var result = await client1.List("D:\\Projects\\Homework-SecondYear\\src\\TestDir");
 
-        Console.WriteLine("result: ");
+        Console.WriteLine($"result: size = {result.Item1}");
         foreach (var item in result.Item2)
         {
             Console.Write(item);

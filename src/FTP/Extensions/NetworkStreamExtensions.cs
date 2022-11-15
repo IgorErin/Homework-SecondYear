@@ -4,6 +4,9 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 
+/// <summary>
+/// Some <see cref="NetworkStream"/> and <see cref="StreamReader"/> extensions.
+/// </summary>
 public static class NetworkStreamExtensions
 {
     private const int CharCodeLength = 2;
@@ -11,28 +14,30 @@ public static class NetworkStreamExtensions
     private static readonly byte[] FalseInBytes = { Convert.ToByte(false) };
     private static readonly byte[] TrueInBytes = { Convert.ToByte(true) };
 
-    public static ConfiguredTaskAwaitable ConfigureWriteAsync(this NetworkStream stream, byte[] buffer, int offset, int count)
-        => stream.WriteAsync(buffer, offset, count).ConfigureAwait(false);
+    private static readonly byte[] WhiteSpaceBytes = Encoding.Unicode.GetBytes(" ");
+
+    public static Task ConfigureWriteAsyncFromZero(this NetworkStream stream, byte[] buffer, int count)
+        => stream.WriteAsync(buffer, 0, count);
 
     public static ConfiguredTaskAwaitable ConfigureWriteAsync(this NetworkStream stream, byte[] buffer)
         => stream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
 
     public static ConfiguredTaskAwaitable ConfigureWriteWhiteSpaceAsync(this NetworkStream stream)
-        => stream.WriteAsync(Encoding.Unicode.GetBytes(" "), 0, CharCodeLength).ConfigureAwait(false);
+        => stream.WriteAsync(WhiteSpaceBytes, 0, CharCodeLength).ConfigureAwait(false);
 
     public static async Task ConfigureReadAsyncWhithCheck(this NetworkStream stream, byte[] buffer)
     {
         if (await stream.ReadAsync(buffer).ConfigureAwait(false) != buffer.Length)
         {
-            throw new Exception("read size not compatible"); //TODO()
+            throw new Exception("data loss during transmission, incomplete specifier");
         }
     }
 
-    public static ConfiguredTaskAwaitable ConfigureWriteTrue(this NetworkStream stream)
+    public static ConfiguredTaskAwaitable ConfigureWriteTrueAsync(this NetworkStream stream)
         => stream.WriteAsync(TrueInBytes, 0, FalseInBytes.Length).ConfigureAwait(false);
 
-    public static ConfiguredTaskAwaitable ConfigureWriteFalse(this NetworkStream stream)
-        => stream.WriteAsync(TrueInBytes, 0, TrueInBytes.Length).ConfigureAwait(false);
+    public static ConfiguredTaskAwaitable ConfigureWriteFalseAsync(this NetworkStream stream)
+        => stream.WriteAsync(FalseInBytes, 0, FalseInBytes.Length).ConfigureAwait(false);
 
     public static ConfiguredTaskAwaitable ConfigureFlushAsync(this NetworkStream stream)
         => stream.FlushAsync().ConfigureAwait(false);

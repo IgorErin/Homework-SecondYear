@@ -10,7 +10,8 @@ using Extensions;
 /// </summary>
 public sealed class Client : IDisposable
 {
-    private const int SizeLengthInBytes = 8;
+    private const int GetSizeBufferSize = 8;
+    private const int ListSizeBufferSize = 4;
     private const int StringCharSizeInBytes = 2;
     private const int BoolSizeInBytes = 1;
 
@@ -23,6 +24,8 @@ public sealed class Client : IDisposable
 
     private readonly byte[] charBuffer = new byte[StringCharSizeInBytes];
     private readonly byte[] boolBuffer = new byte[BoolSizeInBytes];
+
+    private readonly LinkedList<string> charList = new ();
 
     private bool disposed;
 
@@ -57,7 +60,7 @@ public sealed class Client : IDisposable
         await this.writer.WriteLineAsync($"1 {path}\n");
         await this.writer.FlushAsync();
 
-        var size = await this.GetSizeAsync();
+        var size = await this.GetSizeFromListAsync();
 
         if (size == -1)
         {
@@ -69,14 +72,14 @@ public sealed class Client : IDisposable
             throw new ClientException();
         }
 
-        var directoryDataList = new List<(string, bool)>((int)size);
+        var directoryDataList = new List<(string, bool)>(size);
 
         for (var i = 0; i < size; i++)
         {
             var name = await this.GetNameAsync();
             var isDirectory = await this.GetDirectoryFlagAsync();
 
-            directoryDataList[i] = (name, isDirectory);
+            directoryDataList.Add((name, isDirectory));
 
             await this.ReadWhiteSpaceAsync();
         }
@@ -94,30 +97,33 @@ public sealed class Client : IDisposable
     /// An exception will be thrown if there is a zero response from the server or
     /// if the transmission protocol is violated.
     /// </exception>
-    public async Task<(long, Byte[])> GetAsync(string path)
+    public async Task<(long, byte[])> GetAsync(string path)
     {
         await this.writer.WriteLineAsync($"2 {path}");
         await this.writer.FlushAsync();
 
-        var fileSize = await this.GetSizeAsync();
+        var fileSize = await this.GetSizeFromGetAsync();
 
         var fileBuffer = new byte[fileSize];
 
-        var byteCount = await this.stream.ReadAsync(fileBuffer, 0, (int)fileSize);
-
-        if (byteCount != fileSize)
-        {
-            throw new ClientException("data loss during transmission, incomplete specifier");
-        }
+        await this.stream.ConfigureReadAsyncWhithCheck(fileBuffer);
 
         return (fileSize, fileBuffer);
     }
 
     public void Dispose()
     {
+        if (this.disposed)
+        {
+            return;
+        }
+
         this.reader.Dispose();
         this.writer.Dispose();
         this.stream.Dispose();
+        this.client.Dispose();
+
+        this.disposed = true;
     }
 
     private async Task ReadWhiteSpaceAsync()
@@ -133,9 +139,9 @@ public sealed class Client : IDisposable
 
     private async Task<string> GetNameAsync()
     {
-        await this.stream.ConfigureReadAsyncWhithCheck(charBuffer);
+        await this.stream.ConfigureReadAsyncWhithCheck(this.charBuffer);
 
-        var charList = new LinkedList<string>();
+        this.charList.Clear();
         var symbol = Encoding.Unicode.GetString(this.charBuffer);
 
         while (symbol != " ")
@@ -153,19 +159,23 @@ public sealed class Client : IDisposable
     {
         await this.stream.ConfigureReadAsyncWhithCheck(this.boolBuffer);
 
-        return System.Convert.ToBoolean(this.boolBuffer);
+        return BitConverter.ToBoolean(this.boolBuffer);
     }
 
-    private async Task<long> GetSizeAsync()
+    private async Task<int> GetSizeFromListAsync()
     {
-        var sizeInBytes = new byte[SizeLengthInBytes];
+        var sizeInBytes = new byte[ListSizeBufferSize];
 
-        var count = await this.stream.ReadAsync(sizeInBytes.AsMemory(0, SizeLengthInBytes));
+        await this.stream.ConfigureReadAsyncWhithCheck(sizeInBytes);
 
-        if (count != SizeLengthInBytes)
-        {
-            throw new ClientException("data loss during transmission, incomplete specifier");
-        }
+        return BitConverter.ToInt32(sizeInBytes);
+    }
+
+    private async Task<long> GetSizeFromGetAsync()
+    {
+        var sizeInBytes = new byte[GetSizeBufferSize];
+
+        await this.stream.ConfigureReadAsyncWhithCheck(sizeInBytes);
 
         return BitConverter.ToInt64(sizeInBytes);
     }
