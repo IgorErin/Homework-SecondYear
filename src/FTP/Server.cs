@@ -27,6 +27,9 @@ public class Server
     /// The method whose call starts listening on the specified port.
     /// </summary>
     /// <param name="token">Token to stop listening.</param>
+    /// <returns>
+    /// <see cref="Task"/>.
+    /// </returns>
     public async Task Start(CancellationToken token)
     {
         var listener = new TcpListener(IPAddress.Any, this.port);

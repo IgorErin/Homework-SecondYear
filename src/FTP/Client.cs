@@ -14,6 +14,7 @@ public sealed class Client : IDisposable
     private const int ListSizeBufferSize = 4;
     private const int StringCharSizeInBytes = 2;
     private const int BoolSizeInBytes = 1;
+    private const int ChunkSize = 1024;
 
     private readonly TcpClient client;
 
@@ -24,6 +25,7 @@ public sealed class Client : IDisposable
 
     private readonly byte[] charBuffer = new byte[StringCharSizeInBytes];
     private readonly byte[] boolBuffer = new byte[BoolSizeInBytes];
+    private readonly byte[] fileChunkBuffer = new byte[ChunkSize];
 
     private readonly LinkedList<string> charList = new ();
 
@@ -84,31 +86,47 @@ public sealed class Client : IDisposable
             await this.ReadWhiteSpaceAsync();
         }
 
-        return ((int)size, directoryDataList);
+        return (size, directoryDataList);
     }
 
     /// <summary>
     /// A method that allows you to get the number of bytes and the bytes themselves
     /// in the form of an <see cref="Array"/> of the file you specified.
     /// </summary>
-    /// <param name="path">Path to file.</param>
+    /// <param name="pathToGet">Path relative to the server.</param>
+    /// <param name="pathToWrite">Path for writing data from the server.</param>
     /// <returns>Pair is the number of bytes and the bytes themselves.</returns>
     /// <exception cref="ClientException">
     /// An exception will be thrown if there is a zero response from the server or
     /// if the transmission protocol is violated.
     /// </exception>
-    public async Task<(long, byte[])> GetAsync(string path)
+    public async Task<long> GetAsync(string pathToGet, string pathToWrite)
     {
-        await this.writer.WriteLineAsync($"2 {path}");
+        await this.writer.WriteLineAsync($"2 {pathToGet}");
         await this.writer.FlushAsync();
 
         var fileSize = await this.GetSizeFromGetAsync();
 
-        var fileBuffer = new byte[fileSize];
+        var newFileInfo = new FileInfo(pathToWrite);
+        if (newFileInfo.Exists)
+        {
+            throw new ClientException($"a file already exists by the specified path: {pathToWrite}");
+        }
 
-        await this.stream.ConfigureReadAsyncWhithCheck(fileBuffer);
+        var newFileStream = newFileInfo.Create();
 
-        return (fileSize, fileBuffer);
+        var bytesLeft = fileSize;
+        var currentChunkSize = Math.Min(ChunkSize, bytesLeft);
+
+        while (bytesLeft > 0)
+        {
+            await this.stream.CopyToAsync(newFileStream, (int)currentChunkSize);
+
+            bytesLeft -= currentChunkSize;
+            currentChunkSize = Math.Min(ChunkSize, bytesLeft);
+        }
+
+        return fileSize;
     }
 
     public void Dispose()
@@ -129,7 +147,7 @@ public sealed class Client : IDisposable
     private async Task ReadWhiteSpaceAsync()
     {
         var charWhiteSpaceBuffer = new byte[StringCharSizeInBytes];
-        await this.stream.ConfigureReadAsyncWhithCheck(charWhiteSpaceBuffer);
+        await this.stream.ConfigureReadAsyncWithCheck(charWhiteSpaceBuffer);
 
         if (Encoding.Unicode.GetString(charWhiteSpaceBuffer) != " ")
         {
@@ -139,25 +157,25 @@ public sealed class Client : IDisposable
 
     private async Task<string> GetNameAsync()
     {
-        await this.stream.ConfigureReadAsyncWhithCheck(this.charBuffer);
+        await this.stream.ConfigureReadAsyncWithCheck(this.charBuffer);
 
         this.charList.Clear();
         var symbol = Encoding.Unicode.GetString(this.charBuffer);
 
         while (symbol != " ")
         {
-            charList.AddLast(symbol);
+            this.charList.AddLast(symbol);
 
-            await this.stream.ConfigureReadAsyncWhithCheck(this.charBuffer);
+            await this.stream.ConfigureReadAsyncWithCheck(this.charBuffer);
             symbol = Encoding.Unicode.GetString(this.charBuffer);
         }
 
-        return string.Join(string.Empty, charList);
+        return string.Join(string.Empty, this.charList);
     }
 
     private async Task<bool> GetDirectoryFlagAsync()
     {
-        await this.stream.ConfigureReadAsyncWhithCheck(this.boolBuffer);
+        await this.stream.ConfigureReadAsyncWithCheck(this.boolBuffer);
 
         return BitConverter.ToBoolean(this.boolBuffer);
     }
@@ -166,7 +184,7 @@ public sealed class Client : IDisposable
     {
         var sizeInBytes = new byte[ListSizeBufferSize];
 
-        await this.stream.ConfigureReadAsyncWhithCheck(sizeInBytes);
+        await this.stream.ConfigureReadAsyncWithCheck(sizeInBytes);
 
         return BitConverter.ToInt32(sizeInBytes);
     }
@@ -175,7 +193,7 @@ public sealed class Client : IDisposable
     {
         var sizeInBytes = new byte[GetSizeBufferSize];
 
-        await this.stream.ConfigureReadAsyncWhithCheck(sizeInBytes);
+        await this.stream.ConfigureReadAsyncWithCheck(sizeInBytes);
 
         return BitConverter.ToInt64(sizeInBytes);
     }
