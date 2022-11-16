@@ -101,26 +101,26 @@ public class Server
         await stream.ConfigureFlushAsync();
     }
 
-    private async Task GetAsync(string path, NetworkStream writer)
+    private async Task GetAsync(string path, NetworkStream stream)
     {
         if (!File.Exists(path))
         {
-            await writer.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(IncorrectRequestLengthAnswer), GetAnswerBufferSize);
+            await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(IncorrectRequestLengthAnswer), GetAnswerBufferSize);
 
-            await writer.ConfigureFlushAsync();
+            await stream.ConfigureFlushAsync();
 
             return;
         }
 
         var file = new FileInfo(path);
 
-        await writer.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(file.Length), GetAnswerBufferSize);
+        await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(file.Length), GetAnswerBufferSize);
 
         var fileStream = file.Open(FileMode.Open);
-        await fileStream.CopyToAsync(writer).ConfigureAwait(false);
+        await fileStream.CopyToAsync(stream).ConfigureAwait(false);
         fileStream.Close();
 
-        await writer.ConfigureFlushAsync();
+        await stream.ConfigureFlushAsync();
     }
 
     private async Task ReadAndExecuteRequests(Socket socket)

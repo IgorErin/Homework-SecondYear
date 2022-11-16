@@ -94,41 +94,47 @@ public sealed class Client : IDisposable
     /// in the form of an <see cref="Array"/> of the file you specified.
     /// </summary>
     /// <param name="pathToGet">Path relative to the server.</param>
-    /// <param name="pathToWrite">Path for writing data from the server.</param>
+    /// <param name="streamToWrite">Stream for writing data from the server.</param>
     /// <returns>Pair is the number of bytes and the bytes themselves.</returns>
     /// <exception cref="ClientException">
     /// An exception will be thrown if there is a zero response from the server or
     /// if the transmission protocol is violated.
     /// </exception>
-    public async Task<long> GetAsync(string pathToGet, string pathToWrite)
+    public async Task<long> GetAsync(string pathToGet, Stream streamToWrite)
     {
         await this.writer.WriteLineAsync($"2 {pathToGet}");
         await this.writer.FlushAsync();
 
         var fileSize = await this.GetSizeFromGetAsync();
 
-        var newFileInfo = new FileInfo(pathToWrite);
-        if (newFileInfo.Exists)
-        {
-            throw new ClientException($"a file already exists by the specified path: {pathToWrite}");
-        }
-
-        var newFileStream = newFileInfo.Create();
-
         var bytesLeft = fileSize;
         var currentChunkSize = Math.Min(ChunkSize, bytesLeft);
+        var chunkBuffer = new byte[ChunkSize];
 
         while (bytesLeft > 0)
         {
-            await this.stream.CopyToAsync(newFileStream, (int)currentChunkSize);
+            var writtenByteCount = await this.stream.ReadAsync(chunkBuffer, 0, (int)currentChunkSize);
+
+            if (writtenByteCount != currentChunkSize)
+            {
+                throw new ClientException("data loss during transmission, incomplete specifier");
+            }
+
+            await streamToWrite.WriteAsync(chunkBuffer, 0, (int)currentChunkSize);
 
             bytesLeft -= currentChunkSize;
             currentChunkSize = Math.Min(ChunkSize, bytesLeft);
         }
 
+        await streamToWrite.FlushAsync();
+        streamToWrite.Close();
+
         return fileSize;
     }
 
+    /// <summary>
+    /// <see cref="Dispose"/> method for release resources.
+    /// </summary>
     public void Dispose()
     {
         if (this.disposed)

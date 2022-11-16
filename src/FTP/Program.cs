@@ -18,12 +18,18 @@ public static class FTPMain
 
         var client1 = new Client(8888);
 
-        var result = await client1.List("D:\\Projects\\Homework-SecondYear\\src\\TestDir");
+        // var result = await client1.List("D:\\Projects\\Homework-SecondYear\\src\\TestDir");
+        //
+        // Console.WriteLine($"result: size = {result.Item1}");
+        // foreach (var item in result.Item2)
+        // {
+        //     Console.Write(item);
+        // }
 
-        Console.WriteLine($"result: size = {result.Item1}");
-        foreach (var item in result.Item2)
-        {
-            Console.Write(item);
-        }
+        var newFileInfo = new FileInfo("D:\\Projects\\Homework-SecondYear\\src\\TestDir\\testSubDir\\result.txt");
+
+        var fileStream = newFileInfo.Open(FileMode.Open);
+
+        await client1.GetAsync("D:\\Projects\\Homework-SecondYear\\src\\TestDir\\testFile.txt", fileStream);
     }
 }
