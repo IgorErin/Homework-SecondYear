@@ -67,7 +67,7 @@ public class Server
     {
         var currentDirectoryPath = Directory.GetCurrentDirectory(); // TODO() to server dir path !!!
 
-        var currentDirectory = new DirectoryInfo(path); //TODO()
+        var currentDirectory = new DirectoryInfo(path);
 
         if (!currentDirectory.Exists)
         {

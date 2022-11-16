@@ -2,10 +2,13 @@ namespace FTPTest;
 
 using FTP;
 
+/// <summary>
+/// FTP test class.
+/// </summary>
 public class Tests
 {
-    private const int port = 8888;
-    private readonly Server server = new (port);
+    private const int Port = 8888;
+    private readonly Server server = new (Port);
     private readonly CancellationTokenSource sourceToken = new ();
 
     /// <summary>
@@ -14,12 +17,13 @@ public class Tests
     [SetUp]
     public void Setup()
     {
-        Task.Run(async () => await this.server.Start(sourceToken.Token));
+        Task.Run(async () => await this.server.Start(this.sourceToken.Token));
     }
 
     /// <summary>
     /// Test equality of responses of multiple queries <see cref="Client.List(string)"/>.
     /// </summary>
+    /// <returns>Task.</returns>
     [Test]
     public async Task NumberListAnswersAreEqualTest()
     {
@@ -28,7 +32,7 @@ public class Tests
 
         for (var i = 0; i < clientCount; i++)
         {
-            clients[i] = new Client(port);
+            clients[i] = new Client(Port);
         }
 
         var tasks = new Task<(int, List<(string, bool)>)>[clientCount];
@@ -61,10 +65,11 @@ public class Tests
     /// <summary>
     /// A test that checks the non-negativity of the size of an existing directory.
     /// </summary>
+    /// <returns>Task.</returns>
     [Test]
     public async Task ExistingDirectorySizeTest()
     {
-        var client = new Client(port);
+        var client = new Client(Port);
 
         var (size, _) = await client.List("./");
 
@@ -74,10 +79,11 @@ public class Tests
     /// <summary>
     /// A test that checks the non-negativity of the size of an not existing directory.
     /// </summary>
+    /// <returns>Task.</returns>
     [Test]
     public async Task NotExistingDirectorySizeTest()
     {
-        var client = new Client(port);
+        var client = new Client(Port);
 
         var (size, _) = await client.List("@<notExistPath>");
 

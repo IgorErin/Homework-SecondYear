@@ -1,8 +1,9 @@
 namespace FTP.Exceptions;
 
 /// <summary>
-/// Exception class for <see cref="Client"/>
+/// Exception class for <see cref="Client"/>.
 /// </summary>
+[Serializable]
 public class ClientException : Exception
 {
     /// <summary>

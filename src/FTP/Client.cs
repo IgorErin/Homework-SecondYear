@@ -6,7 +6,7 @@ using Exceptions;
 using Extensions;
 
 /// <summary>
-/// Client class for <see cref="Server"/>
+/// Client class for <see cref="Server"/>.
 /// </summary>
 public sealed class Client : IDisposable
 {

@@ -3,6 +3,7 @@ namespace FTP.Exceptions;
 /// <summary>
 /// Data loss exception.
 /// </summary>
+[Serializable]
 public class DataLossException : Exception
 {
     /// <summary>
