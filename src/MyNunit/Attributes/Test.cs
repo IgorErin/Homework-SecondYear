@@ -3,15 +3,16 @@ namespace MyNunit.Attributes;
 [AttributeUsage(AttributeTargets.Method, Inherited = false)]
 public class Test : Attribute
 {
-    public Test()
+
+    public string Ignore
     {
+        get;
+        set;
     }
 
-    public Test(string ignore)
+    public Type Expected
     {
-    }
-
-    public Test(Exception Expected)
-    {
+        get;
+        set;
     }
 }

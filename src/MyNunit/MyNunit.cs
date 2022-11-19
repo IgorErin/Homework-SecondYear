@@ -18,8 +18,21 @@ public class MyNunit
         var assembly = Assembly.LoadFrom(pathToAssembly);
         loadedPaths.AddLast(pathToAssembly);
 
+        foreach (var type in assembly.ExportedTypes)
+        {
+
+
+            foreach (var method in type.GetTypeInfo().GetMethods())
+            {
+                if (IsTestMethod(method))
+                {
+
+                }
+            }
+        }
     }
 
+    [Test(Expected = typeof(Exception), Ignore = "some reason")]
     private bool IsTestMethod(MethodInfo methodInfo)
     {
         foreach (var att in methodInfo.CustomAttributes)
