@@ -1,6 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using System.Reflection;
+﻿using System.Reflection;
 
 Console.WriteLine("Hello, World!");
 
@@ -28,8 +26,6 @@ foreach (var type in assembly.ExportedTypes)
     {
 
         method.GetParameters();
-
-
 
         if (IsTestMethod(method))
         {

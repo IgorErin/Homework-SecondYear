@@ -1,7 +1,7 @@
 namespace MyNunit.Attributes;
 
 [AttributeUsage(AttributeTargets.Method, Inherited = false)]
-public class Test : Attribute
+public class TestAttribute : Attribute
 {
 
     public string Ignore
