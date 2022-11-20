@@ -66,7 +66,7 @@ public class Tests
     }
 
     /// <summary>
-    /// A test that checks the non-negativity of the size of an existing directory.
+    /// Test that checks the non-negativity of the size of an existing directory.
     /// </summary>
     /// <returns>Task.</returns>
     [Test]
@@ -74,13 +74,13 @@ public class Tests
     {
         var client = new Client(Port);
 
-        var (size, _) = await client.ListAsync("./");
+        var (size, _) = await client.ListAsync("");
 
         Assert.That(size, Is.GreaterThan(0));
     }
 
     /// <summary>
-    /// A test that checks the size of an not existing directory.
+    /// Test that checks the size of an not existing directory.
     /// </summary>
     /// <returns>Task.</returns>
     [Test]
@@ -94,7 +94,7 @@ public class Tests
     }
 
     /// <summary>
-    /// A test that checks the non-negativity of the size of an not existing directory.
+    /// Test that checks <see cref="Client.GetAsync(string, Stream)"/>
     /// </summary>
     /// <returns>Task.</returns>
     [Test]
