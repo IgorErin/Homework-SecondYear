@@ -1,22 +1,30 @@
 namespace TestAssembly;
 
-[Obsolete]
+using MyNunit.Attributes;
+
 public class Tests
 {
-    [SetUp]
+    [Before]
     public void Setup()
     {
+        Console.WriteLine("before");
     }
 
-    [Test]
+    [Test(Ignore = "never mind")]
     public void ShouldPass()
     {
-        Assert.Pass();
+        Console.WriteLine("ShouldPass test");
     }
 
     [Test]
     public void TestShouldFail()
     {
-        Assert.That(1, Is.EqualTo(-1));
+        Assert.Fail();
+    }
+
+    [After]
+    public void After()
+    {
+        Console.WriteLine("after");
     }
 }
