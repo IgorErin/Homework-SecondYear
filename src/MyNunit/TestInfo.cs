@@ -1,6 +1,7 @@
 namespace MyNunit;
 
 using System.Reflection;
+using System.Text;
 using Optional;
 using Optional.Unsafe;
 
@@ -72,5 +73,18 @@ public class TestInfo
         this.expectedException = expectedException.SomeNotNull();
         this.ignoreMessage = ignoreMessage.SomeNotNull();
         this.time = time;
+    }
+
+    public override string ToString()
+    {
+        var stringBuilder = new StringBuilder();
+
+        stringBuilder.AppendLine($"Test method name: {this.Name}");
+        stringBuilder.AppendLine($"Status: {this.Status}");
+        stringBuilder.AppendLine($"Message: {this.Message}");
+        stringBuilder.AppendLine($"Time: {this.time}");
+        stringBuilder.AppendLine();
+
+        return stringBuilder.ToString();
     }
 }

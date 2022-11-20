@@ -13,7 +13,7 @@ public class MyNunit
     private static readonly Stopwatch assemblyStopWatch = new();
     private static readonly object[] emptyArgs = Array.Empty<object>();
 
-    public TestAssemblyInfo RunTests(string pathToAssembly)
+    public TestAssemblyInfo RunTestsFrom(string pathToAssembly)
     {
         var assembly = Assembly.LoadFrom(pathToAssembly);
 
@@ -29,25 +29,17 @@ public class MyNunit
 
         foreach (var type in assembly.ExportedTypes)
         {
-            if (type.GetConstructor(Type.EmptyTypes) == null) //TODO()
+            if (type.GetConstructor(Type.EmptyTypes) == null)
             {
-                typeTests.Add(new TestClassInfo( "Class doesn't match to test class", type));
+                typeTests.Add(new TestClassInfo( "Class doesn't match to test class", type.GetTypeInfo()));
                 continue;
             }
 
-            var resultTestClassInfo = RunTypeTests(type);
-
-            foreach (var test in resultTestClassInfo.Tests)
-            {
-                Console.WriteLine($"Test: {test.Name} : {test.Status} => {test.Message}, Time: {test.Time}");
-            }
-
-            typeTests.Add(resultTestClassInfo);
+            typeTests.Add(RunTypeTests(type));
         }
 
         assemblyStopWatch.Stop();
-
-        return new TestAssemblyInfo(assemblyStopWatch.ElapsedMilliseconds, typeTests);
+        return new TestAssemblyInfo(assemblyStopWatch.ElapsedMilliseconds, typeTests, assembly);
     }
 
     private TestClassInfo RunTypeTests(Type type)
@@ -65,16 +57,14 @@ public class MyNunit
             RunStaticMethodsWithEmptyArgs(typeInfo, typeof(BeforeClassAttribute));
 
             var instance = Activator.CreateInstance(type) ??
-                           throw new Exception("message that indicate that class is not instanced");
+                           throw new Exception("message that indicate this class is not instanced");
 
             var beforeTestMethods = GetMethodsWithAttribute(typeof(BeforeAttribute), typeInfo);
             var afterTestMethods = GetMethodsWithAttribute(typeof(AfterAttribute), typeInfo);
 
-            for (var i = 0; i < testMethods.Count; i++)
+            foreach (var method in testMethods)
             {
-                var method = testMethods[i];
                 var testInfo = RunMethodTest(instance, beforeTestMethods, method, afterTestMethods);
-
                 results.Add(testInfo);
             }
 
@@ -83,11 +73,11 @@ public class MyNunit
         catch (Exception testRunTimeException)
         {
             typeStopWatch.Stop();
-            return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, testRunTimeException.Some(), "Type failed", type);
+            return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, testRunTimeException.Some(), "Type failed", typeInfo);
         }
 
         typeStopWatch.Stop();
-        return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, "Type passed", type);
+        return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, "Type passed", typeInfo);
     }
 
     private TestInfo RunMethodTest(
@@ -138,11 +128,8 @@ public class MyNunit
         => methodInfo.Invoke(type, emptyArgs);
 
     private TestAttribute GetTestAttribute(MethodInfo type)
-    {
-        var attribute = Attribute.GetCustomAttribute(type, typeof(TestAttribute)) ?? throw new Exception(); //TODO()
+        => (TestAttribute)(Attribute.GetCustomAttribute(type, typeof(TestAttribute)) ?? throw new Exception()); //TODO()
 
-        return (TestAttribute)attribute;
-    }
 
     private void RunInstanceMethodsWithEmptyArgs(object instance, IEnumerable<MethodInfo> methods)
     {
@@ -152,7 +139,7 @@ public class MyNunit
         }
     }
 
-    private void RunStaticMethodsWithEmptyArgs(TypeInfo typeInfo, Type methodAttributeType) //TODO() type -> attribyte
+    private void RunStaticMethodsWithEmptyArgs(TypeInfo typeInfo, Type methodAttributeType)
     {
         var staticMethods = GetMethodsWithAttribute(methodAttributeType, typeInfo);
 
