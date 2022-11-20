@@ -21,7 +21,7 @@ public class Tests
     }
 
     /// <summary>
-    /// Test equality of responses of multiple queries <see cref="Client.List(string)"/>.
+    /// Test equality of responses of multiple queries <see cref="Client.ListAsync"/>.
     /// </summary>
     /// <returns>Task.</returns>
     [Test]
@@ -39,7 +39,7 @@ public class Tests
 
         for (var i = 0; i < clientCount; i++)
         {
-            tasks[i] = clients[i].List("./");
+            tasks[i] = clients[i].ListAsync("./");
         }
 
         var sizeArray = new int[clientCount];
@@ -71,7 +71,7 @@ public class Tests
     {
         var client = new Client(Port);
 
-        var (size, _) = await client.List("./");
+        var (size, _) = await client.ListAsync("./");
 
         Assert.That(size, Is.GreaterThan(0));
     }
@@ -85,7 +85,7 @@ public class Tests
     {
         var client = new Client(Port);
 
-        var (size, _) = await client.List("@<notExistPath>");
+        var (size, _) = await client.ListAsync("@<notExistPath>");
 
         Assert.That(size, Is.EqualTo(-1));
     }

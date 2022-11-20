@@ -16,12 +16,7 @@ public sealed class Client : IDisposable
     private const int BoolSizeInBytes = 1;
     private const int ChunkSize = 1024;
 
-    private readonly TcpClient client;
-
-    private readonly StreamWriter writer;
-    private readonly StreamReader reader;
-
-    private readonly NetworkStream stream;
+    private readonly int port;
 
     private readonly byte[] charBuffer = new byte[StringCharSizeInBytes];
     private readonly byte[] boolBuffer = new byte[BoolSizeInBytes];
@@ -37,11 +32,7 @@ public sealed class Client : IDisposable
     /// <param name="port">Port for communicating with the server.</param>
     public Client(int port)
     {
-        this.client = new TcpClient("localHost", port);
-
-        this.stream = this.client.GetStream();
-        this.writer = new StreamWriter(this.stream);
-        this.reader = new StreamReader(this.stream);
+        this.port = port;
     }
 
     /// <summary>
@@ -57,36 +48,51 @@ public sealed class Client : IDisposable
     /// An exception will be thrown if there is a zero response from the server or
     /// if the transmission protocol is violated.
     /// </exception>
-    public async Task<(int, List<(string, bool)>)> List(string path)
+    public async Task<(int, List<(string, bool)>)> ListAsync(string path)
     {
-        await this.writer.WriteLineAsync($"1 {path}\n");
-        await this.writer.FlushAsync();
+        var client = new TcpClient("localHost", this.port);
 
-        var size = await this.GetSizeFromListAsync();
+        await using var networkStream = client.GetStream();
+        await using var writer = new StreamWriter(networkStream);
 
-        if (size == -1)
+        try
         {
-            return (-1, new List<(string, bool)>());
-        }
+            await writer.WriteLineAsync($"1 {path}\n");
+            await writer.FlushAsync();
 
-        if (size < 0)
+            var size = await this.GetSizeFromListAsync(networkStream);
+
+            if (size == -1)
+            {
+                return (-1, new List<(string, bool)>());
+            }
+
+            if (size < 0)
+            {
+                throw new ClientException();
+            }
+
+            var directoryDataList = new List<(string, bool)>(size);
+
+            for (var i = 0; i < size; i++)
+            {
+                var name = await this.GetNameAsync(networkStream);
+                var isDirectory = await this.GetDirectoryFlagAsync(networkStream);
+
+                directoryDataList.Add((name, isDirectory));
+
+                await this.ReadWhiteSpaceAsync(networkStream);
+            }
+
+            return (size, directoryDataList);
+        }
+        finally
         {
-            throw new ClientException();
+            await networkStream.DisposeAsync();
+            await writer.DisposeAsync();
+
+            client.Dispose();
         }
-
-        var directoryDataList = new List<(string, bool)>(size);
-
-        for (var i = 0; i < size; i++)
-        {
-            var name = await this.GetNameAsync();
-            var isDirectory = await this.GetDirectoryFlagAsync();
-
-            directoryDataList.Add((name, isDirectory));
-
-            await this.ReadWhiteSpaceAsync();
-        }
-
-        return (size, directoryDataList);
     }
 
     /// <summary>
@@ -102,34 +108,49 @@ public sealed class Client : IDisposable
     /// </exception>
     public async Task<long> GetAsync(string pathToGet, Stream streamToWrite)
     {
-        await this.writer.WriteLineAsync($"2 {pathToGet}");
-        await this.writer.FlushAsync();
+        var client = new TcpClient("localHost", this.port);
 
-        var fileSize = await this.GetSizeFromGetAsync();
+        await using var networkStream = client.GetStream();
+        await using var writer = new StreamWriter(networkStream);
 
-        var bytesLeft = fileSize;
-        var currentChunkSize = Math.Min(ChunkSize, bytesLeft);
-        var chunkBuffer = new byte[ChunkSize];
-
-        while (bytesLeft > 0)
+        try
         {
-            var writtenByteCount = await this.stream.ReadAsync(chunkBuffer, 0, (int)currentChunkSize);
+            await writer.WriteLineAsync($"2 {pathToGet}");
+            await writer.FlushAsync();
 
-            if (writtenByteCount != currentChunkSize)
+            var fileSize = await this.GetSizeFromGetAsync(networkStream);
+
+            var bytesLeft = fileSize;
+            var currentChunkSize = Math.Min(ChunkSize, bytesLeft);
+            var chunkBuffer = new byte[ChunkSize];
+
+            while (bytesLeft > 0)
             {
-                throw new ClientException("data loss during transmission, incomplete specifier");
+                var writtenByteCount = await networkStream.ReadAsync(chunkBuffer, 0, (int)currentChunkSize);
+
+                if (writtenByteCount != currentChunkSize)
+                {
+                    throw new ClientException("data loss during transmission, incomplete specifier");
+                }
+
+                await streamToWrite.WriteAsync(chunkBuffer, 0, (int)currentChunkSize);
+
+                bytesLeft -= currentChunkSize;
+                currentChunkSize = Math.Min(ChunkSize, bytesLeft);
             }
 
-            await streamToWrite.WriteAsync(chunkBuffer, 0, (int)currentChunkSize);
+            await streamToWrite.FlushAsync();
+            streamToWrite.Close();
 
-            bytesLeft -= currentChunkSize;
-            currentChunkSize = Math.Min(ChunkSize, bytesLeft);
+            return fileSize;
         }
+        finally
+        {
+            await networkStream.DisposeAsync();
+            await writer.DisposeAsync();
 
-        await streamToWrite.FlushAsync();
-        streamToWrite.Close();
-
-        return fileSize;
+            client.Dispose();
+        }
     }
 
     /// <summary>
@@ -142,18 +163,13 @@ public sealed class Client : IDisposable
             return;
         }
 
-        this.reader.Dispose();
-        this.writer.Dispose();
-        this.stream.Dispose();
-        this.client.Dispose();
-
         this.disposed = true;
     }
 
-    private async Task ReadWhiteSpaceAsync()
+    private async Task ReadWhiteSpaceAsync(NetworkStream stream)
     {
         var charWhiteSpaceBuffer = new byte[StringCharSizeInBytes];
-        await this.stream.ConfigureReadAsyncWithCheck(charWhiteSpaceBuffer);
+        await stream.ConfigureReadAsyncWithCheck(charWhiteSpaceBuffer);
 
         if (Encoding.Unicode.GetString(charWhiteSpaceBuffer) != " ")
         {
@@ -161,9 +177,9 @@ public sealed class Client : IDisposable
         }
     }
 
-    private async Task<string> GetNameAsync()
+    private async Task<string> GetNameAsync(NetworkStream stream)
     {
-        await this.stream.ConfigureReadAsyncWithCheck(this.charBuffer);
+        await stream.ConfigureReadAsyncWithCheck(this.charBuffer);
 
         this.charList.Clear();
         var symbol = Encoding.Unicode.GetString(this.charBuffer);
@@ -172,34 +188,34 @@ public sealed class Client : IDisposable
         {
             this.charList.AddLast(symbol);
 
-            await this.stream.ConfigureReadAsyncWithCheck(this.charBuffer);
+            await stream.ConfigureReadAsyncWithCheck(this.charBuffer);
             symbol = Encoding.Unicode.GetString(this.charBuffer);
         }
 
         return string.Join(string.Empty, this.charList);
     }
 
-    private async Task<bool> GetDirectoryFlagAsync()
+    private async Task<bool> GetDirectoryFlagAsync(NetworkStream stream)
     {
-        await this.stream.ConfigureReadAsyncWithCheck(this.boolBuffer);
+        await stream.ConfigureReadAsyncWithCheck(this.boolBuffer);
 
         return BitConverter.ToBoolean(this.boolBuffer);
     }
 
-    private async Task<int> GetSizeFromListAsync()
+    private async Task<int> GetSizeFromListAsync(NetworkStream stream)
     {
         var sizeInBytes = new byte[ListSizeBufferSize];
 
-        await this.stream.ConfigureReadAsyncWithCheck(sizeInBytes);
+        await stream.ConfigureReadAsyncWithCheck(sizeInBytes);
 
         return BitConverter.ToInt32(sizeInBytes);
     }
 
-    private async Task<long> GetSizeFromGetAsync()
+    private async Task<long> GetSizeFromGetAsync(NetworkStream stream)
     {
         var sizeInBytes = new byte[GetSizeBufferSize];
 
-        await this.stream.ConfigureReadAsyncWithCheck(sizeInBytes);
+        await stream.ConfigureReadAsyncWithCheck(sizeInBytes);
 
         return BitConverter.ToInt64(sizeInBytes);
     }

@@ -65,8 +65,6 @@ public class Server
 
     private async Task ListAsync(string path, NetworkStream stream)
     {
-        var currentDirectoryPath = Directory.GetCurrentDirectory(); // TODO() to server dir path !!!
-
         var currentDirectory = new DirectoryInfo(path);
 
         if (!currentDirectory.Exists)
@@ -130,28 +128,22 @@ public class Server
 
         try
         {
-            while (true)
+            var command = await reader.ConfigureReadLineAsync();
+            var dividedCommand = command?.Split() ?? Array.Empty<string>();
+
+            var (commandType, path) = (dividedCommand[0], dividedCommand[1]);
+
+            var transmissionTask = commandType switch
             {
-                var command = await reader.ConfigureReadLineAsync();
-                var dividedCommand = command?.Split() ?? Array.Empty<string>();
+                "1" => Task.Run(
+                    async () => await this.ListAsync(path, stream).ConfigureAwait(false)),
+                "2" => Task.Run(
+                    async () => await this.GetAsync(path, stream).ConfigureAwait(false)),
+                _ => Task.Run(async () =>
+                    await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(-1), GetAnswerBufferSize))
+            };
 
-                if (dividedCommand.Length != 2)
-                {
-                    continue;
-                }
-
-                var (commandType, path) = (dividedCommand[0], dividedCommand[1]);
-
-                var _ = commandType switch
-                {
-                    "1" => Task.Run(
-                        async () => await this.ListAsync(path, stream).ConfigureAwait(false)),
-                    "2" => Task.Run(
-                        async () => await this.GetAsync(path, stream).ConfigureAwait(false)),
-                    _ => Task.Run(async () =>
-                        await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(-1), GetAnswerBufferSize))
-                };
-            }
+            await transmissionTask;
         }
         finally
         {

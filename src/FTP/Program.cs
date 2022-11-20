@@ -19,7 +19,7 @@ public static class FTPMain
 
         var client1 = new Client(8888);
 
-        var result = await client1.List("./");
+        var result = await client1.ListAsync("./");
 
         Console.WriteLine($"result size = {result.Item1}");
         foreach (var item in result.Item2)
