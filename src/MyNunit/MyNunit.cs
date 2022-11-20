@@ -13,6 +13,10 @@ public class MyNunit
     private static readonly Stopwatch assemblyStopWatch = new();
     private static readonly object[] emptyArgs = Array.Empty<object>();
 
+    private const string typePassedMessage = "Type passed";
+    private const string typeFailedMessage = "Type failed";
+    private const string typeNotMatchMessage = "Class doesn't match to test class";
+
     public TestAssemblyInfo RunTestsFrom(string pathToAssembly)
     {
         var assembly = Assembly.LoadFrom(pathToAssembly);
@@ -31,7 +35,7 @@ public class MyNunit
         {
             if (type.GetConstructor(Type.EmptyTypes) == null)
             {
-                typeTests.Add(new TestClassInfo( "Class doesn't match to test class", type.GetTypeInfo()));
+                typeTests.Add(new TestClassInfo( typeNotMatchMessage, type.GetTypeInfo()));
                 continue;
             }
 
@@ -57,7 +61,7 @@ public class MyNunit
             RunStaticMethodsWithEmptyArgs(typeInfo, typeof(BeforeClassAttribute));
 
             var instance = Activator.CreateInstance(type) ??
-                           throw new Exception("message that indicate this class is not instanced");
+                           throw new ClassInstantiationException("Class cannot be instantiated");
 
             var beforeTestMethods = GetMethodsWithAttribute(typeof(BeforeAttribute), typeInfo);
             var afterTestMethods = GetMethodsWithAttribute(typeof(AfterAttribute), typeInfo);
@@ -73,11 +77,11 @@ public class MyNunit
         catch (Exception testRunTimeException)
         {
             typeStopWatch.Stop();
-            return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, testRunTimeException.Some(), "Type failed", typeInfo);
+            return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, testRunTimeException.Some(), typeFailedMessage, typeInfo);
         }
 
         typeStopWatch.Stop();
-        return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, "Type passed", typeInfo);
+        return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, typePassedMessage, typeInfo);
     }
 
     private TestInfo RunMethodTest(
@@ -128,8 +132,8 @@ public class MyNunit
         => methodInfo.Invoke(type, emptyArgs);
 
     private TestAttribute GetTestAttribute(MethodInfo type)
-        => (TestAttribute)(Attribute.GetCustomAttribute(type, typeof(TestAttribute)) ?? throw new Exception()); //TODO()
-
+        => (TestAttribute)(Attribute.GetCustomAttribute(type, typeof(TestAttribute))
+                           ?? throw new NullReferenceException("Empty methods attributes"));
 
     private void RunInstanceMethodsWithEmptyArgs(object instance, IEnumerable<MethodInfo> methods)
     {

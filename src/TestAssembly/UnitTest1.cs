@@ -1,19 +1,18 @@
 namespace TestAssembly;
 
 using MyNunit.Attributes;
+using MyNunit.Exceptions;
 
 public class Tests
 {
     [Before]
     public void Setup()
     {
-        Console.WriteLine("before");
     }
 
     [Test(Ignore = "never mind")]
     public void ShouldPass()
     {
-        Console.WriteLine("ShouldPass test");
     }
 
     [Test]
@@ -22,9 +21,17 @@ public class Tests
         Assert.Fail();
     }
 
+    [Test(Expected = typeof(SuccessException))]
+    public void SomeTest()
+    {
+        if (1 == 1)
+        {
+            throw new SuccessException();
+        }
+    }
+
     [After]
     public void After()
     {
-        Console.WriteLine("after");
     }
 }
