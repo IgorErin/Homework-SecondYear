@@ -3,6 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1C7F1C14-C5D2-47FF-BF48-3B926B4B4F50}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FTP", "src\FTP\FTP.csproj", "{1EA848A9-6E25-4109-9D22-B5B73DDF48E9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{00348DD1-2B17-41A4-9AF5-E921253024BC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FTPTest", "test\FTPTest\FTPTest.csproj", "{A8CF8C62-06D8-49D8-B468-3B0977936B7D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -10,5 +18,19 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1EA848A9-6E25-4109-9D22-B5B73DDF48E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1EA848A9-6E25-4109-9D22-B5B73DDF48E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1EA848A9-6E25-4109-9D22-B5B73DDF48E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1EA848A9-6E25-4109-9D22-B5B73DDF48E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8CF8C62-06D8-49D8-B468-3B0977936B7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8CF8C62-06D8-49D8-B468-3B0977936B7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8CF8C62-06D8-49D8-B468-3B0977936B7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8CF8C62-06D8-49D8-B468-3B0977936B7D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1EA848A9-6E25-4109-9D22-B5B73DDF48E9} = {1C7F1C14-C5D2-47FF-BF48-3B926B4B4F50}
+		{A8CF8C62-06D8-49D8-B468-3B0977936B7D} = {00348DD1-2B17-41A4-9AF5-E921253024BC}
 	EndGlobalSection
 EndGlobal
