@@ -1,5 +1,6 @@
 namespace FTPTest;
 
+using System.Text;
 using FTP;
 
 /// <summary>
@@ -10,6 +11,8 @@ public class Tests
     private const int Port = 8888;
     private readonly Server server = new (Port);
     private readonly CancellationTokenSource sourceToken = new ();
+    private readonly string testMessage = "Heinrich Hertz";
+    private readonly string testFilePath = "//testFile";
 
     /// <summary>
     /// Set up method.
@@ -77,7 +80,7 @@ public class Tests
     }
 
     /// <summary>
-    /// A test that checks the non-negativity of the size of an not existing directory.
+    /// A test that checks the size of an not existing directory.
     /// </summary>
     /// <returns>Task.</returns>
     [Test]
@@ -88,5 +91,30 @@ public class Tests
         var (size, _) = await client.ListAsync("@<notExistPath>");
 
         Assert.That(size, Is.EqualTo(-1));
+    }
+
+    /// <summary>
+    /// A test that checks the non-negativity of the size of an not existing directory.
+    /// </summary>
+    /// <returns>Task.</returns>
+    [Test]
+    public async Task GetTest()
+    {
+        var client = new Client(Port);
+
+        var fileInfo = new FileInfo(Directory.GetCurrentDirectory() + this.testFilePath);
+        var fileStream = fileInfo.Create();
+        await fileStream.WriteAsync(Encoding.Unicode.GetBytes(this.testMessage));
+        await fileStream.FlushAsync();
+        fileStream.Close();
+
+        var buffer = new byte[28];
+        var memoryStream = new MemoryStream(buffer);
+
+        var size = await client.GetAsync(this.testFilePath, memoryStream);
+
+        Assert.That(size, Is.EqualTo(28));
+
+        Assert.That(buffer, Is.EqualTo(Encoding.Unicode.GetBytes(this.testMessage)));
     }
 }

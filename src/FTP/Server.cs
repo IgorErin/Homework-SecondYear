@@ -65,7 +65,7 @@ public class Server
 
     private async Task ListAsync(string path, NetworkStream stream)
     {
-        var currentDirectory = new DirectoryInfo(path);
+        var currentDirectory = new DirectoryInfo(Directory.GetCurrentDirectory() + path);
 
         if (!currentDirectory.Exists)
         {
@@ -99,8 +99,10 @@ public class Server
         await stream.ConfigureFlushAsync();
     }
 
-    private async Task GetAsync(string path, NetworkStream stream)
+    private async Task GetAsync(string inputPath, NetworkStream stream)
     {
+        var path = Directory.GetCurrentDirectory() + inputPath;
+
         if (!File.Exists(path))
         {
             await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(IncorrectRequestLengthAnswer), GetAnswerBufferSize);

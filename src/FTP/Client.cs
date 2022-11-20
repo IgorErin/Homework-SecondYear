@@ -130,7 +130,7 @@ public sealed class Client : IDisposable
 
                 if (writtenByteCount != currentChunkSize)
                 {
-                    throw new ClientException("data loss during transmission, incomplete specifier");
+                    throw new ClientException($"data loss during transmission, incomplete specifier, {writtenByteCount}, {currentChunkSize}, {fileSize}, {(int)bytesLeft}");
                 }
 
                 await streamToWrite.WriteAsync(chunkBuffer, 0, (int)currentChunkSize);
@@ -140,7 +140,6 @@ public sealed class Client : IDisposable
             }
 
             await streamToWrite.FlushAsync();
-            streamToWrite.Close();
 
             return fileSize;
         }
