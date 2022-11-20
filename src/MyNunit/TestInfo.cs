@@ -1,17 +1,18 @@
 namespace MyNunit;
 
+using System.Reflection;
 using Optional;
 using Optional.Unsafe;
 
 public class TestInfo
 {
-    private readonly string name;
+    private readonly MethodInfo methodInfo;
     private readonly Exception exceptionResult;
     private readonly Option<Type> expectedException;
     private readonly Option<string> ignoreMessage;
     private readonly long time;
 
-    public string Name => this.name;
+    public string Name => this.methodInfo.Name;
 
     public TestStatus Status
     {
@@ -60,16 +61,16 @@ public class TestInfo
     public long Time => this.time;
 
     public TestInfo(
-        string name,
+        MethodInfo methodInfo,
         Exception exceptionResult,
         Type expectedException,
-        string ignoreReason,
+        string ignoreMessage,
         long time)
     {
-        this.name = name;
+        this.methodInfo = methodInfo;
         this.exceptionResult = exceptionResult;
         this.expectedException = expectedException.SomeNotNull();
-        this.ignoreMessage = ignoreReason.SomeNotNull();
+        this.ignoreMessage = ignoreMessage.SomeNotNull();
         this.time = time;
     }
 }

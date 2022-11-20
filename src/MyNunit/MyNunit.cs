@@ -13,15 +13,11 @@ public class MyNunit
     private static readonly Stopwatch assemblyStopWatch = new();
     private static readonly object[] emptyArgs = Array.Empty<object>();
 
-    public void RunTests(string pathToAssembly)
+    public TestAssemblyInfo RunTests(string pathToAssembly)
     {
         var assembly = Assembly.LoadFrom(pathToAssembly);
 
-        assemblyStopWatch.Start();
-
-
-        assemblyStopWatch.Stop();
-        Console.WriteLine($"Global time: {assemblyStopWatch.ElapsedMilliseconds}");
+        return RunAssemblyTests(assembly);
     }
 
     private TestAssemblyInfo RunAssemblyTests(Assembly assembly)
@@ -35,7 +31,7 @@ public class MyNunit
         {
             if (type.GetConstructor(Type.EmptyTypes) == null) //TODO()
             {
-                Console.WriteLine("Type have strange constructor for test class");
+                typeTests.Add(new TestClassInfo( "Class doesn't match to test class", type));
                 continue;
             }
 
@@ -87,11 +83,11 @@ public class MyNunit
         catch (Exception testRunTimeException)
         {
             typeStopWatch.Stop();
-            return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, testRunTimeException.Some());
+            return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, testRunTimeException.Some(), "Type failed", type);
         }
 
         typeStopWatch.Stop();
-        return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results);
+        return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, "Type passed", type);
     }
 
     private TestInfo RunMethodTest(
@@ -128,7 +124,7 @@ public class MyNunit
         var attribute = GetTestAttribute(testMethod);
 
         return new TestInfo(
-            testMethod.Name,
+            testMethod,
             resultException,
             attribute.Expected,
             attribute.Ignore,
