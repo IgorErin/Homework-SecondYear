@@ -5,84 +5,156 @@ using System.Reflection;
 using Attributes;
 using Exceptions;
 using Optional;
-using Optional.Unsafe;
 
 public class MyNunit
 {
-    private static readonly Stopwatch stopwatch = new ();
+    private static readonly Stopwatch methodStopwatch = new ();
+    private static readonly Stopwatch typeStopWatch = new();
+    private static readonly Stopwatch assemblyStopWatch = new();
     private static readonly object[] emptyArgs = Array.Empty<object>();
 
-    public (IEnumerable<(long, string)>, IEnumerable<string>) RunTests(string pathToAssembly)
+    public void RunTests(string pathToAssembly)
     {
         var assembly = Assembly.LoadFrom(pathToAssembly);
 
+        assemblyStopWatch.Start();
+
+
+        assemblyStopWatch.Stop();
+        Console.WriteLine($"Global time: {assemblyStopWatch.ElapsedMilliseconds}");
+    }
+
+    private TestAssemblyInfo RunAssemblyTests(Assembly assembly)
+    {
+        var typeTests = new List<TestClassInfo>();
+
+        assemblyStopWatch.Reset();
+        assemblyStopWatch.Start();
+
         foreach (var type in assembly.ExportedTypes)
         {
-            var typeInfo = type.GetTypeInfo();
-
-            try
+            if (type.GetConstructor(Type.EmptyTypes) == null) //TODO()
             {
-                RunStaticMethodsWithEmptyArgs(typeInfo, typeof(BeforeClassAttribute));
-
-                var instance = Activator.CreateInstance(typeInfo) ??
-                               throw new Exception("message that indicate that class is not instanced");
-
-                var beforeTestMethods = GetMethodsWithAttribute(typeof(BeforeAttribute), typeInfo);
-                var afterTestMethods = GetMethodsWithAttribute(typeof(AfterAttribute), typeInfo);
-
-                var testMethods = GetMethodsWithAttribute(typeof(TestAttribute), typeInfo);
-                var results = new TestInfo[testMethods.Count];
-
-                for (var i = 0; i < testMethods.Count; i++)
-                {
-                    var method = testMethods[i];
-
-                    if (IsMethodHasAttribute(method, typeof(TestAttribute)))
-                    {
-                        Exception resultException = new SuccessException();
-                        try
-                        {
-                            foreach (var beforeMethod in beforeTestMethods)
-                            {
-                                RunInstanceMethodWithEmptyArgs(instance, beforeMethod);
-                            }
-
-                            stopwatch.Reset();
-                            stopwatch.Start();
-                            RunInstanceMethodWithEmptyArgs(instance, method);
-                            stopwatch.Stop();
-
-                            foreach (var afterMethod in afterTestMethods)
-                            {
-                                RunInstanceMethodWithEmptyArgs(instance, afterMethod);
-                            }
-                        }
-                        catch (Exception e) //TODO()
-                        {
-                            resultException = e;
-                        }
-
-
-                        results[i] = new TestInfo(method.Name, stopwatch.ElapsedMilliseconds, resultException);
-                    }
-                }
-
-                RunStaticMethodsWithEmptyArgs(typeInfo, typeof(AfterClassAttribute));
-            }catch (Exception e) //TODO()
-            {
+                Console.WriteLine("Type have strange constructor for test class");
+                continue;
             }
+
+            var resultTestClassInfo = RunTypeTests(type);
+
+            foreach (var test in resultTestClassInfo.Tests)
+            {
+                Console.WriteLine($"Test: {test.Name} : {test.Status} => {test.Message}, Time: {test.Time}");
+            }
+
+            typeTests.Add(resultTestClassInfo);
         }
 
-        return null; //TODO()
+        assemblyStopWatch.Stop();
+
+        return new TestAssemblyInfo(assemblyStopWatch.ElapsedMilliseconds, typeTests);
+    }
+
+    private TestClassInfo RunTypeTests(Type type)
+    {
+        var typeInfo = type.GetTypeInfo();
+
+        var testMethods = GetMethodsWithAttribute(typeof(TestAttribute), typeInfo);
+        var results = new List<TestInfo>();
+
+        typeStopWatch.Reset();
+        typeStopWatch.Start();
+
+        try
+        {
+            RunStaticMethodsWithEmptyArgs(typeInfo, typeof(BeforeClassAttribute));
+
+            var instance = Activator.CreateInstance(type) ??
+                           throw new Exception("message that indicate that class is not instanced");
+
+            var beforeTestMethods = GetMethodsWithAttribute(typeof(BeforeAttribute), typeInfo);
+            var afterTestMethods = GetMethodsWithAttribute(typeof(AfterAttribute), typeInfo);
+
+            for (var i = 0; i < testMethods.Count; i++)
+            {
+                var method = testMethods[i];
+                var testInfo = RunMethodTest(instance, beforeTestMethods, method, afterTestMethods);
+
+                results.Add(testInfo);
+            }
+
+            RunStaticMethodsWithEmptyArgs(typeInfo, typeof(AfterClassAttribute));
+        }
+        catch (Exception testRunTimeException)
+        {
+            typeStopWatch.Stop();
+            return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, testRunTimeException.Some());
+        }
+
+        typeStopWatch.Stop();
+        return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results);
+    }
+
+    private TestInfo RunMethodTest(
+        object instance,
+        List<MethodInfo> beforeTestMethods,
+        MethodInfo testMethod,
+        List<MethodInfo> afterTestMethods)
+    {
+        Exception resultException = new SuccessException();
+
+        try
+        {
+            RunInstanceMethodsWithEmptyArgs(instance, beforeTestMethods);
+
+            methodStopwatch.Reset();
+            methodStopwatch.Start();
+            try
+            {
+                RunInstanceMethodWithEmptyArgs(instance, testMethod);
+            }
+            catch (Exception testRunTimeException)
+            {
+                resultException = testRunTimeException;
+            }
+            methodStopwatch.Stop();
+
+            RunInstanceMethodsWithEmptyArgs(instance, afterTestMethods);
+        }
+        catch (Exception testRunTimeException)
+        {
+            resultException = testRunTimeException;
+        }
+
+        var attribute = GetTestAttribute(testMethod);
+
+        return new TestInfo(
+            testMethod.Name,
+            resultException,
+            attribute.Expected,
+            attribute.Ignore,
+            methodStopwatch.ElapsedMilliseconds);
     }
 
     private bool IsMethodHasAttribute(MethodInfo methodInfo, Type attributeType)
         => methodInfo.GetCustomAttributes(attributeType).Any();
 
-
     private void RunInstanceMethodWithEmptyArgs(object type, MethodInfo methodInfo)
         => methodInfo.Invoke(type, emptyArgs);
 
+    private TestAttribute GetTestAttribute(MethodInfo type)
+    {
+        var attribute = Attribute.GetCustomAttribute(type, typeof(TestAttribute)) ?? throw new Exception(); //TODO()
+
+        return (TestAttribute)attribute;
+    }
+
+    private void RunInstanceMethodsWithEmptyArgs(object instance, IEnumerable<MethodInfo> methods)
+    {
+        foreach (var afterMethod in methods)
+        {
+            RunInstanceMethodWithEmptyArgs(instance, afterMethod);
+        }
+    }
 
     private void RunStaticMethodsWithEmptyArgs(TypeInfo typeInfo, Type methodAttributeType) //TODO() type -> attribyte
     {
@@ -107,98 +179,5 @@ public class MyNunit
         }
 
         return compatibleMethods;
-    }
-
-    private class TestInfo
-    {
-        private readonly string name;
-        private readonly Exception exceptionResult;
-        private readonly Option<Exception> expectedException;
-        private readonly Option<string> ignoreMessage;
-        private readonly long time;
-
-        public string Name => this.name;
-
-        public TestStatus Status
-        {
-            get
-            {
-                if (this.ignoreMessage.HasValue)
-                {
-                    return TestStatus.Ignored;
-                }
-
-                if (this.expectedException.HasValue
-                    && this.exceptionResult.GetType() == this.expectedException.GetType())
-                {
-                    return TestStatus.Passed;
-                }
-
-                return TestStatus.Failed;
-            }
-        }
-
-        public string Message
-        {
-            get
-            {
-                if (this.ignoreMessage.HasValue)
-                {
-                    return $"Ignore, {ignoreMessage.ValueOrFailure()}";
-                }
-
-                if (this.expectedException.HasValue)
-                {
-                    if (this.expectedException.ValueOrFailure().GetType() == exceptionResult.GetType())
-                    {
-                        return $"Passed with expected exception, message = {this.exceptionResult.Message}";
-                    }
-
-                    return
-                        $"Failed with unexpected exception: {this.exceptionResult.GetType()}," +
-                        $" message = {this.exceptionResult.Message}";
-                }
-
-                return $"Failed with exception: {this.exceptionResult.GetType()}, message = {this.exceptionResult.Message}";
-            }
-        }
-
-        private TestInfo(
-            string name,
-            Exception exceptionResult,
-            Option<Exception> expectedException,
-            Option<string> ignoreReason,
-            long time)
-        {
-            this.name = name;
-            this.exceptionResult = exceptionResult;
-            this.expectedException = expectedException;
-            this.ignoreMessage = ignoreReason;
-            this.time = time;
-        }
-
-        public TestInfo(string name, long time, Exception exceptionResult)
-            : this (name, exceptionResult, Option.None<Exception>(), Option.None<string>(), time)
-        {
-            this.name = name;
-            this.exceptionResult = exceptionResult;
-        }
-
-        public TestInfo(string name, long time, Exception exceptionResult, Exception expectedException)
-            : this(name, exceptionResult, expectedException.Some(), Option.None<string>(), time)
-        {
-        }
-
-        public TestInfo(string name, long time, Exception exceptionResult, string ignoreReason)
-            : this(name, exceptionResult, Option.None<Exception>(), ignoreReason.Some(), time)
-        {
-        }
-    }
-
-    private enum TestStatus
-    {
-        Failed,
-        Ignored,
-        Passed
     }
 }
