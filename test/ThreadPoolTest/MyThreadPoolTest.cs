@@ -108,4 +108,38 @@ public class MyThreadPoolTest
             var _ = testTask.ContinueWith(result => result);
         });
     }
+
+    /// <summary>
+    /// <see cref="MyThreadPool"/> start thread count test.
+    /// </summary>
+    [Test]
+    public void ThreadCountTest()
+    {
+        var countDownEvent = new CountdownEvent(this.processorCount);
+
+        using var threadPool = new MyThreadPool(this.processorCount);
+
+        var taskFun = () =>
+        {
+            countDownEvent.Signal();
+
+            return 1;
+        };
+
+        var tasks = new MyTask.IMyTask<int>[this.processorCount];
+
+        for (var i = 0; i < this.processorCount; i++)
+        {
+            tasks[i] = threadPool.Submit(taskFun);
+        }
+
+        foreach (var task in tasks)
+        {
+            var _ = task.Result;
+        }
+
+        countDownEvent.Wait();
+
+        Assert.Pass();
+    }
 }
