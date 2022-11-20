@@ -104,7 +104,17 @@ public class MyNunit
             }
             catch (Exception testRunTimeException)
             {
-                resultException = testRunTimeException;
+                methodStopwatch.Stop();
+
+                var firstAttribute = GetTestAttribute(testMethod);
+                RunInstanceMethodsWithEmptyArgs(instance, afterTestMethods);
+
+                return new TestInfo(
+                    testMethod,
+                    testRunTimeException.InnerException ?? throw new NullReferenceException("Inner exception of target call"),
+                    firstAttribute.Expected,
+                    firstAttribute.Ignore,
+                    methodStopwatch.ElapsedMilliseconds);
             }
             methodStopwatch.Stop();
 

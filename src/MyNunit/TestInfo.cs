@@ -2,6 +2,8 @@ namespace MyNunit;
 
 using System.Reflection;
 using System.Text;
+using Exceptions;
+using Extensions;
 using Optional;
 using Optional.Unsafe;
 
@@ -24,8 +26,7 @@ public class TestInfo
                 return TestStatus.Ignored;
             }
 
-            if (this.expectedException.HasValue
-                && this.exceptionResult.GetType() == this.expectedException.GetType())
+            if (IsPassedWithExpectedException())
             {
                 return TestStatus.Passed;
             }
@@ -40,22 +41,15 @@ public class TestInfo
         {
             if (this.ignoreMessage.HasValue)
             {
-                return $"Ignore, {ignoreMessage.ValueOrFailure()}";
+                return $"Ignore, message: {ignoreMessage.ValueOrFailure()}";
             }
 
-            if (this.expectedException.HasValue)
+            if (IsPassedWithExpectedException())
             {
-                if (this.expectedException.ValueOrFailure().GetType() == exceptionResult.GetType()) //TODO()
-                {
-                    return $"Passed with expected exception, message: {this.exceptionResult.Message}";
-                }
-
-                return
-                    $"Failed with unexpected exception: {this.exceptionResult.GetType()}," +
-                    $" message = {this.exceptionResult.Message}";
+                return $"Passed with expected exception, message: {this.exceptionResult.Message}";
             }
 
-            return $"Failed with exception: {this.exceptionResult.GetType()}, message = {this.exceptionResult.Message}";
+            return $"Failed with exception: {this.exceptionResult.GetType()}, message: {this.exceptionResult.Message}";
         }
     }
 
@@ -82,9 +76,17 @@ public class TestInfo
         stringBuilder.AppendLine($"Test method name: {this.Name}");
         stringBuilder.AppendLine($"Status: {this.Status}");
         stringBuilder.AppendLine($"Message: {this.Message}");
+        if (this.exceptionResult.StackTrace?.Length > 0)
+        {
+            stringBuilder.AppendLine($"{this.exceptionResult.StackTrace}");
+        }
         stringBuilder.AppendLine($"Time: {this.time}");
         stringBuilder.AppendLine();
 
         return stringBuilder.ToString();
     }
+
+    private bool IsPassedWithExpectedException()
+        => this.expectedException.HasValue &&
+           this.expectedException.ValueOrFailure().IsEqual(exceptionResult.GetType());
 }
