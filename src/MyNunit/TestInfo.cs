@@ -17,43 +17,35 @@ public class TestInfo
 
     public string Name => this.methodInfo.Name;
 
-    public TestStatus Status
-    {
-        get
-        {
-            if (this.ignoreMessage.HasValue)
-            {
-                return TestStatus.Ignored;
-            }
-
-            if (IsPassedWithExpectedException())
-            {
-                return TestStatus.Passed;
-            }
-
-            return TestStatus.Failed;
-        }
-    }
-
-    public string Message
-    {
-        get
-        {
-            if (this.ignoreMessage.HasValue)
-            {
-                return $"Ignore, message: {ignoreMessage.ValueOrFailure()}";
-            }
-
-            if (IsPassedWithExpectedException())
-            {
-                return $"Passed with expected exception, message: {this.exceptionResult.Message}";
-            }
-
-            return $"Failed with exception: {this.exceptionResult.GetType()}, message: {this.exceptionResult.Message}";
-        }
-    }
-
     public long Time => this.time;
+
+    public (string, long, TestStatus) Result
+    {
+        get
+        {
+            if (this.ignoreMessage.HasValue)
+            {
+                return ($"Ignore, message: {ignoreMessage.ValueOrFailure()}", this.time, TestStatus.Ignored);
+            }
+
+            if (this.expectedException.HasValue && this.expectedException.ValueOrFailure().IsEqual(exceptionResult.GetType()))
+            {
+                return ($"Passed with expected exception, message: {this.exceptionResult.Message}", this.time, TestStatus.Passed);
+            }
+
+            if (this.expectedException.HasValue)
+            {
+                return ($"Failed with exception, message {this.exceptionResult.Message}", this.time, TestStatus.Failed);
+            }
+
+            if (this.exceptionResult.GetType().IsEqual(typeof(SuccessException)))
+            {
+                return ($"Passed", this.time, TestStatus.Passed);
+            }
+
+            return ("Failed", this.time, TestStatus.Failed);
+        }
+    }
 
     public TestInfo(
         MethodInfo methodInfo,
@@ -73,9 +65,11 @@ public class TestInfo
     {
         var stringBuilder = new StringBuilder();
 
+        var (message, _, status) = this.Result;
+
         stringBuilder.AppendLine($"Test method name: {this.Name}");
-        stringBuilder.AppendLine($"Status: {this.Status}");
-        stringBuilder.AppendLine($"Message: {this.Message}");
+        stringBuilder.AppendLine($"Status: {message}");
+        stringBuilder.AppendLine($"Message: {status}");
         if (this.exceptionResult.StackTrace?.Length > 0)
         {
             stringBuilder.AppendLine($"{this.exceptionResult.StackTrace}");
@@ -85,8 +79,4 @@ public class TestInfo
 
         return stringBuilder.ToString();
     }
-
-    private bool IsPassedWithExpectedException()
-        => this.expectedException.HasValue &&
-           this.expectedException.ValueOrFailure().IsEqual(exceptionResult.GetType());
 }

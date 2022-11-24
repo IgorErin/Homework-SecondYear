@@ -1,6 +1,20 @@
-﻿var nunit = new MyNunit.MyNunit();
+﻿if (File.Exists(args[0]))
+{
+    try
+    {
+        var nunit = new MyNunit.MyNunit();
 
-var assemblyTest =
-    nunit.RunTestsFrom("D:\\Projects\\Homework-SecondYear\\src\\TestAssembly\\bin\\Debug\\net6.0\\TestAssembly.dll");
+        var result = nunit.RunTestsFrom(args[0]);
 
-Console.WriteLine(assemblyTest.ToString());
+        Console.Write(result.ToString());
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine(e.Message);
+        Console.WriteLine("Please, restart the program");
+    }
+}
+else
+{
+    Console.WriteLine("The specified file was not found");
+}
