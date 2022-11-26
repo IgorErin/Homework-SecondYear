@@ -5,12 +5,12 @@ using MyNunit.Exceptions;
 
 public class BeforeClassTest
 {
-    public bool isBeforeTestRun;
+    public static bool isRun;
 
     [BeforeClass]
-    public void BeforeTestMethod()
+    public static void BeforeTestMethod()
     {
-        this.isBeforeTestRun = true;
+        isRun = true;
     }
 
     [Test]

@@ -4,12 +4,12 @@ using MyNunit.Attributes;
 
 public class BeforeTestClass
 {
-    public bool isBeforeRun;
+    public static bool isRun;
 
     [Before]
     public void BeforeTestMethod()
     {
-        this.isBeforeRun = true;
+        isRun = true;
     }
 
     [Test]

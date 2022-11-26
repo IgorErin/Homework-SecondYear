@@ -11,8 +11,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{A397E298-9
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyNunitTest", "test\MyNunitTest\MyNunitTest.csproj", "{A2D8360D-BCB4-4C9C-BCD9-3DBE59CF89B2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestAssemblyDll", "src\TestAssemblyDll\TestAssemblyDll.csproj", "{A192E42D-DA5C-46C1-9681-0C84625664B0}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,14 +28,9 @@ Global
 		{A2D8360D-BCB4-4C9C-BCD9-3DBE59CF89B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2D8360D-BCB4-4C9C-BCD9-3DBE59CF89B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A2D8360D-BCB4-4C9C-BCD9-3DBE59CF89B2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A192E42D-DA5C-46C1-9681-0C84625664B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A192E42D-DA5C-46C1-9681-0C84625664B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A192E42D-DA5C-46C1-9681-0C84625664B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A192E42D-DA5C-46C1-9681-0C84625664B0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{5DB49417-0002-4915-A6C5-1AF34B134796} = {027F5502-6DA3-4466-82FE-F70038FEEF08}
 		{A2D8360D-BCB4-4C9C-BCD9-3DBE59CF89B2} = {A397E298-9900-4D61-B13A-B4D14FF61EC7}
-		{A192E42D-DA5C-46C1-9681-0C84625664B0} = {027F5502-6DA3-4466-82FE-F70038FEEF08}
 	EndGlobalSection
 EndGlobal

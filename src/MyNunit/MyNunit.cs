@@ -46,7 +46,7 @@ public class MyNunit
         return new TestAssemblyInfo(assemblyStopWatch.ElapsedMilliseconds, typeTests, assembly);
     }
 
-    public TestClassInfo RunTypeTests(Type type)
+    public static TestClassInfo RunTypeTests(Type type)
     {
         var typeInfo = type.GetTypeInfo();
 
@@ -84,7 +84,7 @@ public class MyNunit
         return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, typePassedMessage, typeInfo);
     }
 
-    private TestInfo RunMethodTest(
+    private static TestInfo RunMethodTest(
         object instance,
         List<MethodInfo> beforeTestMethods,
         MethodInfo testMethod,
@@ -135,17 +135,17 @@ public class MyNunit
             methodStopwatch.ElapsedMilliseconds);
     }
 
-    private bool IsMethodHasAttribute(MethodInfo methodInfo, Type attributeType)
+    private static bool IsMethodHasAttribute(MethodInfo methodInfo, Type attributeType)
         => methodInfo.GetCustomAttributes(attributeType).Any();
 
-    private void RunInstanceMethodWithEmptyArgs(object type, MethodInfo methodInfo)
+    private static void RunInstanceMethodWithEmptyArgs(object type, MethodInfo methodInfo)
         => methodInfo.Invoke(type, emptyArgs);
 
-    private TestAttribute GetTestAttribute(MethodInfo type)
+    private static TestAttribute GetTestAttribute(MethodInfo type)
         => (TestAttribute)(Attribute.GetCustomAttribute(type, typeof(TestAttribute))
                            ?? throw new NullReferenceException("Empty methods attributes"));
 
-    private void RunInstanceMethodsWithEmptyArgs(object instance, IEnumerable<MethodInfo> methods)
+    private static void RunInstanceMethodsWithEmptyArgs(object instance, IEnumerable<MethodInfo> methods)
     {
         foreach (var afterMethod in methods)
         {
@@ -153,7 +153,7 @@ public class MyNunit
         }
     }
 
-    private void RunStaticMethodsWithEmptyArgs(TypeInfo typeInfo, Type methodAttributeType)
+    private static void RunStaticMethodsWithEmptyArgs(TypeInfo typeInfo, Type methodAttributeType)
     {
         var staticMethods = GetMethodsWithAttribute(methodAttributeType, typeInfo);
 
@@ -163,7 +163,7 @@ public class MyNunit
         }
     }
 
-    private List<MethodInfo> GetMethodsWithAttribute(Type attributeType, TypeInfo typeInfo)
+    private static List<MethodInfo> GetMethodsWithAttribute(Type attributeType, TypeInfo typeInfo)
     {
         var compatibleMethods = new List<MethodInfo>();
 

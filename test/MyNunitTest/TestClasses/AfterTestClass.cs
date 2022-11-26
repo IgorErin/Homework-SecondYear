@@ -5,12 +5,12 @@ using MyNunit.Exceptions;
 
 public class AfterTestClass
 {
-    public bool afterIsRun;
+    public static bool isRun;
 
     [After]
     public void AfterTestMethod()
     {
-        this.afterIsRun = true;
+        isRun = true;
     }
 
     [Test(Ignore = "before test attribute test")]

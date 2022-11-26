@@ -4,11 +4,11 @@ using MyNunit.Attributes;
 
 public class AfterClassTest
 {
-    public bool afterClassRun;
+    public static bool isRun;
 
     [AfterClass]
-    public void AfterClass()
+    public static void AfterClass()
     {
-        this.afterClassRun = true;
+        isRun = true;
     }
 }
