@@ -1,4 +1,4 @@
-namespace MyNunit;
+namespace MyNunit.TestsInfo;
 
 using System.Reflection;
 using System.Text;

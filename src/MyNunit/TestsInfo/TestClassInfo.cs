@@ -1,4 +1,4 @@
-namespace MyNunit;
+namespace MyNunit.TestsInfo;
 
 using System.Reflection;
 using System.Text;
@@ -57,7 +57,7 @@ public class TestClassInfo
 
         foreach (var test in tests)
         {
-            stringBuilder.Append(test.ToString());
+            stringBuilder.Append(test);
         }
 
         return stringBuilder.ToString();

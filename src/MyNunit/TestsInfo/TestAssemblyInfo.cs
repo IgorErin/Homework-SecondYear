@@ -1,4 +1,4 @@
-namespace MyNunit;
+namespace MyNunit.TestsInfo;
 
 using System.Reflection;
 using System.Text;
@@ -6,14 +6,14 @@ using System.Text;
 public class TestAssemblyInfo
 {
     private readonly long time;
-    private readonly List<TestClassInfo> testsClasses;
+    private readonly IEnumerable<TestClassInfo> testsClasses;
     private readonly Assembly assembly;
 
     public long Time => this.time;
 
-    public List<TestClassInfo> TestsClasses => testsClasses;
+    public IEnumerable<TestClassInfo> TestsClasses => testsClasses;
 
-    public TestAssemblyInfo(long time, List<TestClassInfo> testsClasses, Assembly assembly)
+    public TestAssemblyInfo(long time, IEnumerable<TestClassInfo> testsClasses, Assembly assembly)
     {
         this.time = time;
         this.testsClasses = testsClasses;
@@ -30,7 +30,7 @@ public class TestAssemblyInfo
 
         foreach (var testClass in testsClasses)
         {
-            stringBuilder.Append(testClass.ToString());
+            stringBuilder.Append(testClass);
         }
 
         return stringBuilder.ToString();

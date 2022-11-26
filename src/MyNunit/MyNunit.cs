@@ -1,9 +1,11 @@
 namespace MyNunit;
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
 using Attributes;
 using Exceptions;
+using TestsInfo;
 using Optional;
 
 public class MyNunit
@@ -26,24 +28,25 @@ public class MyNunit
 
     public TestAssemblyInfo RunAssemblyTests(Assembly assembly)
     {
-        var typeTests = new List<TestClassInfo>();
+        var resultCollection = new ConcurrentQueue<TestClassInfo>();
 
         assemblyStopWatch.Reset();
         assemblyStopWatch.Start();
 
         foreach (var type in assembly.ExportedTypes)
         {
-            if (type.GetConstructor(Type.EmptyTypes) == null)
+            if (type.GetConstructor(Type.EmptyTypes) != null)
             {
-                typeTests.Add(new TestClassInfo( typeNotMatchMessage, type.GetTypeInfo()));
-                continue;
+                Task.Run(() => resultCollection.Enqueue(RunTypeTests(type)));
             }
-
-            typeTests.Add(RunTypeTests(type));
+            else
+            {
+                resultCollection.Enqueue(new TestClassInfo(typeNotMatchMessage, type.GetTypeInfo()));
+            }
         }
 
         assemblyStopWatch.Stop();
-        return new TestAssemblyInfo(assemblyStopWatch.ElapsedMilliseconds, typeTests, assembly);
+        return new TestAssemblyInfo(assemblyStopWatch.ElapsedMilliseconds, resultCollection, assembly);
     }
 
     public static TestClassInfo RunTypeTests(Type type)
