@@ -1,7 +1,7 @@
 namespace MyNunitTest;
 
 using MyNunit;
-using TestAssemblyDll;
+using TestClasses;
 
 public class MyNunitTest
 {
@@ -10,7 +10,7 @@ public class MyNunitTest
     {
         var _ = MyNunit.RunTypeTests(typeof(BeforeClassTest));
 
-        Assert.That(TestAssemblyDll.BeforeClassTest.isRun, Is.True);
+        Assert.That(TestClasses.BeforeClassTest.isRun, Is.True);
     }
 
     [NUnit.Framework.Test]
@@ -34,6 +34,38 @@ public class MyNunitTest
     {
         var _ = MyNunit.RunTypeTests(typeof(AfterClassTest));
 
-        Assert.That(TestAssemblyDll.AfterClassTest.isRun, Is.True);
+        Assert.That(TestClasses.AfterClassTest.isRun, Is.True);
+    }
+
+    [NUnit.Framework.Test]
+    public void IgnoreTest()
+    {
+        var testInfo =  MyNunit.RunTypeTests(typeof(IgnoreTestClass));
+
+        Assert.That(testInfo.Tests[0].Result.Item3, Is.EqualTo(TestStatus.Ignored));
+    }
+
+    [NUnit.Framework.Test]
+    public void ExpectedTest()
+    {
+        var testInfo =  MyNunit.RunTypeTests(typeof(ExpectedTestClass));
+
+        Assert.That(testInfo.Tests[0].Result.Item3, Is.EqualTo(TestStatus.Passed));
+    }
+
+    [NUnit.Framework.Test]
+    public void FailedTest()
+    {
+        var testInfo =  MyNunit.RunTypeTests(typeof(FailTestClass));
+
+        Assert.That(testInfo.Tests[0].Result.Item3, Is.EqualTo(TestStatus.Failed));
+    }
+
+    [NUnit.Framework.Test]
+    public void PassTest()
+    {
+        var testInfo =  MyNunit.RunTypeTests(typeof(PassTestClass));
+
+        Assert.That(testInfo.Tests[0].Result.Item3, Is.EqualTo(TestStatus.Passed));
     }
 }

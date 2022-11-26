@@ -1,4 +1,4 @@
-namespace TestAssemblyDll;
+namespace MyNunitTest.TestClasses;
 
 using MyNunit.Attributes;
 
