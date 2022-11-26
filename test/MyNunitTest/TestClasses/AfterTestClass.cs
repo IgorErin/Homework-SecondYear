@@ -16,6 +16,6 @@ public class AfterTestClass
     [Test(Ignore = "before test attribute test")]
     public void SomeTest()
     {
-        throw new FailExceptions();
+        throw new FailException();
     }
 }

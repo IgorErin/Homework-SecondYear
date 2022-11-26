@@ -7,6 +7,6 @@ public class FailTestClass
     [MyNunit.Attributes.Test]
     public void TestShouldFail()
     {
-        throw new FailExceptions();
+        throw new FailException();
     }
 }

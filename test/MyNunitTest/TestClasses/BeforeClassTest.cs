@@ -16,6 +16,6 @@ public class BeforeClassTest
     [Test]
     public void TestShouldFail()
     {
-        throw new FailExceptions();
+        throw new FailException();
     }
 }

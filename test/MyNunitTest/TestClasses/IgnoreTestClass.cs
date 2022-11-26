@@ -7,6 +7,6 @@ public class IgnoreTestClass
     [MyNunit.Attributes.Test(Ignore = "never mind")]
     public void IgnoreTest()
     {
-        throw new FailExceptions();
+        throw new FailException();
     }
 }

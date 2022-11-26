@@ -4,9 +4,9 @@ using MyNunit.Exceptions;
 
 public class ExpectedTestClass
 {
-    [MyNunit.Attributes.Test(Expected = typeof(FailExceptions))]
+    [MyNunit.Attributes.Test(Expected = typeof(FailException))]
     public void ExpectedExceptionTest()
     {
-        throw new FailExceptions();
+        throw new FailException();
     }
 }

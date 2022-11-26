@@ -1,33 +1,33 @@
 namespace MyNunit.Exceptions;
 
 /// <summary>
-/// <see cref="MyNunit"/> success exception.
+/// <see cref="MyNunit"/> fail exception.
 /// </summary>
 [Serializable]
-public class SuccessException : Exception
+public class FailException : Exception
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="SuccessException"/> class.
+    /// Initializes a new instance of the <see cref="FailException"/> class.
     /// </summary>
-    public SuccessException()
+    public FailException()
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SuccessException"/> class.
+    /// Initializes a new instance of the <see cref="FailException"/> class.
     /// </summary>
     /// <param name="message">Exception message.</param>
-    public SuccessException(string message)
+    public FailException(string message)
         : base(message)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SuccessException"/> class.
+    /// Initializes a new instance of the <see cref="FailException"/> class.
     /// </summary>
     /// <param name="message">Exception message.</param>
     /// <param name="innerException">Inner exception.</param>
-    public SuccessException(string message, Exception innerException)
+    public FailException(string message, Exception innerException)
         : base(message, innerException)
     {
     }

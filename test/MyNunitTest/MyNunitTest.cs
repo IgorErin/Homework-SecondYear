@@ -1,11 +1,19 @@
 namespace MyNunitTest;
 
 using MyNunit;
+using MyNunit.TestsInfo;
+using MyNunit.Attributes;
 using TestClasses;
 
+/// <summary>
+/// <see cref="MyNunit"/> tests.
+/// </summary>
 public class MyNunitTest
 {
-    [NUnit.Framework.Test]
+    /// <summary>
+    /// <see cref="BeforeClassAttribute"/> test.
+    /// </summary>
+    [Test]
     public void BeforeClassTest()
     {
         var _ = MyNunit.RunTypeTests(typeof(BeforeClassTest));
@@ -13,7 +21,10 @@ public class MyNunitTest
         Assert.That(TestClasses.BeforeClassTest.isRun, Is.True);
     }
 
-    [NUnit.Framework.Test]
+    /// <summary>
+    /// <see cref="BeforeAttribute"/> test.
+    /// </summary>
+    [Test]
     public void BeforeMethodTest()
     {
         var _ = MyNunit.RunTypeTests(typeof(BeforeTestClass));
@@ -21,7 +32,10 @@ public class MyNunitTest
         Assert.That(BeforeTestClass.isRun, Is.True);
     }
 
-    [NUnit.Framework.Test]
+    /// <summary>
+    /// <see cref="AfterAttribute"/> test.
+    /// </summary>
+    [Test]
     public void AfterMethodTest()
     {
         var _ = MyNunit.RunTypeTests(typeof(AfterTestClass));
@@ -29,7 +43,10 @@ public class MyNunitTest
         Assert.That(AfterTestClass.isRun, Is.True);
     }
 
-    [NUnit.Framework.Test]
+    /// <summary>
+    /// <see cref="AfterClassAttribute"/> test.
+    /// </summary>
+    [Test]
     public void AfterClassTest()
     {
         var _ = MyNunit.RunTypeTests(typeof(AfterClassTest));
@@ -37,34 +54,46 @@ public class MyNunitTest
         Assert.That(TestClasses.AfterClassTest.isRun, Is.True);
     }
 
-    [NUnit.Framework.Test]
+    /// <summary>
+    /// <see cref="IgnoreAttribute"/> test.
+    /// </summary>
+    [Test]
     public void IgnoreTest()
     {
-        var testInfo =  MyNunit.RunTypeTests(typeof(IgnoreTestClass));
+        var testInfo = MyNunit.RunTypeTests(typeof(IgnoreTestClass));
 
         Assert.That(testInfo.Tests[0].Result.Item3, Is.EqualTo(TestStatus.Ignored));
     }
 
-    [NUnit.Framework.Test]
+    /// <summary>
+    /// <see cref="MyNunit"/> Expected property test.
+    /// </summary>
+    [Test]
     public void ExpectedTest()
     {
-        var testInfo =  MyNunit.RunTypeTests(typeof(ExpectedTestClass));
+        var testInfo = MyNunit.RunTypeTests(typeof(ExpectedTestClass));
 
         Assert.That(testInfo.Tests[0].Result.Item3, Is.EqualTo(TestStatus.Passed));
     }
 
-    [NUnit.Framework.Test]
+    /// <summary>
+    /// <see cref="MyNunit"/> failed test.
+    /// </summary>
+    [Test]
     public void FailedTest()
     {
-        var testInfo =  MyNunit.RunTypeTests(typeof(FailTestClass));
+        var testInfo = MyNunit.RunTypeTests(typeof(FailTestClass));
 
         Assert.That(testInfo.Tests[0].Result.Item3, Is.EqualTo(TestStatus.Failed));
     }
 
-    [NUnit.Framework.Test]
+    /// <summary>
+    /// <see cref="MyNunit"/> passed test.
+    /// </summary>
+    [Test]
     public void PassTest()
     {
-        var testInfo =  MyNunit.RunTypeTests(typeof(PassTestClass));
+        var testInfo = MyNunit.RunTypeTests(typeof(PassTestClass));
 
         Assert.That(testInfo.Tests[0].Result.Item3, Is.EqualTo(TestStatus.Passed));
     }
