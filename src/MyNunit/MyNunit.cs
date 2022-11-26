@@ -24,7 +24,7 @@ public class MyNunit
         return RunAssemblyTests(assembly);
     }
 
-    private TestAssemblyInfo RunAssemblyTests(Assembly assembly)
+    public TestAssemblyInfo RunAssemblyTests(Assembly assembly)
     {
         var typeTests = new List<TestClassInfo>();
 
@@ -46,7 +46,7 @@ public class MyNunit
         return new TestAssemblyInfo(assemblyStopWatch.ElapsedMilliseconds, typeTests, assembly);
     }
 
-    private TestClassInfo RunTypeTests(Type type)
+    public TestClassInfo RunTypeTests(Type type)
     {
         var typeInfo = type.GetTypeInfo();
 
