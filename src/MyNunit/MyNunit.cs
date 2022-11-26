@@ -8,50 +8,57 @@ using Exceptions;
 using TestsInfo;
 using Optional;
 
-public class MyNunit
+/// <summary>
+/// Class for testing assemblies and classes.
+/// </summary>
+public static class MyNunit
 {
-    private static readonly Stopwatch methodStopwatch = new ();
-    private static readonly Stopwatch typeStopWatch = new();
-    private static readonly Stopwatch assemblyStopWatch = new();
-    private static readonly object[] emptyArgs = Array.Empty<object>();
+    private const string TypePassedMessage = "Type passed";
+    private const string TypeFailedMessage = "Type failed";
+    private const string TypeNotMatchMessage = "Class doesn't match to test class";
 
-    private const string typePassedMessage = "Type passed";
-    private const string typeFailedMessage = "Type failed";
-    private const string typeNotMatchMessage = "Class doesn't match to test class";
+    private static readonly Stopwatch AssemblyStopWatch = new ();
 
-    public TestAssemblyInfo RunTestsFrom(string pathToAssembly)
-    {
-        var assembly = Assembly.LoadFrom(pathToAssembly);
+    private static readonly object[] EmptyArgs = Array.Empty<object>();
 
-        return RunAssemblyTests(assembly);
-    }
-
-    public TestAssemblyInfo RunAssemblyTests(Assembly assembly)
+    /// <summary>
+    /// A method that tests all suitable classes in the assembly.
+    /// </summary>
+    /// <param name="assembly">Assembly for the test.</param>
+    /// <returns>Returns information about test results in the form of <see cref="TestAssemblyInfo"/>.</returns>
+    public static TestAssemblyInfo RunAssemblyTests(Assembly assembly)
     {
         var resultCollection = new ConcurrentQueue<TestClassInfo>();
 
-        assemblyStopWatch.Reset();
-        assemblyStopWatch.Start();
+        AssemblyStopWatch.Reset();
+        AssemblyStopWatch.Start();
 
-        foreach (var type in assembly.ExportedTypes)
+        Parallel.ForEach(assembly.ExportedTypes, type =>
         {
-            if (type.GetConstructor(Type.EmptyTypes) != null)
+            if (type.GetConstructor(Type.EmptyTypes) != null && !type.IsAbstract)
             {
                 Task.Run(() => resultCollection.Enqueue(RunTypeTests(type)));
             }
             else
             {
-                resultCollection.Enqueue(new TestClassInfo(typeNotMatchMessage, type.GetTypeInfo()));
+                resultCollection.Enqueue(new TestClassInfo(TypeNotMatchMessage, type.GetTypeInfo()));
             }
-        }
+        });
 
-        assemblyStopWatch.Stop();
-        return new TestAssemblyInfo(assemblyStopWatch.ElapsedMilliseconds, resultCollection, assembly);
+        AssemblyStopWatch.Stop();
+        return new TestAssemblyInfo(AssemblyStopWatch.ElapsedMilliseconds, resultCollection, assembly);
     }
 
+    /// <summary>
+    /// Method for running tests in a class.
+    /// </summary>
+    /// <param name="type">Type for testing.</param>
+    /// <returns>Returns the results of type tests in the form <see cref="TestClassInfo"/>.</returns>
+    /// <exception cref="ClassInstantiationException">Will be thrown out if the class cannot be instantiated.</exception>
     public static TestClassInfo RunTypeTests(Type type)
     {
         var typeInfo = type.GetTypeInfo();
+        var typeStopWatch = new Stopwatch();
 
         var testMethods = GetMethodsWithAttribute(typeof(TestAttribute), typeInfo);
         var results = new List<TestInfo>();
@@ -80,11 +87,11 @@ public class MyNunit
         catch (Exception testRunTimeException)
         {
             typeStopWatch.Stop();
-            return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, testRunTimeException.Some(), typeFailedMessage, typeInfo);
+            return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, testRunTimeException.Some(), TypeFailedMessage, typeInfo);
         }
 
         typeStopWatch.Stop();
-        return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, typePassedMessage, typeInfo);
+        return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, TypePassedMessage, typeInfo);
     }
 
     private static TestInfo RunMethodTest(
@@ -93,7 +100,8 @@ public class MyNunit
         MethodInfo testMethod,
         List<MethodInfo> afterTestMethods)
     {
-        Exception resultException = new SuccessException();
+        var resultException = Option.None<Exception>();
+        var methodStopwatch = new Stopwatch();
 
         try
         {
@@ -101,6 +109,7 @@ public class MyNunit
 
             methodStopwatch.Reset();
             methodStopwatch.Start();
+
             try
             {
                 RunInstanceMethodWithEmptyArgs(instance, testMethod);
@@ -114,18 +123,20 @@ public class MyNunit
 
                 return new TestInfo(
                     testMethod,
-                    testRunTimeException.InnerException ?? throw new NullReferenceException("Inner exception of target call"),
-                    firstAttribute.Expected,
-                    firstAttribute.Ignore,
+                    testRunTimeException.InnerException?.Some<>() ?? Option.None<Exception>(),
+                    firstAttribute.Expected?.Some<>() ?? Option.None<Exception>(),
+                    firstAttribute.Ignore?.Some<>() ?? Option.None<string>(),
                     methodStopwatch.ElapsedMilliseconds);
             }
+
             methodStopwatch.Stop();
 
             RunInstanceMethodsWithEmptyArgs(instance, afterTestMethods);
         }
         catch (Exception testRunTimeException)
         {
-            resultException = testRunTimeException;
+            methodStopwatch.Stop();
+            resultException = testRunTimeException.Some<>();
         }
 
         var attribute = GetTestAttribute(testMethod);
@@ -133,8 +144,8 @@ public class MyNunit
         return new TestInfo(
             testMethod,
             resultException,
-            attribute.Expected,
-            attribute.Ignore,
+            attribute.Expected?.Some<>() ?? Option.None<Exception>(),
+            attribute.Ignore?.Some<string>() ?? Option.None<string>(),
             methodStopwatch.ElapsedMilliseconds);
     }
 
@@ -142,7 +153,7 @@ public class MyNunit
         => methodInfo.GetCustomAttributes(attributeType).Any();
 
     private static void RunInstanceMethodWithEmptyArgs(object type, MethodInfo methodInfo)
-        => methodInfo.Invoke(type, emptyArgs);
+        => methodInfo.Invoke(type, EmptyArgs);
 
     private static TestAttribute GetTestAttribute(MethodInfo type)
         => (TestAttribute)(Attribute.GetCustomAttribute(type, typeof(TestAttribute))
@@ -162,7 +173,7 @@ public class MyNunit
 
         foreach (var method in staticMethods)
         {
-            method.Invoke(null, emptyArgs);
+            method.Invoke(null, EmptyArgs);
         }
     }
 

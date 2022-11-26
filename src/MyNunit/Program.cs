@@ -1,10 +1,11 @@
-﻿if (File.Exists(args[0]))
+﻿using System.Reflection;
+
+if (File.Exists(args[0]))
 {
     try
     {
-        var nunit = new MyNunit.MyNunit();
-
-        var result = nunit.RunTestsFrom(args[0]);
+        var assembly = Assembly.LoadFrom(args[0]);
+        var result = MyNunit.MyNunit.RunAssemblyTests(assembly);
 
         Console.Write(result.ToString());
     }
