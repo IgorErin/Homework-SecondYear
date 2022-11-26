@@ -44,7 +44,7 @@ public class TestAssemblyInfo
         var stringBuilder = new StringBuilder();
 
         stringBuilder.AppendLine($"Test assembly: {this.assembly.FullName}.");
-        stringBuilder.AppendLine($"Time: {this.time}");
+        stringBuilder.AppendLine($"Assembly test time: {this.time} milliseconds");
         stringBuilder.AppendLine();
 
         foreach (var testClass in this.testsClasses)

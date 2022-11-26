@@ -89,7 +89,7 @@ public class TestClassInfo
 
         stringBuilder.AppendLine($"Test class: {this.Name}");
         stringBuilder.AppendLine($"Status: {this.message}");
-        stringBuilder.AppendLine($"Time: {this.time}");
+        stringBuilder.AppendLine($"Type test time: {this.time} milliseconds");
 
         this.testRuntimeException.Match(
             some: value => stringBuilder.AppendLine($"Exception: {value.Message}"),

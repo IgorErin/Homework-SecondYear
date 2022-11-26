@@ -17,8 +17,6 @@ public static class MyNunit
     private const string TypeFailedMessage = "Type failed";
     private const string TypeNotMatchMessage = "Class doesn't match to test class";
 
-    private static readonly Stopwatch AssemblyStopWatch = new ();
-
     private static readonly object[] EmptyArgs = Array.Empty<object>();
 
     /// <summary>
@@ -29,15 +27,16 @@ public static class MyNunit
     public static TestAssemblyInfo RunAssemblyTests(Assembly assembly)
     {
         var resultCollection = new ConcurrentQueue<TestClassInfo>();
+        var assemblyStopWatch = new Stopwatch();
 
-        AssemblyStopWatch.Reset();
-        AssemblyStopWatch.Start();
+        assemblyStopWatch.Reset();
+        assemblyStopWatch.Start();
 
         Parallel.ForEach(assembly.ExportedTypes, type =>
         {
             if (type.GetConstructor(Type.EmptyTypes) != null && !type.IsAbstract)
             {
-                Task.Run(() => resultCollection.Enqueue(RunTypeTests(type)));
+                resultCollection.Enqueue(RunTypeTests(type));
             }
             else
             {
@@ -45,8 +44,8 @@ public static class MyNunit
             }
         });
 
-        AssemblyStopWatch.Stop();
-        return new TestAssemblyInfo(AssemblyStopWatch.ElapsedMilliseconds, resultCollection, assembly);
+        assemblyStopWatch.Stop();
+        return new TestAssemblyInfo(assemblyStopWatch.ElapsedMilliseconds, resultCollection, assembly);
     }
 
     /// <summary>
@@ -123,9 +122,9 @@ public static class MyNunit
 
                 return new TestInfo(
                     testMethod,
-                    testRunTimeException.InnerException?.Some<>() ?? Option.None<Exception>(),
-                    firstAttribute.Expected?.Some<>() ?? Option.None<Exception>(),
-                    firstAttribute.Ignore?.Some<>() ?? Option.None<string>(),
+                    testRunTimeException.InnerException?.Some<Exception>() ?? Option.None<Exception>(),
+                    firstAttribute.Expected?.Some<Type>() ?? Option.None<Type>(),
+                    firstAttribute.Ignore?.Some<string>() ?? Option.None<string>(),
                     methodStopwatch.ElapsedMilliseconds);
             }
 
@@ -136,7 +135,7 @@ public static class MyNunit
         catch (Exception testRunTimeException)
         {
             methodStopwatch.Stop();
-            resultException = testRunTimeException.Some<>();
+            resultException = testRunTimeException.Some<Exception>();
         }
 
         var attribute = GetTestAttribute(testMethod);
@@ -144,7 +143,7 @@ public static class MyNunit
         return new TestInfo(
             testMethod,
             resultException,
-            attribute.Expected?.Some<>() ?? Option.None<Exception>(),
+            attribute.Expected?.Some<Type>() ?? Option.None<Type>(),
             attribute.Ignore?.Some<string>() ?? Option.None<string>(),
             methodStopwatch.ElapsedMilliseconds);
     }
@@ -173,7 +172,10 @@ public static class MyNunit
 
         foreach (var method in staticMethods)
         {
-            method.Invoke(null, EmptyArgs);
+            if (method.IsStatic)
+            {
+                method.Invoke(null, EmptyArgs);
+            }
         }
     }
 

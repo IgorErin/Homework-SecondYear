@@ -69,8 +69,10 @@ public class TestInfo
 
                 if (isExpectedExceptionTypeIsEqualToTestException)
                 {
-                    return ($"Passed with expected exception, message: {this.exceptionResult.ValueOrFailure().Message}",
-                        this.time, TestStatus.Passed);
+                    return ($"Passed with expected exception," +
+                            $" message: {this.exceptionResult.ValueOrFailure().Message}",
+                            this.time,
+                            TestStatus.Passed);
                 }
 
                 return ($"Failed with exception, Expected: {this.expectedException.ValueOrFailure()}, " +
@@ -79,25 +81,36 @@ public class TestInfo
 
             if (this.expectedException.HasValue)
             {
-                return ($"Failed with exception, Expected: {this.expectedException.ValueOrFailure()}, but no exception was received", this.time, TestStatus.Failed);
+                return ($"Failed without exception," +
+                        $" Expected: {this.expectedException.ValueOrFailure()}, but no exception was received",
+                        this.time,
+                        TestStatus.Failed);
             }
 
             if (this.exceptionResult.HasValue)
             {
-                var isSuccessExceptionReceived = this.exceptionResult.ValueOrFailure().GetType().IsEqual(typeof(SuccessException));
+                var isSuccessExceptionReceived =
+                    this.exceptionResult.ValueOrFailure().GetType().IsEqual(typeof(SuccessException));
 
                 if (isSuccessExceptionReceived)
                 {
-                    return ($"Passed with success exception", this.time, TestStatus.Passed);
+                    return ($"Check passed", this.time, TestStatus.Passed);
                 }
+
+                var isFailExceptionReceived =
+                    this.exceptionResult.ValueOrFailure().GetType().IsEqual(typeof(FailException));
+
+                if (isFailExceptionReceived)
+                {
+                    return ("Checks failed", this.time, TestStatus.Failed);
+                }
+
+                return ($"Failed with exception: {this.exceptionResult.ValueOrFailure().GetType()}",
+                        this.time,
+                        TestStatus.Failed);
             }
 
-            if (this.exceptionResult.GetType().IsEqual(typeof(SuccessException)))
-            {
-                return ($"Passed", this.time, TestStatus.Passed);
-            }
-
-            return ("Failed", this.time, TestStatus.Failed);
+            return ("Passed without exception", this.time, TestStatus.Passed);
         }
     }
 
@@ -120,7 +133,7 @@ public class TestInfo
             stringBuilder.AppendLine($"{this.exceptionResult.ValueOrFailure().StackTrace}");
         }
 
-        stringBuilder.AppendLine($"Time: {this.time}");
+        stringBuilder.AppendLine($"Time: {this.time} milliseconds");
         stringBuilder.AppendLine();
 
         return stringBuilder.ToString();

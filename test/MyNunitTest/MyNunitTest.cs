@@ -13,7 +13,7 @@ public class MyNunitTest
     /// <summary>
     /// <see cref="BeforeClassAttribute"/> test.
     /// </summary>
-    [Test]
+    [NUnit.Framework.Test]
     public void BeforeClassTest()
     {
         var _ = MyNunit.RunTypeTests(typeof(BeforeClassTest));
@@ -24,7 +24,7 @@ public class MyNunitTest
     /// <summary>
     /// <see cref="BeforeAttribute"/> test.
     /// </summary>
-    [Test]
+    [NUnit.Framework.Test]
     public void BeforeMethodTest()
     {
         var _ = MyNunit.RunTypeTests(typeof(BeforeTestClass));
@@ -35,7 +35,7 @@ public class MyNunitTest
     /// <summary>
     /// <see cref="AfterAttribute"/> test.
     /// </summary>
-    [Test]
+    [NUnit.Framework.Test]
     public void AfterMethodTest()
     {
         var _ = MyNunit.RunTypeTests(typeof(AfterTestClass));
@@ -46,7 +46,7 @@ public class MyNunitTest
     /// <summary>
     /// <see cref="AfterClassAttribute"/> test.
     /// </summary>
-    [Test]
+    [NUnit.Framework.Test]
     public void AfterClassTest()
     {
         var _ = MyNunit.RunTypeTests(typeof(AfterClassTest));
@@ -57,7 +57,7 @@ public class MyNunitTest
     /// <summary>
     /// <see cref="IgnoreAttribute"/> test.
     /// </summary>
-    [Test]
+    [NUnit.Framework.Test]
     public void IgnoreTest()
     {
         var testInfo = MyNunit.RunTypeTests(typeof(IgnoreTestClass));
@@ -68,7 +68,7 @@ public class MyNunitTest
     /// <summary>
     /// <see cref="MyNunit"/> Expected property test.
     /// </summary>
-    [Test]
+    [NUnit.Framework.Test]
     public void ExpectedTest()
     {
         var testInfo = MyNunit.RunTypeTests(typeof(ExpectedTestClass));
@@ -79,7 +79,7 @@ public class MyNunitTest
     /// <summary>
     /// <see cref="MyNunit"/> failed test.
     /// </summary>
-    [Test]
+    [NUnit.Framework.Test]
     public void FailedTest()
     {
         var testInfo = MyNunit.RunTypeTests(typeof(FailTestClass));
@@ -90,7 +90,7 @@ public class MyNunitTest
     /// <summary>
     /// <see cref="MyNunit"/> passed test.
     /// </summary>
-    [Test]
+    [NUnit.Framework.Test]
     public void PassTest()
     {
         var testInfo = MyNunit.RunTypeTests(typeof(PassTestClass));
