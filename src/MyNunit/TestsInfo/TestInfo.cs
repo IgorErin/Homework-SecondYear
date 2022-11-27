@@ -16,7 +16,6 @@ public class TestInfo
     private readonly Option<Exception> exceptionResult;
     private readonly Option<Type> expectedException;
     private readonly Option<string> ignoreMessage;
-    private readonly long time;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TestInfo"/> class.
@@ -37,7 +36,7 @@ public class TestInfo
         this.exceptionResult = exceptionResult;
         this.expectedException = expectedException;
         this.ignoreMessage = ignoreMessage;
-        this.time = time;
+        this.Time = time;
     }
 
     /// <summary>
@@ -48,7 +47,10 @@ public class TestInfo
     /// <summary>
     /// Gets test execution time.
     /// </summary>
-    public long Time => this.time;
+    public long Time
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the result of test.
@@ -59,7 +61,7 @@ public class TestInfo
         {
             if (this.ignoreMessage.HasValue)
             {
-                return ($"Ignore, message: {this.ignoreMessage.ValueOrFailure()}", this.time, TestStatus.Ignored);
+                return ($"Ignore, message: {this.ignoreMessage.ValueOrFailure()}", this.Time, TestStatus.Ignored);
             }
 
             if (this.expectedException.HasValue && this.exceptionResult.HasValue)
@@ -71,19 +73,19 @@ public class TestInfo
                 {
                     return ($"Passed with expected exception," +
                             $" message: {this.exceptionResult.ValueOrFailure().Message}",
-                            this.time,
+                            this.Time,
                             TestStatus.Passed);
                 }
 
                 return ($"Failed with exception, Expected: {this.expectedException.ValueOrFailure()}, " +
-                        $"but received {this.exceptionResult.ValueOrFailure()}", this.time, TestStatus.Failed);
+                        $"but received {this.exceptionResult.ValueOrFailure()}", this.Time, TestStatus.Failed);
             }
 
             if (this.expectedException.HasValue)
             {
                 return ($"Failed without exception," +
                         $" Expected: {this.expectedException.ValueOrFailure()}, but no exception was received",
-                        this.time,
+                        this.Time,
                         TestStatus.Failed);
             }
 
@@ -94,7 +96,7 @@ public class TestInfo
 
                 if (isSuccessExceptionReceived)
                 {
-                    return ($"Check passed", this.time, TestStatus.Passed);
+                    return ($"Check passed", this.Time, TestStatus.Passed);
                 }
 
                 var isFailExceptionReceived =
@@ -102,15 +104,15 @@ public class TestInfo
 
                 if (isFailExceptionReceived)
                 {
-                    return ("Checks failed", this.time, TestStatus.Failed);
+                    return ("Checks failed", this.Time, TestStatus.Failed);
                 }
 
                 return ($"Failed with exception: {this.exceptionResult.ValueOrFailure().GetType()}",
-                        this.time,
+                        this.Time,
                         TestStatus.Failed);
             }
 
-            return ("Passed without exception", this.time, TestStatus.Passed);
+            return ("Passed without exception", this.Time, TestStatus.Passed);
         }
     }
 
@@ -133,7 +135,7 @@ public class TestInfo
             stringBuilder.AppendLine($"{this.exceptionResult.ValueOrFailure().StackTrace}");
         }
 
-        stringBuilder.AppendLine($"Time: {this.time} milliseconds");
+        stringBuilder.AppendLine($"Time: {this.Time} milliseconds");
         stringBuilder.AppendLine();
 
         return stringBuilder.ToString();

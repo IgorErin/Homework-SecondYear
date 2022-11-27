@@ -9,10 +9,6 @@ using Optional;
 /// </summary>
 public class TestClassInfo
 {
-    private readonly long time;
-    private readonly List<TestInfo> tests;
-    private readonly Option<Exception> testRuntimeException;
-    private readonly string message;
     private readonly TypeInfo typeInfo;
 
     /// <summary>
@@ -25,10 +21,10 @@ public class TestClassInfo
     /// <param name="typeInfo">Information about the type of the tested class.</param>
     public TestClassInfo(long time, List<TestInfo> tests, Option<Exception> testRuntimeException, string message, TypeInfo typeInfo)
     {
-        this.time = time;
-        this.tests = tests;
-        this.testRuntimeException = testRuntimeException;
-        this.message = message;
+        this.Time = time;
+        this.Tests = tests;
+        this.Exception = testRuntimeException;
+        this.Message = message;
         this.typeInfo = typeInfo;
     }
 
@@ -57,22 +53,34 @@ public class TestClassInfo
     /// <summary>
     /// Gets class tests information.
     /// </summary>
-    public List<TestInfo> Tests => this.tests;
+    public List<TestInfo> Tests
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets class test time.
     /// </summary>
-    public long Time => this.time;
+    public long Time
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets class test message.
     /// </summary>
-    public string Message => this.message;
+    public string Message
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets test exception.
     /// </summary>
-    public Option<Exception> Exception => this.testRuntimeException;
+    public Option<Exception> Exception
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets class name.
@@ -88,16 +96,16 @@ public class TestClassInfo
         var stringBuilder = new StringBuilder();
 
         stringBuilder.AppendLine($"Test class: {this.Name}");
-        stringBuilder.AppendLine($"Status: {this.message}");
-        stringBuilder.AppendLine($"Type test time: {this.time} milliseconds");
+        stringBuilder.AppendLine($"Status: {this.Message}");
+        stringBuilder.AppendLine($"Type test time: {this.Time} milliseconds");
 
-        this.testRuntimeException.Match(
+        this.Exception.Match(
             some: value => stringBuilder.AppendLine($"Exception: {value.Message}"),
             none: () => { });
 
         stringBuilder.AppendLine();
 
-        foreach (var test in this.tests)
+        foreach (var test in this.Tests)
         {
             stringBuilder.Append(test);
         }

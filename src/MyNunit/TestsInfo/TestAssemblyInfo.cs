@@ -8,8 +8,6 @@ using System.Text;
 /// </summary>
 public class TestAssemblyInfo
 {
-    private readonly long time;
-    private readonly IEnumerable<TestClassInfo> testsClasses;
     private readonly Assembly assembly;
 
     /// <summary>
@@ -20,20 +18,26 @@ public class TestAssemblyInfo
     /// <param name="assembly">Tested assembly.</param>
     public TestAssemblyInfo(long time, IEnumerable<TestClassInfo> testsClasses, Assembly assembly)
     {
-        this.time = time;
-        this.testsClasses = testsClasses;
+        this.Time = time;
+        this.TestsClasses = testsClasses;
         this.assembly = assembly;
     }
 
     /// <summary>
     /// Gets a test execution time for this assembly.
     /// </summary>
-    public long Time => this.time;
+    public long Time
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets type tests information in form of <see cref="TestClassInfo"/>.
     /// </summary>
-    public IEnumerable<TestClassInfo> TestsClasses => this.testsClasses;
+    public IEnumerable<TestClassInfo> TestsClasses
+    {
+        get;
+    }
 
     /// <summary>
     /// <see cref="ToString"/> method.
@@ -44,10 +48,10 @@ public class TestAssemblyInfo
         var stringBuilder = new StringBuilder();
 
         stringBuilder.AppendLine($"Test assembly: {this.assembly.FullName}.");
-        stringBuilder.AppendLine($"Assembly test time: {this.time} milliseconds");
+        stringBuilder.AppendLine($"Assembly test time: {this.Time} milliseconds");
         stringBuilder.AppendLine();
 
-        foreach (var testClass in this.testsClasses)
+        foreach (var testClass in this.TestsClasses)
         {
             stringBuilder.Append(testClass);
         }
