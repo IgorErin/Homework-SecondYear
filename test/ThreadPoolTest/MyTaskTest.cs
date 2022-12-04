@@ -1,19 +1,20 @@
 namespace ThreadPool;
 
+using Extensions;
 using Common;
 
 /// <summary>
-/// <see cref="MyTask.MyTask{TResult}"/> Nunit test class.
+/// <see cref="MyThreadPool.MyTask{TResult}"/> Nunit test class.
 /// </summary>
 public class MyTaskTest
 {
     private const int IterCount = 10;
 
     /// <summary>
-    /// Correct value <see cref="MyTask.MyTask{TResult}.Result"/> result before calling
+    /// Correct value <see cref="MyThreadPool.MyTask{TResult}.Result"/> result before calling
     /// <see cref="MyThreadPool.ShutDown()"/>.
     /// </summary>
-    /// <param name="expectedResultValue">Expected <see cref="MyTask.MyTask{TResult}.Result"/> value.</param>
+    /// <param name="expectedResultValue">Expected <see cref="MyThreadPool.MyTask{TResult}.Result"/> value.</param>
     [TestCase(-1000)]
     [TestCase(-100)]
     [TestCase(0)]
@@ -30,7 +31,7 @@ public class MyTaskTest
     }
 
     /// <summary>
-    /// Correct reference type <see cref="MyTask.MyTask{TResult}.Result"/> result before calling
+    /// Correct reference type <see cref="MyThreadPool.MyTask{TResult}.Result"/> result before calling
     /// <see cref="MyThreadPool.ShutDown()"/>.
     /// </summary>
     [Test]
@@ -49,7 +50,7 @@ public class MyTaskTest
     }
 
     /// <summary>
-    /// <see cref="MyTask.MyTask{TResult}.Result"/> gives the same object in other threads.
+    /// <see cref="MyThreadPool.MyTask{TResult}.Result"/> gives the same object in other threads.
     /// </summary>
     [Test]
     public void ConcurrentResultsAreEqualTest()
@@ -81,9 +82,9 @@ public class MyTaskTest
     }
 
     /// <summary>
-    /// <see cref="MyTask.MyTask{TResult}.Result"/> gives the same exception in other threads.
+    /// <see cref="MyThreadPool.MyTask{TResult}.Result"/> gives the same exception in other threads.
     /// </summary>
-    /// <exception cref="TestException"><see cref="MyTask.MyTask{TResult}.Result"/> exception.</exception>
+    /// <exception cref="TestException"><see cref="MyThreadPool.MyTask{TResult}.Result"/> exception.</exception>
     [Test]
     public void ConcurrentExceptionResultsAreEqualTest()
     {
@@ -106,7 +107,7 @@ public class MyTaskTest
                 {
                     var aggregateException = Assert.Throws<AggregateException>(() =>
                     {
-                        var _ = newTask.Result;
+                        newTask.Result.Ignore();
                     });
 
                     results[localIndex] = aggregateException!.InnerException;
@@ -120,7 +121,7 @@ public class MyTaskTest
     }
 
     /// <summary>
-    /// The correct result of the first task in the <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>.
+    /// The correct result of the first task in the <see cref="MyThreadPool.MyTask{TResult}.ContinueWith{TNewResult}"/>.
     /// </summary>
     /// <param name="firstTaskResultValue">Result value.</param>
     [TestCase(-1000)]
@@ -141,7 +142,7 @@ public class MyTaskTest
     }
 
     /// <summary>
-    /// The correct exception of the base task in the <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>.
+    /// The correct exception of the base task in the <see cref="MyThreadPool.MyTask{TResult}.ContinueWith{TNewResult}"/>.
     /// </summary>
     /// <exception cref="TestException">Base task exception.</exception>
     [Test]
@@ -155,14 +156,14 @@ public class MyTaskTest
 
         var aggregateException = Assert.Throws<AggregateException>(() =>
         {
-            var _ = testTaskContinuation.Result;
+            testTaskContinuation.Result.Ignore();
         });
         Assert.That(aggregateException!.InnerException, Is.EqualTo(testException));
     }
 
     /// <summary>
     ///  The correct exception of the continuation task in the
-    /// <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>.
+    /// <see cref="MyThreadPool.MyTask{TResult}.ContinueWith{TNewResult}"/>.
     /// </summary>
     /// <exception cref="TestException">Result exception.</exception>
     [Test]
@@ -176,7 +177,7 @@ public class MyTaskTest
 
         var aggregateException = Assert.Throws<AggregateException>(() =>
         {
-            var _ = testTaskContinuation.Result;
+            testTaskContinuation.Result.Ignore();
         });
         Assert.That(aggregateException!.InnerException, Is.EqualTo(testException));
     }

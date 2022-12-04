@@ -1,5 +1,6 @@
 namespace ThreadPool;
 
+using Extensions;
 using Common;
 
 /// <summary>
@@ -96,7 +97,7 @@ public class ComputationCellTest
 
         Assert.Throws<TestException>(() =>
         {
-            var _ = this.computationCellWithExceptionResult.Result;
+            this.computationCellWithExceptionResult.Result.Ignore();
         });
     }
 
@@ -124,7 +125,7 @@ public class ComputationCellTest
                 {
                     try
                     {
-                        var _ = newComputationCell.Result;
+                        newComputationCell.Result.Ignore();
                     }
                     catch (TestException currentException)
                     {

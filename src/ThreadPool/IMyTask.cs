@@ -1,4 +1,4 @@
-namespace ThreadPool.MyTask;
+namespace ThreadPool;
 
 /// <summary>
 /// Abstraction interface over a task computed in a thread pull.

@@ -1,4 +1,5 @@
 ﻿using ThreadPool;
+using ThreadPool.Extensions;
 
 Console.WriteLine($"main thread: {Environment.CurrentManagedThreadId}");
 using var threadPool = new MyThreadPool(4);
@@ -19,7 +20,6 @@ var myContinuation = (int x) =>
 };
 
 var firstTask = threadPool.Submit(myFunc);
-var _ = firstTask.ContinueWith(myContinuation);
 
-var __ = firstTask.Result;
-
+firstTask.ContinueWith(myContinuation).Ignore();
+firstTask.Result.Ignore();

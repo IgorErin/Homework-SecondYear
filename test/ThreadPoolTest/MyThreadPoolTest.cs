@@ -1,5 +1,6 @@
 namespace ThreadPool;
 
+using Extensions;
 using Common;
 using Exceptions;
 
@@ -21,7 +22,7 @@ public class MyThreadPoolTest
     {
         Assert.Throws<MyThreadPoolException>(() =>
         {
-            var _ = new MyThreadPool(threadCount);
+            new MyThreadPool(threadCount).Ignore();
         });
     }
 
@@ -86,12 +87,12 @@ public class MyThreadPoolTest
 
         Assert.Throws<MyThreadPoolException>(() =>
         {
-            var _ = threadPool.Submit(() => resultObject);
+            threadPool.Submit(() => resultObject);
         });
     }
 
     /// <summary>
-    /// Calling <see cref="MyTask.MyTask{TResult}.ContinueWith{TNewResult}"/>
+    /// Calling <see cref="MyThreadPool.MyTask{TResult}.ContinueWith{TNewResult}"/>
     /// after <see cref="MyThreadPool.ShutDown()"/> test.
     /// </summary>
     [Test]
@@ -105,7 +106,7 @@ public class MyThreadPoolTest
 
         Assert.Throws<MyThreadPoolException>(() =>
         {
-            var _ = testTask.ContinueWith(result => result);
+            testTask.ContinueWith(result => result);
         });
     }
 
@@ -116,7 +117,6 @@ public class MyThreadPoolTest
     public void ThreadCountTest()
     {
         var countDownEvent = new CountdownEvent(this.processorCount);
-
         using var threadPool = new MyThreadPool(this.processorCount);
 
         var taskFun = () =>
@@ -126,7 +126,7 @@ public class MyThreadPoolTest
             return 1;
         };
 
-        var tasks = new MyTask.IMyTask<int>[this.processorCount];
+        var tasks = new IMyTask<int>[this.processorCount];
 
         for (var i = 0; i < this.processorCount; i++)
         {
@@ -135,7 +135,7 @@ public class MyThreadPoolTest
 
         foreach (var task in tasks)
         {
-            var _ = task.Result;
+            task.Result.Ignore();
         }
 
         countDownEvent.Wait();
