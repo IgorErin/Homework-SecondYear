@@ -34,7 +34,7 @@ public static class MyNunit
 
         Parallel.ForEach(assembly.ExportedTypes, type =>
         {
-            if (type.GetConstructor(Type.EmptyTypes) != null && !type.IsAbstract)
+            if (IsTypeCompatible(type))
             {
                 resultCollection.Enqueue(RunTypeTests(type));
             }
@@ -91,6 +91,49 @@ public static class MyNunit
 
         typeStopWatch.Stop();
         return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, TypePassedMessage, typeInfo);
+    }
+
+    private static bool IsTypeCompatible(Type typeInfo)
+    {
+        if (typeInfo.GetConstructor(Type.EmptyTypes) == null)
+        {
+            return false;
+        }
+
+        if (typeInfo.IsAbstract)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsMethodCompatible(MethodInfo methodInfo)
+    {
+        if (methodInfo.IsConstructor)
+        {
+            return false;
+        }
+
+        if (methodInfo.IsGenericMethodDefinition)
+        {
+
+        }
+
+        if (methodInfo.IsSpecialName)
+        {
+
+        }
+
+        if (methodInfo.GetParameters().Length != 0)
+        {
+            //TODO()
+        }
+
+        if (methodInfo.ReturnType == typeof(void))
+        {
+            //TODO()
+        }
     }
 
     private static TestInfo RunMethodTest(
