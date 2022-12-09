@@ -24,7 +24,7 @@ public static class MyNunit
     /// </summary>
     /// <param name="assembly">Assembly for the test.</param>
     /// <returns>Returns information about test results in the form of <see cref="TestAssemblyInfo"/>.</returns>
-    public static TestAssemblyInfo RunAssemblyTests(Assembly assembly)
+    public static TestAssemblyInfo RunAssemblyTests(System.Reflection.Assembly assembly)
     {
         var resultCollection = new ConcurrentQueue<TestClassInfo>();
         var assemblyStopWatch = new Stopwatch();
