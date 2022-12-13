@@ -29,7 +29,7 @@ public sealed class MyThreadPool : IDisposable
     {
         if (threadCount <= 0)
         {
-            throw new MyThreadPoolException(
+            throw new ArgumentException(
                 $"the number of threads must be greater than 0, but was = {threadCount}");
         }
 
@@ -53,28 +53,22 @@ public sealed class MyThreadPool : IDisposable
     {
         var resultTask = Option.None<MyTask<TResult>>();
 
-        try
+        lock (this.locker)
         {
-            Monitor.Enter(this.locker);
-
-            if (!this.isShutDown)
+            try
             {
-                var (newTask, newCell) = CreateNewTaskAndCell(func, this);
+                if (!this.isShutDown)
+                {
+                    var (newTask, newCell) = CreateNewTaskAndCell(func, this);
 
-                resultTask = newTask.Some<MyTask<TResult>>();
+                    resultTask = newTask.Some<MyTask<TResult>>();
 
-                this.queue.Add(() => newCell.Compute());
+                    this.queue.Add(newCell.Compute);
+                }
             }
-        }
-        catch (Exception e)
-        {
-            throw new MyThreadPoolException($"submit error:{e.Message}", e);
-        }
-        finally
-        {
-            if (Monitor.IsEntered(this.locker))
+            catch (Exception e)
             {
-                Monitor.Exit(this.locker);
+                throw new MyThreadPoolException($"submit error:{e.Message}", e);
             }
         }
 
@@ -125,92 +119,15 @@ public sealed class MyThreadPool : IDisposable
     }
 
     /// <summary>
-    /// Method that allows you to create a new <see cref="ComputationCell{TResult}"/> and a
-    /// <see cref="MyTask{TResult}"/> from a <see cref="Func{TResult}"/> for continuation.
-    /// </summary>
-    /// <param name="func">Function for abstracting.</param>
-    /// <param name="threadPool"><see cref="MyThreadPool"/> on which the calculations will take place.</param>
-    /// <typeparam name="T">Type of <see cref="Func{TResult}"/> result.</typeparam>
-    /// <returns>
-    /// Pair of elements - a <see cref="MyTask{TResult}"/> and a <see cref="ComputationCell{TResult}"/>
-    ///  encapsulating an attempt to put a task on a <see cref="MyThreadPool"/>.
-    /// </returns>
-    private static (MyTask<T>, ComputationCell<object>) CreateContinuation<T>(Func<T> func, MyThreadPool threadPool)
-    {
-        var newComputationCell = new ComputationCell<T>(func);
-
-        var enqueueFun = () =>
-        {
-            threadPool.EnqueueCell(newComputationCell);
-
-            return new object();
-        };
-
-        var enqueueCell = new ComputationCell<object>(enqueueFun);
-        var (newTask, _) = CreateNewTaskAndCell(() => newComputationCell.Result, threadPool);
-
-        return (newTask, enqueueCell);
-    }
-
-    /// <summary>
-    /// Method that allows you to create a new <see cref="ComputationCell{TResult}"/> and a
-    /// <see cref="MyTask{TResult}"/> from a <see cref="Func{TResult}"/>.
-    /// </summary>
-    /// <param name="newFunc">Function for abstracting.</param>
-    /// <param name="threadPool"><see cref="MyThreadPool"/> on which the calculations will take place.</param>
-    /// <typeparam name="T">Result type of <see cref="Func{TResult}"/>.</typeparam>
-    /// <returns>Pair of elements - a <see cref="MyTask{TResult}"/> and a <see cref="ComputationCell{TResult}"/>
-    /// encapsulating the calculation of the task.
-    /// </returns>
-    private static (MyTask<T>, ComputationCell<T>) CreateNewTaskAndCell<T>(Func<T> newFunc, MyThreadPool threadPool)
-    {
-        var newCollection = new BlockingCollection<Action>();
-        var subCell = new ComputationCell<T>(newFunc);
-
-        var resultFunc = () =>
-        {
-            subCell.Compute();
-
-            lock (newCollection)
-            {
-                newCollection.CompleteAdding();
-            }
-
-            foreach (var action in newCollection.GetConsumingEnumerable())
-            {
-                action.Invoke();
-            }
-
-            return subCell.Result;
-        };
-
-        var newCell = new ComputationCell<T>(resultFunc);
-        var newTask = new MyTask<T>(threadPool, newCell, newCollection);
-
-        return (newTask, newCell);
-    }
-
-    /// <summary>
     /// A method that allows you to put the calculation of the <see cref="ComputationCell{TResult}"/>
     /// on the <see cref="MyThreadPool"/> without blocking.
     ///
     /// </summary>
     /// <param name="cell"><see cref="ComputationCell{TResult}"/> for calculations.</param>
     /// <typeparam name="T">Type of ComputationCell.</typeparam>
-    private void EnqueueCell<T>(ComputationCell<T> cell)
+    private void EnqueueTask<T>(MyTask<T> cell)
     {
-        try
-        {
-            this.queue.Add(() => cell.Compute());
-        }
-        catch (ObjectDisposedException e)
-        {
-            throw new MyThreadPoolException("the shutdown is called, the task cannot be completed", e);
-        }
-        catch (InvalidOperationException e)
-        {
-            throw new MyThreadPoolException("the shutdown is called, the task cannot be completed", e);
-        }
+        //TODO()
     }
 
     /// <summary>
@@ -219,20 +136,22 @@ public sealed class MyThreadPool : IDisposable
     /// <typeparam name="TResult">Result type.</typeparam>
     public class MyTask<TResult> : IMyTask<TResult>
     {
-        private readonly ComputationCell<TResult> computationCell;
+        private readonly Func<TResult> func;
         private readonly MyThreadPool threadPool;
 
         private readonly BlockingCollection<Action> actions;
+
+        private volatile bool isComputed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MyTask{TResult}"/> class.
         /// </summary>
         /// <param name="threadPool">Thread pool that perform computations.</param>
-        /// <param name="computationCell">Cell that encapsulates calculation and state of result.</param>
+        /// <param name="computationCell">Cell that encapsulates calculation and state of result.</param> //TODO()
         /// <param name="actions">Actions that will be performed immediately after the completion of the task.</param>
-        public MyTask(MyThreadPool threadPool, ComputationCell<TResult> computationCell, BlockingCollection<Action> actions)
+        public MyTask(MyThreadPool threadPool, Func<TResult> func, BlockingCollection<Action> actions)
         {
-            this.computationCell = computationCell;
+            this.func = func;
             this.threadPool = threadPool;
 
             this.actions = actions;
@@ -241,7 +160,7 @@ public sealed class MyThreadPool : IDisposable
         /// <summary>
         /// Gets a value indicating whether task is completed.
         /// </summary>
-        public bool IsCompleted => this.computationCell.IsComputed;
+        public bool IsCompleted => this.isComputed;
 
         /// <summary>
         /// Gets the result of the evaluation or, if it has not yet been evaluated,
@@ -288,44 +207,7 @@ public sealed class MyThreadPool : IDisposable
         /// </exception>
         public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> continuation)
         {
-            var newFunc = () =>
-            {
-                var result = this.GetResultFromComputationCell();
-
-                return continuation.Invoke(result);
-            };
-
-            if (this.IsCompleted || this.actions.IsAddingCompleted)
-            {
-                return this.threadPool.Submit(newFunc);
-            }
-
-            try
-            {
-                Monitor.Enter(this.actions);
-
-                if (this.IsCompleted || this.actions.IsAddingCompleted)
-                {
-                    return this.threadPool.Submit(newFunc);
-                }
-
-                var (newTask, newCell) = CreateContinuation<TNewResult>(newFunc, this.threadPool);
-
-                this.actions.Add(() => newCell.Compute());
-
-                return newTask;
-            }
-            catch (Exception e)
-            {
-                throw new MyTaskException("Continue add error: ", e);
-            }
-            finally
-            {
-                if (Monitor.IsEntered(this.actions))
-                {
-                    Monitor.Exit(this.actions);
-                }
-            }
+            
         }
 
         private TResult GetResultFromComputationCell()

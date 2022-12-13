@@ -26,7 +26,7 @@ internal class ThreadPoolItem
 
         this.countdownEvent = countdown;
 
-        new Thread(() => this.ThreadWork()).Start();
+        new Thread(this.ThreadWork).Start();
     }
 
     private void ThreadWork()
