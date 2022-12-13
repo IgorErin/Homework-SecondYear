@@ -20,7 +20,7 @@ public class MyThreadPoolTest
     [TestCase(0)]
     public void ThreadsCountTest(int threadCount)
     {
-        Assert.Throws<MyThreadPoolException>(() =>
+        Assert.Throws<ArgumentException>(() =>
         {
             new MyThreadPool(threadCount).Ignore();
         });
@@ -49,13 +49,13 @@ public class MyThreadPoolTest
     [Test]
     public void ConcurrentThreadShotDownTest()
     {
-        const int arrayLenght = 100;
+        const int arrayLength = 100;
 
-        var threads = new Thread[arrayLenght];
-        var results = new object[arrayLenght];
+        var threads = new Thread[arrayLength];
+        var results = new object[arrayLength];
         var newResult = new object();
 
-        for (var i = 0; i < arrayLenght; i++)
+        for (var i = 0; i < arrayLength; i++)
         {
             var localResultIndex = i;
 
@@ -139,7 +139,5 @@ public class MyThreadPoolTest
         }
 
         countDownEvent.Wait();
-
-        Assert.Pass();
     }
 }

@@ -158,7 +158,7 @@ public class MyTaskTest
         {
             testTaskContinuation.Result.Ignore();
         });
-        Assert.That(aggregateException!.InnerException, Is.EqualTo(testException));
+        Assert.That(aggregateException!.InnerException!.InnerException, Is.EqualTo(testException));
     }
 
     /// <summary>
