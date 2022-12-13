@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Reflection;
 using Attributes;
 using Exceptions;
-using TestsInfo;
 using Optional;
 
 /// <summary>
