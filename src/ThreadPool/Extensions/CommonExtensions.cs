@@ -9,7 +9,7 @@ public static class CommonExtensions
     /// Ignore method.
     /// </summary>
     /// <param name="someObject">Some object to ignore.</param>
-    public static void Ignore(this object someObject)
+    public static void Ignore(this object? someObject)
     {
         var _ = someObject;
     }

@@ -59,11 +59,11 @@ public sealed class MyThreadPool : IDisposable
             {
                 if (!this.isShutDown)
                 {
-                    var (newTask, newCell) = CreateNewTaskAndCell(func, this);
+                    var newTask = new MyTask<TResult>(this, func);
 
                     resultTask = newTask.Some<MyTask<TResult>>();
 
-                    this.queue.Add(newCell.Compute);
+                    this.queue.Add(newTask.Compute);
                 }
             }
             catch (Exception e)
@@ -72,7 +72,7 @@ public sealed class MyThreadPool : IDisposable
             }
         }
 
-        return resultTask.ValueOr(() => throw new MyThreadPoolException("submit error, task not added)"));
+        return resultTask.ValueOr(() => throw new MyThreadPoolException("submit error, task not added"));
     }
 
     /// <summary>
@@ -118,16 +118,20 @@ public sealed class MyThreadPool : IDisposable
         }
     }
 
-    /// <summary>
-    /// A method that allows you to put the calculation of the <see cref="ComputationCell{TResult}"/>
-    /// on the <see cref="MyThreadPool"/> without blocking.
-    ///
-    /// </summary>
-    /// <param name="cell"><see cref="ComputationCell{TResult}"/> for calculations.</param>
-    /// <typeparam name="T">Type of ComputationCell.</typeparam>
-    private void EnqueueTask<T>(MyTask<T> cell)
+    private void SubmitActionTask<T>(Action action)
     {
-        //TODO()
+        try
+        {
+            this.queue.Add(action);
+        }
+        catch (ObjectDisposedException e)
+        {
+            throw new MyThreadPoolException("the shutdown is called, the task cannot be completed", e);
+        }
+        catch (InvalidOperationException e)
+        {
+            throw new MyThreadPoolException("the shutdown is called, the task cannot be completed", e);
+        }
     }
 
     /// <summary>
@@ -136,12 +140,11 @@ public sealed class MyThreadPool : IDisposable
     /// <typeparam name="TResult">Result type.</typeparam>
     public class MyTask<TResult> : IMyTask<TResult>
     {
-        private readonly Func<TResult> func;
         private readonly MyThreadPool threadPool;
+        private readonly BlockingCollection<Action> actions = new ();
 
-        private readonly BlockingCollection<Action> actions;
-
-        private volatile bool isComputed;
+        private readonly Lazy<TResult> lazyFun;
+        private readonly Lazy<TResult> lazyWithContinuationSubmit;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MyTask{TResult}"/> class.
@@ -149,18 +152,47 @@ public sealed class MyThreadPool : IDisposable
         /// <param name="threadPool">Thread pool that perform computations.</param>
         /// <param name="computationCell">Cell that encapsulates calculation and state of result.</param> //TODO()
         /// <param name="actions">Actions that will be performed immediately after the completion of the task.</param>
-        public MyTask(MyThreadPool threadPool, Func<TResult> func, BlockingCollection<Action> actions)
+        public MyTask(MyThreadPool threadPool, Func<TResult> func)
         {
-            this.func = func;
             this.threadPool = threadPool;
+            this.lazyFun = new Lazy<TResult>(() =>
+            {
+                try
+                {
+                    return func.Invoke();
+                }
+                catch (Exception e)
+                {
+                    throw new AggregateException(e);
+                }
+            });
 
-            this.actions = actions;
+            var funWithContinuationSubmit = () =>
+            {
+                try
+                {
+                    return this.lazyFun.Value;
+                }
+                catch (Exception e)
+                {
+                    throw new AggregateException(e);
+                }
+                finally
+                {
+                    foreach (var action in this.actions)
+                    {
+                        this.threadPool.SubmitActionTask<TResult>(action);
+                    }
+                }
+            };
+
+            this.lazyWithContinuationSubmit = new Lazy<TResult>(funWithContinuationSubmit);
         }
 
         /// <summary>
         /// Gets a value indicating whether task is completed.
         /// </summary>
-        public bool IsCompleted => this.isComputed;
+        public bool IsCompleted => this.lazyFun.IsValueCreated;
 
         /// <summary>
         /// Gets the result of the evaluation or, if it has not yet been evaluated,
@@ -174,18 +206,14 @@ public sealed class MyThreadPool : IDisposable
         {
             get
             {
-                try
+                if (this.lazyFun.IsValueCreated)
                 {
-                    return this.GetResultFromComputationCell();
+                    return this.lazyFun.Value;
                 }
-                catch (ComputationCellException e)
-                {
-                    throw new MyTaskException("computation error: \n", e);
-                }
-                catch (Exception e)
-                {
-                    throw new AggregateException(e);
-                }
+
+                this.ComputeLazy(this.lazyWithContinuationSubmit);
+
+                return this.lazyFun.Value;
             }
         }
 
@@ -207,17 +235,42 @@ public sealed class MyThreadPool : IDisposable
         /// </exception>
         public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> continuation)
         {
-            
-        }
+            var newTask = this.threadPool.Submit(() => continuation.Invoke(this.lazyFun.Value));
 
-        private TResult GetResultFromComputationCell()
-        {
-            if (!this.computationCell.IsComputed)
+            if (this.lazyFun.IsValueCreated)
             {
-                this.computationCell.Compute();
+                return newTask;
             }
 
-            return this.computationCell.Result;
+            lock (this.actions)
+            {
+                if (this.lazyFun.IsValueCreated)
+                {
+                    return newTask;
+                }
+
+                this.actions.Add(newTask.Compute);
+            }
+
+            this.actions.Add(newTask.Compute);
+
+            return newTask;
+        }
+
+        public void Compute()
+        {
+            this.ComputeLazy(this.lazyWithContinuationSubmit);
+        }
+
+        private void ComputeLazy(Lazy<TResult> lazy)
+        {
+            try
+            {
+                this.lazyFun.Value.Ignore();
+            }
+            catch (Exception e)
+            {
+            }
         }
     }
 }

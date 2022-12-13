@@ -22,4 +22,3 @@ var myContinuation = (int x) =>
 var firstTask = threadPool.Submit(myFunc);
 
 firstTask.ContinueWith(myContinuation).Ignore();
-firstTask.Result.Ignore();
