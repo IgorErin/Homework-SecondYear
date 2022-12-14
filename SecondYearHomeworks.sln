@@ -10,6 +10,13 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{1F91AFCB-7AA2-404F-B69A-070ADA619077}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadPoolTest", "test\ThreadPoolTest\ThreadPoolTest.csproj", "{FD4A7E1F-4F00-4784-B198-EA50B5183EBC}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{070880EA-107A-4A81-B02E-5AB601C692F3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lazy", "src\Lazy\Lazy.csproj", "{3BC8B30B-A280-4C1A-9FEC-5C2812BDB4E6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{9EE59B94-67CF-4DED-A959-177CC64AC224}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LazyTest", "test\LazyTest\LazyTest.csproj", "{2202E8CE-66EC-4ADB-88D9-CA31186FEE56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
