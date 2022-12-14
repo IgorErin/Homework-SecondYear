@@ -8,7 +8,6 @@ using System.Collections.Concurrent;
 internal class ThreadPoolItem
 {
     private readonly BlockingCollection<Action> queue;
-
     private readonly CountdownEvent countdownEvent;
 
     /// <summary>
@@ -23,7 +22,6 @@ internal class ThreadPoolItem
     public ThreadPoolItem(BlockingCollection<Action> queue, CountdownEvent countdown)
     {
         this.queue = queue;
-
         this.countdownEvent = countdown;
 
         new Thread(this.ThreadWork).Start();

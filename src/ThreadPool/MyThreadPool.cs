@@ -34,7 +34,6 @@ public sealed class MyThreadPool : IDisposable
         }
 
         this.queue = new BlockingCollection<Action>();
-
         this.threadsCompletedEvent = new CountdownEvent(threadCount);
 
         for (var i = 0; i < threadCount; i++)
@@ -118,7 +117,7 @@ public sealed class MyThreadPool : IDisposable
         }
     }
 
-    private void SubmitActionTask<T>(Action action)
+    private void SubmitAction<T>(Action action)
     {
         try
         {
@@ -141,10 +140,10 @@ public sealed class MyThreadPool : IDisposable
     public class MyTask<TResult> : IMyTask<TResult>
     {
         private readonly MyThreadPool threadPool;
-        private readonly BlockingCollection<Action> actions = new ();
 
         private readonly Lazy<TResult> lazyFun;
-        private readonly Lazy<TResult> lazyWithContinuationSubmit;
+
+        private readonly ActionExecutor actionExecutor;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MyTask{TResult}"/> class.
@@ -155,6 +154,8 @@ public sealed class MyThreadPool : IDisposable
         public MyTask(MyThreadPool threadPool, Func<TResult> func)
         {
             this.threadPool = threadPool;
+            this.actionExecutor = new ActionExecutor(this.threadPool);
+
             this.lazyFun = new Lazy<TResult>(() =>
             {
                 try
@@ -163,30 +164,19 @@ public sealed class MyThreadPool : IDisposable
                 }
                 catch (Exception e)
                 {
-                    throw new AggregateException(e);
-                }
-            });
+                    Console.WriteLine("LOL");
 
-            var funWithContinuationSubmit = () =>
-            {
-                try
-                {
-                    return this.lazyFun.Value;
-                }
-                catch (Exception e)
-                {
                     throw new AggregateException(e);
                 }
                 finally
                 {
-                    foreach (var action in this.actions)
+                    lock (this.actionExecutor)
                     {
-                        this.threadPool.SubmitActionTask<TResult>(action);
+                        this.actionExecutor.CompleteAdding();
+                        this.actionExecutor.Execute();
                     }
                 }
-            };
-
-            this.lazyWithContinuationSubmit = new Lazy<TResult>(funWithContinuationSubmit);
+            });
         }
 
         /// <summary>
@@ -211,7 +201,7 @@ public sealed class MyThreadPool : IDisposable
                     return this.lazyFun.Value;
                 }
 
-                this.ComputeLazy(this.lazyWithContinuationSubmit);
+                this.ComputeLazy(this.lazyFun);
 
                 return this.lazyFun.Value;
             }
@@ -235,31 +225,36 @@ public sealed class MyThreadPool : IDisposable
         /// </exception>
         public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> continuation)
         {
-            var newTask = this.threadPool.Submit(() => continuation.Invoke(this.lazyFun.Value));
-
-            if (this.lazyFun.IsValueCreated)
+            var newTask = new MyTask<TNewResult>(this.threadPool, () =>
             {
-                return newTask;
-            }
+                var result = this.lazyFun.Value;
 
-            lock (this.actions)
+                return continuation.Invoke(result);
+            });
+
+            if (this.IsCompleted)
             {
-                if (this.lazyFun.IsValueCreated)
+                this.threadPool.SubmitAction<TNewResult>(() => newTask.Compute());
+            } /// TODO()
+
+            lock (this.actionExecutor)
+            {
+                if (this.IsCompleted)
                 {
-                    return newTask;
+                    this.threadPool.SubmitAction<TNewResult>(() => newTask.Compute());
                 }
-
-                this.actions.Add(newTask.Compute);
+                else
+                {
+                    this.actionExecutor.AddAction(() => newTask.Compute());
+                }
             }
-
-            this.actions.Add(newTask.Compute);
 
             return newTask;
         }
 
         public void Compute()
         {
-            this.ComputeLazy(this.lazyWithContinuationSubmit);
+            this.ComputeLazy(this.lazyFun);
         }
 
         private void ComputeLazy(Lazy<TResult> lazy)
@@ -270,6 +265,48 @@ public sealed class MyThreadPool : IDisposable
             }
             catch (Exception e)
             {
+            }
+        }
+
+        class ActionExecutor
+        {
+            private readonly MyThreadPool threadPool;
+            private readonly BlockingCollection<Action> actions = new ();
+
+            public bool HasException
+            {
+                get;
+                private set;
+            }
+
+            public ActionExecutor(MyThreadPool threadPool)
+            {
+                this.threadPool = threadPool;
+            }
+
+            public void AddAction(Action action)
+            {
+                this.actions.Add(action);
+            }
+
+            public void Execute()
+            {
+                foreach (var action in this.actions)
+                {
+                    try
+                    {
+                        action.Invoke();
+                    }
+                    catch (Exception e)
+                    {
+                        this.HasException = true;
+                    }
+                }
+            }
+
+            public void CompleteAdding()
+            {
+                this.actions.CompleteAdding();
             }
         }
     }
