@@ -4,6 +4,7 @@ using Extensions;
 using System.Collections.Concurrent;
 using Optional;
 using Exceptions;
+using Lazy.Lazy;
 
 /// <summary>
 /// Thread pool that implement <see cref="IDisposable"/>.
@@ -141,7 +142,7 @@ public sealed class MyThreadPool : IDisposable
     {
         private readonly MyThreadPool threadPool;
 
-        private readonly Lazy<TResult> lazyFun;
+        private readonly SafeLazy<TResult> lazyFun;
 
         private readonly ActionExecutor actionExecutor;
 
@@ -156,7 +157,7 @@ public sealed class MyThreadPool : IDisposable
             this.threadPool = threadPool;
             this.actionExecutor = new ActionExecutor(this.threadPool);
 
-            this.lazyFun = new Lazy<TResult>(() =>
+            this.lazyFun = new SafeLazy<TResult>(() =>
             {
                 try
                 {
