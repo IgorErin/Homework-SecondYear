@@ -6,85 +6,73 @@ using System.Net.Sockets;
 /// <summary>
 /// Server class for <see cref="Client"/>.
 /// </summary>
-public class Server
+public class Server : IWriter
 {
-    private const int GetAnswerBufferSize = 8;
-    private const int ListAnswerBufferSize = 4;
-    private const int IncorrectRequestLengthAnswer = -1;
+    private readonly NetworkStream networkStream;
+    private readonly TcpListener tcpListener;
+
+    private readonly StreamReader streamReader;
+    private readonly StreamWriter streamWriter;
 
     private readonly int port;
+    private readonly IPrinter printer;
+    private readonly IPAddress ipAddress;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Server"/> class.
     /// </summary>
-    /// <param name="port">Port for communicating with the server.</param>
-    public Server(int port)
-        => this.port = port;
-
-    /// <summary>
-    /// The method whose call starts listening on the specified port.
-    /// </summary>
-    /// <param name="token">Token to stop listening.</param>
-    /// <returns>
-    /// <see cref="Task"/>.
-    /// </returns>
-    public async Task Start(CancellationToken token)
+    public Server(int port, IPrinter printer)
     {
-        var listener = new TcpListener(IPAddress.Any, this.port);
-        listener.Start();
+        this.port = port;
+        this.printer = printer;
+        
+        var client = new TcpClient("localHost", port);
+        this.tcpListener = new TcpListener(IPAddress.Any, this.port);
 
-        var taskList = new LinkedList<Task>();
-
-        try
-        {
-            while (true)
-            {
-                var socket = await listener.AcceptSocketAsync(token).ConfigureAwait(false);
-
-                if (token.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                taskList.AddLast(
-                    Task.Run(async () => await this.Read(socket).ConfigureAwait(false)));
-            }
-        }
-        finally
-        {
-            foreach (var task in taskList)
-            {
-                await task.ConfigureAwait(false);
-            }
-
-            listener.Stop();
-        }
-    }
-
-    private async Task Read(Socket socket, )
-    {
-        var stream = new NetworkStream(socket);
-        using var reader = new StreamReader(stream);
-
-        try
-        {
-            while (true)
-            {
-                var message = await reader.ConfigureReadLineAsync();
-
-                // to  console...
-            }
-
-
-            await transmissionTask;
-        }
-        finally
-        {
-            reader.Close();
-            stream.Close();
-            socket.Close();
-        }
+        this.networkStream = client.GetStream();
+        
+        this.streamWriter = new StreamWriter(networkStream);
+        this.streamReader = new StreamReader(networkStream);
     }
     
-    private string receiveMessage()
+    public async Task Start()
+    {
+        this.tcpListener.Start();
+
+        Task.Run(async () => await this.Read(printer));
+    }
+
+    public async Task Write(string message)
+    {
+        await this.streamWriter.WriteLineAsync(message);
+        await this.streamWriter.FlushAsync();
+        
+        if (message == "exit")
+        {
+            await this.Exit();
+        }
+    }
+
+    private async Task Read(IPrinter printer)
+    {
+        try
+        {
+            while (true)
+            {
+                var message = await this.streamReader.ConfigureReadLineAsync();
+
+                printer.Print(message);
+            }
+        }
+        finally
+        {
+            this.streamReader.Close();
+        }
+    }
+
+    private async Task Exit()
+    {
+        this.tcpListener.Stop();
+        await this.networkStream.DisposeAsync();
+    }
 }
