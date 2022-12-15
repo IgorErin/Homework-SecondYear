@@ -145,8 +145,6 @@ public sealed class MyThreadPool : IDisposable
 
         private readonly ActionExecutor actionExecutor;
 
-        private readonly object locker = new ();
-
         /// <summary>
         /// Initializes a new instance of the <see cref="MyTask{TResult}"/> class.
         /// </summary>
@@ -157,7 +155,7 @@ public sealed class MyThreadPool : IDisposable
             this.threadPool = threadPool;
             this.actionExecutor = new ActionExecutor();
 
-            this.lazyFun = new Lazy<TResult>(() => this.ExecuteFunAndAddContinuationToThreadPool(func));
+            this.lazyFun = new Lazy<TResult>(() => this.ExecuteFunAndAddContinuationsToThreadPool(func));
         }
 
         /// <summary>
@@ -169,20 +167,7 @@ public sealed class MyThreadPool : IDisposable
         /// Gets the result of the evaluation or, if it has not yet been evaluated,
         /// blocks the calling thread until it is evaluated and returns the value.
         /// </summary>
-        public TResult Result
-        {
-            get
-            {
-                if (this.lazyFun.IsValueCreated)
-                {
-                    return this.lazyFun.Value;
-                }
-
-                this.ComputeLazy(this.lazyFun);
-
-                return this.lazyFun.Value;
-            }
-        }
+        public TResult Result => this.lazyFun.Value;
 
         /// <summary>
         /// The method that allows you to get the continuation of the result in the form <see cref="IMyTask{TResult}"/>.
@@ -198,12 +183,7 @@ public sealed class MyThreadPool : IDisposable
         /// </returns>
         public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> continuation)
         {
-            var newTask = new MyTask<TNewResult>(this.threadPool, () =>
-            {
-                var result = this.lazyFun.Value;
-
-                return continuation.Invoke(result);
-            });
+            var newTask = new MyTask<TNewResult>(this.threadPool, () => continuation.Invoke(this.lazyFun.Value));
 
             if (this.IsCompleted)
             {
@@ -220,7 +200,23 @@ public sealed class MyThreadPool : IDisposable
                 }
                 else
                 {
-                    this.actionExecutor.AddAction(() => this.threadPool.SubmitAction(newTask.Compute));
+                    var exceptionHandlerForSubmitAction = new Lazy<Type.Unit>(() =>
+                    {
+                        this.threadPool.SubmitAction(newTask.Compute);
+
+                        return Type.UnitType;
+                    });
+
+                    var funWithSubmitExceptionCheck = () =>
+                    {
+                        exceptionHandlerForSubmitAction.Value.Ignore();
+
+                        return continuation.Invoke(this.lazyFun.Value);
+                    };
+
+                    this.actionExecutor.AddAction(() => this.ComputeLazy(exceptionHandlerForSubmitAction));
+
+                    newTask = new MyTask<TNewResult>(this.threadPool, funWithSubmitExceptionCheck);
                 }
             }
 
@@ -238,7 +234,7 @@ public sealed class MyThreadPool : IDisposable
             this.ComputeLazy(this.lazyFun);
         }
 
-        private TResult ExecuteFunAndAddContinuationToThreadPool(Func<TResult> func)
+        private TResult ExecuteFunAndAddContinuationsToThreadPool(Func<TResult> func)
         {
             try
             {
@@ -254,17 +250,18 @@ public sealed class MyThreadPool : IDisposable
                 {
                     this.actionExecutor.CompleteAdding();
                     this.actionExecutor.Execute();
+                    this.actionExecutor.Dispose();
                 }
             }
         }
 
-        private void ComputeLazy(Lazy<TResult> lazy)
+        private void ComputeLazy<T>(Lazy<T> lazy)
         {
             try
             {
                 lazy.Value.Ignore(); // boxing...
             }
-            catch (Exception)
+            catch
             {
             }
         }
@@ -272,8 +269,11 @@ public sealed class MyThreadPool : IDisposable
         /// <summary>
         /// Entity that performing certain action.
         /// </summary>
-        private class ActionExecutor
+        private class ActionExecutor : IDisposable
         {
+            private readonly object locker = new();
+            private volatile bool isDisposed;
+
             private readonly BlockingCollection<Action> actions = new ();
 
             /// <summary>
@@ -296,7 +296,7 @@ public sealed class MyThreadPool : IDisposable
                     {
                         action.Invoke();
                     }
-                    catch (Exception)
+                    catch
                     {
                     }
                 }
@@ -308,6 +308,22 @@ public sealed class MyThreadPool : IDisposable
             public void CompleteAdding()
             {
                 this.actions.CompleteAdding();
+            }
+
+            /// <summary>
+            /// Method to release managed resources.
+            /// </summary>
+            public void Dispose()
+            {
+                lock (this.locker)
+                {
+                    if (!this.isDisposed)
+                    {
+                        this.actions.Dispose();
+                    }
+
+                    this.isDisposed = true;
+                }
             }
         }
     }
