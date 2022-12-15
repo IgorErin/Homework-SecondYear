@@ -2,10 +2,8 @@ namespace ThreadPool;
 
 using Extensions;
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 using Optional;
 using Exceptions;
-using Lazy.Lazy;
 
 /// <summary>
 /// Thread pool that implement <see cref="IDisposable"/>.
@@ -147,36 +145,19 @@ public sealed class MyThreadPool : IDisposable
 
         private readonly ActionExecutor actionExecutor;
 
+        private readonly object locker = new ();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MyTask{TResult}"/> class.
         /// </summary>
         /// <param name="threadPool">Thread pool that perform computations.</param>
-        /// <param name="computationCell">Cell that encapsulates calculation and state of result.</param> //TODO()
-        /// <param name="actions">Actions that will be performed immediately after the completion of the task.</param>
+        /// <param name="func">Function to compute.</param>
         public MyTask(MyThreadPool threadPool, Func<TResult> func)
         {
             this.threadPool = threadPool;
             this.actionExecutor = new ActionExecutor();
 
-            this.lazyFun = new Lazy<TResult>(() =>
-            {
-                try
-                {
-                    return func.Invoke();
-                }
-                catch (Exception e)
-                {
-                    throw new AggregateException(e);
-                }
-                finally
-                {
-                    lock (this.actionExecutor)
-                    {
-                        this.actionExecutor.CompleteAdding();
-                        this.actionExecutor.Execute();
-                    }
-                }
-            });
+            this.lazyFun = new Lazy<TResult>(() => this.ExecuteFunAndAddContinuationToThreadPool(func));
         }
 
         /// <summary>
@@ -188,10 +169,6 @@ public sealed class MyThreadPool : IDisposable
         /// Gets the result of the evaluation or, if it has not yet been evaluated,
         /// blocks the calling thread until it is evaluated and returns the value.
         /// </summary>
-        /// <exception cref="MyTaskException">Will be thrown on runtime error.</exception>
-        /// <exception cref="AggregateException">
-        /// Will be thrown at an exception in the computation, will contain it as inner exception.
-        /// </exception>
         public TResult Result
         {
             get
@@ -219,10 +196,6 @@ public sealed class MyThreadPool : IDisposable
         /// <returns>
         /// Abstraction over computation in form of <see cref="IMyTask{TResult}"/>.
         /// </returns>
-        /// <exception cref="AggregateException">
-        /// An exception will be thrown when the exception is thrown in the original task
-        /// or its continuation, when the <see cref="Result"/> property is applied to it.
-        /// </exception>
         public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> continuation)
         {
             var newTask = new MyTask<TNewResult>(this.threadPool, () =>
@@ -254,9 +227,35 @@ public sealed class MyThreadPool : IDisposable
             return newTask;
         }
 
+        /// <summary>
+        /// Compute task.
+        /// </summary>
+        /// <remarks>
+        /// The computation can be performed in the current thread.
+        /// </remarks>
         public void Compute()
         {
             this.ComputeLazy(this.lazyFun);
+        }
+
+        private TResult ExecuteFunAndAddContinuationToThreadPool(Func<TResult> func)
+        {
+            try
+            {
+                return func.Invoke();
+            }
+            catch (Exception e)
+            {
+                throw new AggregateException(e);
+            }
+            finally
+            {
+                lock (this.actionExecutor)
+                {
+                    this.actionExecutor.CompleteAdding();
+                    this.actionExecutor.Execute();
+                }
+            }
         }
 
         private void ComputeLazy(Lazy<TResult> lazy)
@@ -270,15 +269,25 @@ public sealed class MyThreadPool : IDisposable
             }
         }
 
-        class ActionExecutor
+        /// <summary>
+        /// Entity that performing certain action.
+        /// </summary>
+        private class ActionExecutor
         {
             private readonly BlockingCollection<Action> actions = new ();
 
+            /// <summary>
+            /// Add an action to for execution.
+            /// </summary>
+            /// <param name="action">Action for execution.</param>
             public void AddAction(Action action)
             {
                 this.actions.Add(action);
             }
 
+            /// <summary>
+            /// Execute all previously added actions.
+            /// </summary>
             public void Execute()
             {
                 foreach (var action in this.actions)
@@ -293,6 +302,9 @@ public sealed class MyThreadPool : IDisposable
                 }
             }
 
+            /// <summary>
+            /// Make adding actions impossible.
+            /// </summary>
             public void CompleteAdding()
             {
                 this.actions.CompleteAdding();
