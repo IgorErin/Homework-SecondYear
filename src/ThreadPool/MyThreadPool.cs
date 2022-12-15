@@ -2,6 +2,7 @@ namespace ThreadPool;
 
 using Extensions;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Optional;
 using Exceptions;
 using Lazy.Lazy;
@@ -118,7 +119,7 @@ public sealed class MyThreadPool : IDisposable
         }
     }
 
-    private void SubmitAction<T>(Action action)
+    private void SubmitAction(Action action)
     {
         try
         {
@@ -142,7 +143,7 @@ public sealed class MyThreadPool : IDisposable
     {
         private readonly MyThreadPool threadPool;
 
-        private readonly SafeLazy<TResult> lazyFun;
+        private readonly Lazy<TResult> lazyFun;
 
         private readonly ActionExecutor actionExecutor;
 
@@ -155,9 +156,9 @@ public sealed class MyThreadPool : IDisposable
         public MyTask(MyThreadPool threadPool, Func<TResult> func)
         {
             this.threadPool = threadPool;
-            this.actionExecutor = new ActionExecutor(this.threadPool);
+            this.actionExecutor = new ActionExecutor();
 
-            this.lazyFun = new SafeLazy<TResult>(() =>
+            this.lazyFun = new Lazy<TResult>(() =>
             {
                 try
                 {
@@ -165,8 +166,6 @@ public sealed class MyThreadPool : IDisposable
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("LOL");
-
                     throw new AggregateException(e);
                 }
                 finally
@@ -235,18 +234,20 @@ public sealed class MyThreadPool : IDisposable
 
             if (this.IsCompleted)
             {
-                this.threadPool.SubmitAction<TNewResult>(() => newTask.Compute());
-            } /// TODO()
+                this.threadPool.SubmitAction(newTask.Compute);
+
+                return newTask;
+            }
 
             lock (this.actionExecutor)
             {
                 if (this.IsCompleted)
                 {
-                    this.threadPool.SubmitAction<TNewResult>(() => newTask.Compute());
+                    this.threadPool.SubmitAction(newTask.Compute);
                 }
                 else
                 {
-                    this.actionExecutor.AddAction(() => newTask.Compute());
+                    this.actionExecutor.AddAction(() => this.threadPool.SubmitAction(newTask.Compute));
                 }
             }
 
@@ -262,28 +263,16 @@ public sealed class MyThreadPool : IDisposable
         {
             try
             {
-                this.lazyFun.Value.Ignore();
+                lazy.Value.Ignore(); // boxing...
             }
-            catch (Exception e)
+            catch (Exception)
             {
             }
         }
 
         class ActionExecutor
         {
-            private readonly MyThreadPool threadPool;
             private readonly BlockingCollection<Action> actions = new ();
-
-            public bool HasException
-            {
-                get;
-                private set;
-            }
-
-            public ActionExecutor(MyThreadPool threadPool)
-            {
-                this.threadPool = threadPool;
-            }
 
             public void AddAction(Action action)
             {
@@ -298,9 +287,8 @@ public sealed class MyThreadPool : IDisposable
                     {
                         action.Invoke();
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
-                        this.HasException = true;
                     }
                 }
             }
