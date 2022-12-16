@@ -71,7 +71,8 @@ public sealed class MyThreadPool : IDisposable
             }
         }
 
-        return resultTask.ValueOr(() => throw new MyThreadPoolException("submit error, task not added"));
+        return resultTask.ValueOr(
+            () => throw new MyThreadPoolException("submit error, task not added"));
     }
 
     /// <summary>
@@ -117,7 +118,7 @@ public sealed class MyThreadPool : IDisposable
         }
     }
 
-    private void SubmitAction(Action action)
+    private Type.Unit SubmitAction(Action action)
     {
         try
         {
@@ -131,6 +132,8 @@ public sealed class MyThreadPool : IDisposable
         {
             throw new MyThreadPoolException("the shutdown is called, the task cannot be completed", e);
         }
+
+        return Type.UnitType;
     }
 
     /// <summary>
@@ -155,7 +158,7 @@ public sealed class MyThreadPool : IDisposable
             this.threadPool = threadPool;
             this.actionExecutor = new ActionExecutor();
 
-            this.lazyFun = new Lazy<TResult>(() => this.ExecuteFunAndAddContinuationsToThreadPool(func));
+            this.lazyFun = new Lazy<TResult>(() => this.ExecuteFunAndSubmitContinuationsToThreadPool(func));
         }
 
         /// <summary>
@@ -200,21 +203,19 @@ public sealed class MyThreadPool : IDisposable
                 }
                 else
                 {
-                    var exceptionHandlerForSubmitAction = new Lazy<Type.Unit>(() =>
-                    {
-                        this.threadPool.SubmitAction(newTask.Compute);
-
-                        return Type.UnitType;
-                    });
+                    var submitter = new Submitter(this.threadPool, newTask.Compute);
 
                     var funWithSubmitExceptionCheck = () =>
                     {
-                        exceptionHandlerForSubmitAction.Value.Ignore();
+                        if (submitter.IsSubmitted)
+                        {
+                            submitter.ThrowSubmitExceptionIfThatExist();
+                        }
 
                         return continuation.Invoke(this.lazyFun.Value);
                     };
 
-                    this.actionExecutor.AddAction(() => this.ComputeLazy(exceptionHandlerForSubmitAction));
+                    this.actionExecutor.AddAction(submitter.Submit);
 
                     newTask = new MyTask<TNewResult>(this.threadPool, funWithSubmitExceptionCheck);
                 }
@@ -229,12 +230,9 @@ public sealed class MyThreadPool : IDisposable
         /// <remarks>
         /// The computation can be performed in the current thread.
         /// </remarks>
-        public void Compute()
-        {
-            this.ComputeLazy(this.lazyFun);
-        }
+        public void Compute() => this.lazyFun.Compute();
 
-        private TResult ExecuteFunAndAddContinuationsToThreadPool(Func<TResult> func)
+        private TResult ExecuteFunAndSubmitContinuationsToThreadPool(Func<TResult> func)
         {
             try
             {
@@ -248,66 +246,67 @@ public sealed class MyThreadPool : IDisposable
             {
                 lock (this.actionExecutor)
                 {
-                    this.actionExecutor.CompleteAdding();
-                    this.actionExecutor.Execute();
+                    this.actionExecutor.Release();
                     this.actionExecutor.Dispose();
                 }
             }
         }
 
-        private void ComputeLazy<T>(Lazy<T> lazy)
+        /// <summary>
+        /// Class for encapsulating an exception when submitting.
+        /// </summary>
+        private class Submitter
         {
-            try
-            {
-                lazy.Value.Ignore(); // boxing...
-            }
-            catch
-            {
-            }
+            private readonly Lazy<Type.Unit> lazySubmit;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="Submitter"/> class.
+            /// </summary>
+            public Submitter(MyThreadPool threadPool, Action action)
+                => this.lazySubmit = new Lazy<Type.Unit>(() => threadPool.SubmitAction(action));
+
+            /// <summary>
+            /// Gets a value indicating whether action submitted.
+            /// </summary>
+            public bool IsSubmitted => this.lazySubmit.IsValueCreated;
+
+            /// <summary>
+            /// Submit action.
+            /// </summary>
+            public void Submit() => this.lazySubmit.Compute();
+
+            /// <summary>
+            /// Throw an exception that was thrown during the submission.
+            /// </summary>
+            public void ThrowSubmitExceptionIfThatExist() => this.lazySubmit.Value.Ignore();
         }
 
         /// <summary>
-        /// Entity that performing certain action.
+        /// Entity that perform certain actions.
         /// </summary>
         private class ActionExecutor : IDisposable
         {
-            private readonly object locker = new();
-            private volatile bool isDisposed;
-
             private readonly BlockingCollection<Action> actions = new ();
 
+            private volatile bool isDisposed;
+
             /// <summary>
-            /// Add an action to for execution.
+            /// Add an action for execution.
             /// </summary>
             /// <param name="action">Action for execution.</param>
-            public void AddAction(Action action)
-            {
-                this.actions.Add(action);
-            }
+            public void AddAction(Action action) => this.actions.Add(action);
 
             /// <summary>
-            /// Execute all previously added actions.
+            /// Execute all previously added actions and complete addition.
             /// </summary>
-            public void Execute()
-            {
-                foreach (var action in this.actions)
-                {
-                    try
-                    {
-                        action.Invoke();
-                    }
-                    catch
-                    {
-                    }
-                }
-            }
-
-            /// <summary>
-            /// Make adding actions impossible.
-            /// </summary>
-            public void CompleteAdding()
+            public void Release()
             {
                 this.actions.CompleteAdding();
+
+                foreach (var action in this.actions)
+                {
+                    action.Invoke();
+                }
             }
 
             /// <summary>
@@ -315,15 +314,12 @@ public sealed class MyThreadPool : IDisposable
             /// </summary>
             public void Dispose()
             {
-                lock (this.locker)
+                if (!this.isDisposed)
                 {
-                    if (!this.isDisposed)
-                    {
-                        this.actions.Dispose();
-                    }
-
-                    this.isDisposed = true;
+                    this.actions.Dispose();
                 }
+
+                this.isDisposed = true;
             }
         }
     }

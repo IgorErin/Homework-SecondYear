@@ -6,44 +6,41 @@ using var threadPool = new MyThreadPool(4);
 
 var myFunc = () =>
 {
-    Console.WriteLine($"FirstTask thread = {Environment.CurrentManagedThreadId}");
-
     Task.Delay(100).GetAwaiter().GetResult();
+    Console.WriteLine($"FirstTask thread = {Environment.CurrentManagedThreadId}");
 
     return 2 * 2;
 };
 
 var myContinuation = (int x) =>
 {
+    Task.Delay(100).GetAwaiter().GetResult();
     Console.WriteLine($"Continuation thread = {Environment.CurrentManagedThreadId}");
     Console.WriteLine($"Result = {x}");
-
-    //Task.Delay(100).GetAwaiter().GetResult();
 
     return x;
 };
 
-// Work script
 var firstTask = threadPool.Submit(myFunc);
 
-firstTask.ContinueWith(myContinuation).Result.Ignore();
+// // Number of continuations.
+// firstTask.ContinueWith(myContinuation).Result.Ignore();
+// firstTask.ContinueWith(myContinuation).Ignore();
+// firstTask.ContinueWith(myContinuation).Ignore();
+// firstTask.ContinueWith(myContinuation).Result.Ignore();
+// firstTask.ContinueWith(myContinuation).Ignore();
+
+// Computation in user thread.
 firstTask.ContinueWith(myContinuation).Ignore();
 firstTask.ContinueWith(myContinuation).Ignore();
-firstTask.ContinueWith(myContinuation).Result.Ignore();
 firstTask.ContinueWith(myContinuation).Ignore();
+firstTask.ContinueWith(myContinuation).Ignore();
+firstTask.ContinueWith(myContinuation).Ignore(); // the continuations above will not have time to get on the threadpool
+var cont = firstTask.ContinueWith(myContinuation);
+threadPool.ShutDown();
+cont.Result.Ignore(); // no exception thrown --- the task is calculated in the user thread
 
-// // Add to thread pool queue error
-// firstTask.ContinueWith(myContinuation).Ignore();
-// firstTask.ContinueWith(myContinuation).Ignore();
-// firstTask.ContinueWith(myContinuation).Ignore();
-// firstTask.ContinueWith(myContinuation).Ignore();
-// firstTask.ContinueWith(myContinuation).Ignore();
-// var cont = firstTask.ContinueWith(myContinuation);
-// threadPool.ShutDown();
-// cont.Result.Ignore(); // exception about the error of adding a task to the thread pool
-
-
-// // Submit error.
+// Submit error.
 // firstTask.ContinueWith(myContinuation).Ignore();
 // firstTask.ContinueWith(myContinuation).Ignore();
 // firstTask.ContinueWith(myContinuation).Ignore();
