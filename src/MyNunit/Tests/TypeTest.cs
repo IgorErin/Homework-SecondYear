@@ -14,7 +14,7 @@ public class TypeTest : ITest
     private readonly Stopwatch stopwatch = new ();
     private static readonly object[] emptyArgs = Array.Empty<object>();
 
-    private Option<IEnumerable<MethodTest>> results;
+    private Option<IEnumerable<MethodTest>> optionTestMethods;
     private Option<Exception> exception = Option.None<Exception>();
     private Option<long> time = Option.None<long>();
 
@@ -101,7 +101,7 @@ public class TypeTest : ITest
         this.stopwatch.Stop();
 
         this.time = this.stopwatch.ElapsedMilliseconds.Some<>();
-        this.results = typeTests.Some<>();
+        this.optionTestMethods = typeTests.Some<>();
 
         try
         {
@@ -162,5 +162,13 @@ public class TypeTest : ITest
         }
 
         return compatibleMethods;
+    }
+
+    public void Print(ITestPrinter printer)
+    {
+        foreach (var methodTest in this.optionTestMethods)
+        {
+            methodTest.Print(printer);
+        }
     }
 }

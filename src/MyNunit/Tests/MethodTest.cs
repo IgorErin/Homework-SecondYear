@@ -264,4 +264,9 @@ public class MethodTest : ITest
 
         return "The test fell with an exception";
     }
+
+    public void Print(ITestPrinter printer)
+    {
+        return; //TODO()
+    }
 }

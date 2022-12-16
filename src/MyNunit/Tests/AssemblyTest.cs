@@ -49,4 +49,12 @@ public class AssemblyTest : ITest
     {
         return null;
     }
+
+    private void Print(ITestPrinter printer)
+    {
+        foreach (var typeTest in this.typeTests)
+        {
+            typeTest.Print(printer);
+        }
+    }
 }
