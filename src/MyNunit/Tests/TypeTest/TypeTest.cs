@@ -1,64 +1,34 @@
-namespace MyNunit.Tests;
+namespace MyNunit.Tests.TypeTest;
 
-using System.Diagnostics;
 using System.Reflection;
 using Attributes;
 using Exceptions;
+using MethodTest;
 using Optional;
+using Optional.Unsafe;
+using Printer;
 
-public class TypeTest : ITest
+public class TypeTest
 {
-    private readonly Type type;
+    private static readonly object[] EmptyArgs = Array.Empty<object>();
+
     private readonly TypeInfo typeInfo;
 
-    private readonly Stopwatch stopwatch = new ();
-    private static readonly object[] emptyArgs = Array.Empty<object>();
-
-    private Option<IEnumerable<MethodTest>> optionTestMethods;
+    private Option<IEnumerable<MethodTest>> optionTestMethods = Option.None<IEnumerable<MethodTest>>();
     private Option<Exception> exception = Option.None<Exception>();
-    private Option<long> time = Option.None<long>();
 
-    private TypeStatus typeStatus = TypeStatus.NotInit;
-
-    public long Time
-    {
-        get;
-    }
-
-    public TestStatus Status
-    {
-        get;
-        private set;
-    }
-
-    public string Message
-    {
-        get;
-    }
+    private TypeTestStatus typeStatus;
 
     public TypeTest(Type type)
     {
-        this.type = type;
         this.typeInfo = type.GetTypeInfo();
-    }
-
-    private enum TypeStatus
-    {
-        NotInit,
-        AbstractType,
-        IncompatibleConstructorParameters,
-        Compatible,
+        this.typeStatus = GetTypeStatus(this.typeInfo);
     }
 
     public void Run()
     {
-        this.typeStatus = GetTypeStatus(this.typeInfo);
-
-        if (this.typeStatus != TypeStatus.Compatible)
+        if (this.typeStatus != TypeTestStatus.Compatible)
         {
-            this.time = 0.Some<>();
-            this.Status = TestStatus.Ignored;
-
             return;
         }
 
@@ -68,16 +38,13 @@ public class TypeTest : ITest
         }
         catch (Exception testRunTimeException)
         {
-            this.stopwatch.Stop();
-
             this.exception = testRunTimeException.Some<>();
-            this.time = this.stopwatch.ElapsedMilliseconds.Some<>();
-            this.Status = TestStatus.BeforeFailed; // TODO()
+            this.typeStatus = TypeTestStatus.BeforeFailed;
 
             return;
         }
 
-        var instance = Activator.CreateInstance(this.type) ??
+        var instance = Activator.CreateInstance(this.typeInfo) ??
                        throw new ClassInstantiationException("Class cannot be instantiated");
 
         var beforeTestMethods = GetMethodsWithAttribute(typeof(BeforeAttribute), this.typeInfo);
@@ -86,22 +53,13 @@ public class TypeTest : ITest
         var testMethods = GetMethodsWithAttribute(typeof(TestAttribute), this.typeInfo);
         var typeTests = new List<MethodTest>();
 
-        this.stopwatch.Reset();
-        this.stopwatch.Start();
-
         foreach (var method in testMethods)
         {
             var test = new MethodTest(instance, beforeTestMethods, method, afterTestMethods);
 
             test.Run();
-
             typeTests.Add(test);
         }
-
-        this.stopwatch.Stop();
-
-        this.time = this.stopwatch.ElapsedMilliseconds.Some<>();
-        this.optionTestMethods = typeTests.Some<>();
 
         try
         {
@@ -109,28 +67,28 @@ public class TypeTest : ITest
         }
         catch (Exception testRunTimeException)
         {
-            this.stopwatch.Stop();
-
             this.exception = testRunTimeException.Some<>();
-            this.time = this.stopwatch.ElapsedMilliseconds.Some<>();
+            this.typeStatus = TypeTestStatus.AfterFailed;
 
-            this.Status = TestStatus.AfterFaild; //TODO()
+            return;
         }
+
+        this.typeStatus = TypeTestStatus.Passed;
     }
 
-    private static TypeStatus GetTypeStatus(Type typeInfo)
+    private static TypeTestStatus GetTypeStatus(Type typeInfo)
     {
         if (typeInfo.GetConstructor(Type.EmptyTypes) == null)
         {
-            return TypeStatus.IncompatibleConstructorParameters;
+            return TypeTestStatus.IncompatibleConstructorParameters;
         }
 
         if (typeInfo.IsAbstract)
         {
-            return TypeStatus.AbstractType;
+            return TypeTestStatus.AbstractType;
         }
 
-        return TypeStatus.Compatible;
+        return TypeTestStatus.Compatible;
     }
 
     private static bool IsMethodHasAttribute(MethodInfo methodInfo, Type attributeType)
@@ -144,7 +102,7 @@ public class TypeTest : ITest
         {
             if (method.IsStatic)
             {
-                method.Invoke(null, emptyArgs);
+                method.Invoke(null, EmptyArgs);
             }
         }
     }
@@ -166,7 +124,7 @@ public class TypeTest : ITest
 
     public void Print(ITestPrinter printer)
     {
-        foreach (var methodTest in this.optionTestMethods)
+        foreach (var methodTest in this.optionTestMethods.ValueOrFailure()) //TODO()
         {
             methodTest.Print(printer);
         }

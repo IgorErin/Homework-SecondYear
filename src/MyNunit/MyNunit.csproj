@@ -17,10 +17,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Tests\Assembly" />
-    <Folder Include="Tests\Method" />
-    <Folder Include="Tests\Type" />
-  </ItemGroup>
-
 </Project>
