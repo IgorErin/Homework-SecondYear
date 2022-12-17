@@ -19,6 +19,7 @@ public class ConsoleTestPrinter : ITestPrinter
     public void PrintTypeTest(TypeInfo typeInfo, TypeTestStatus status, Option<Exception> exception)
     {
         Console.WriteLine($">> Test type name: {typeInfo.Name}");
+        Console.WriteLine($">> Status: {GetTypeMessage(status, exception)}");
     }
 
     public void PrintMethodTest(
@@ -35,6 +36,19 @@ public class ConsoleTestPrinter : ITestPrinter
 
         Console.WriteLine($"   --> Message: {GetTestMethodMessage(methodTestStatus, ignoreMessage, exception)}");
     }
+    
+    private static string GetTypeMessage(TypeTestStatus status, Option<Exception> exception)
+        => status switch
+        {
+            TypeTestStatus.NoTestsFound => "No test found",
+            TypeTestStatus.AbstractType => "The type cannot be tested because it is abstract",
+            TypeTestStatus.IncompatibleConstructorParameters => "The type has incompatible constructor parameters",
+            TypeTestStatus.AfterFailed => "An exception was received when performing post actions",
+            TypeTestStatus.BeforeFailed => "An exception was received when performing pre-actions",
+            TypeTestStatus.Passed => "Passed",
+            TypeTestStatus.Compatible => throw new Exception(), //TODO()
+            _ => throw new Exception() // TODO()
+        };
 
     private static string GetTestMethodStatus(MethodTestStatus methodTestStatus, Option<Exception> exception)
         => methodTestStatus switch
@@ -80,9 +94,12 @@ public class ConsoleTestPrinter : ITestPrinter
             MethodTestStatus.Generic => "Generalized method --- incompatible for testing",
             MethodTestStatus.IncompatibleParameters or
                 MethodTestStatus.IncompatibleReturnType => "The method has an incompatible signature",
-            MethodTestStatus.SpecialName => "The method has a special name --- not compatible for testing",
-            MethodTestStatus.AfterFailed => "An exception was received when performing post actions",
-            MethodTestStatus.BeforeFailed => "An exception was received when performing pre-actions",
+            MethodTestStatus.SpecialName
+                => "The method has a special name --- not compatible for testing",
+            MethodTestStatus.AfterFailed
+                => $"An exception was received when performing post actions: {exception.ValueOrFailure()}",
+            MethodTestStatus.BeforeFailed
+                => $"An exception was received when performing pre-actions: {exception.ValueOrFailure()}",
             MethodTestStatus.IgnoredWithMessage =>
                 $"The test is specified as ignored, the reason: {ignoreMessage.ValueOrFailure()}",
             MethodTestStatus.ReceivedExpectedException =>

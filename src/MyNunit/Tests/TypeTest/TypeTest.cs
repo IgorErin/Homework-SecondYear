@@ -24,8 +24,6 @@ public class TypeTest
         this.typeStatus = GetTypeStatus(this.typeInfo);
     }
 
-    public TypeTestStatus Status => this.typeStatus;
-
     public void Run()
     {
         if (this.typeStatus != TypeTestStatus.Compatible)
