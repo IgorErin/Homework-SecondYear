@@ -18,8 +18,9 @@ foreach (var path in args)
 var myNunit = new MyNunit.MyNunit(assemblies);
 var printer = new ConsoleTestPrinter();
 
-myNunit.Print(printer);
+myNunit.Run();
 
+myNunit.Print(printer);
 
 bool IsAssembly(string path)
 {

@@ -1,6 +1,6 @@
 namespace MyNunit.Tests.MethodTest;
 
-public enum MethodStatus
+public enum MethodTestStatus
 {
     Compatible,
     Constructor,
@@ -14,6 +14,5 @@ public enum MethodStatus
     AfterFailed,
     ReceivedExpectedException,
     ReceivedUnexpectedException,
-    ReceivedException,
     IgnoredWithMessage,
 }

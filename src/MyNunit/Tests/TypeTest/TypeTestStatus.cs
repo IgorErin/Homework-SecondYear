@@ -9,4 +9,6 @@ public enum TypeTestStatus
     BeforeFailed,
     AfterFailed,
     Passed,
+
+    NoTestsFound,
 }

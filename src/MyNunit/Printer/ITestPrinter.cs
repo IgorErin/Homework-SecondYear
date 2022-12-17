@@ -13,7 +13,8 @@ public interface ITestPrinter
 
     public void PrintMethodTest(
         MethodInfo methodInfo,
-        MethodStatus methodStatus,
+        MethodTestStatus methodTestStatus,
+        Option<long> time,
         Option<string> ignoreMessage,
         Option<Exception> exception);
 }

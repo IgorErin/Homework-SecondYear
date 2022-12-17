@@ -27,7 +27,7 @@ public class MethodTest
     private Option<Exception> exception = Option.None<Exception>();
     private Option<long> time = Option.None<long>();
 
-    private MethodStatus methodStatus;
+    private MethodTestStatus methodTestStatus;
 
     public MethodTest(object instance, Methods before, MethodInfo method, Methods after)
     {
@@ -42,12 +42,14 @@ public class MethodTest
         this.expectedExceptionType = attribute.Expected?.Some<Type>() ?? Option.None<Type>();
         this.ignore = attribute.Ignore?.Some<string>() ?? Option.None<string>();
 
-        this.methodStatus = GetMethodStatus(this.method);
+        this.methodTestStatus = GetMethodStatus(this.method);
     }
+
+    public MethodTestStatus Status => this.methodTestStatus;
 
     public void Run()
     {
-        if (this.methodStatus != MethodStatus.Compatible)
+        if (this.methodTestStatus != MethodTestStatus.Compatible)
         {
             return;
         }
@@ -59,7 +61,7 @@ public class MethodTest
         catch (Exception beforeException)
         {
             this.exception = beforeException.Some();
-            this.methodStatus = MethodStatus.BeforeFailed;
+            this.methodTestStatus = MethodTestStatus.BeforeFailed;
 
             return;
         }
@@ -74,7 +76,7 @@ public class MethodTest
                 RunInstanceMethodWithEmptyArgs(this.instance, this.method);
 
                 this.stopwatch.Stop();
-                this.methodStatus = MethodStatus.Passed;
+                this.methodTestStatus = MethodTestStatus.Passed;
             }
             catch (Exception testRuntimeException)
             {
@@ -83,16 +85,16 @@ public class MethodTest
                 this.exception =
                     testRuntimeException.InnerException?.Some<Exception>() ?? throw new Exception(); //TODO()
 
-                this.methodStatus = GetExceptionStatus(this.exception, this.expectedExceptionType);
+                this.methodTestStatus = GetExceptionStatus(this.exception, this.expectedExceptionType);
             }
             finally
             {
-                this.time = this.stopwatch.ElapsedMilliseconds.Some<>(); // TODO()
+                this.time = this.stopwatch.ElapsedMilliseconds.Some<long>(); // TODO()
             }
         }
         else
         {
-            this.methodStatus = MethodStatus.IgnoredWithMessage;
+            this.methodTestStatus = MethodTestStatus.IgnoredWithMessage;
         }
 
         try
@@ -102,41 +104,41 @@ public class MethodTest
         catch (Exception afterException)
         {
             this.exception = afterException.Some();
-            this.methodStatus = MethodStatus.AfterFailed;
+            this.methodTestStatus = MethodTestStatus.AfterFailed;
         }
     }
 
-    private static MethodStatus GetMethodStatus(MethodInfo methodInfo)
+    private static MethodTestStatus GetMethodStatus(MethodInfo methodInfo)
     {
         if (methodInfo.IsConstructor)
         {
-            return MethodStatus.Constructor;
+            return MethodTestStatus.Constructor;
         }
 
         if (methodInfo.IsGenericMethodDefinition)
         {
-            return MethodStatus.Generic;
+            return MethodTestStatus.Generic;
         }
 
         if (methodInfo.IsSpecialName)
         {
-            return MethodStatus.SpecialName;
+            return MethodTestStatus.SpecialName;
         }
 
         if (methodInfo.GetParameters().Length != 0)
         {
-            return MethodStatus.IncompatibleParameters;
+            return MethodTestStatus.IncompatibleParameters;
         }
 
-        if (methodInfo.ReturnType == typeof(void))
+        if (methodInfo.ReturnType != typeof(void))
         {
-            return MethodStatus.IncompatibleReturnType;
+            return MethodTestStatus.IncompatibleReturnType;
         }
 
-        return MethodStatus.Compatible;
+        return MethodTestStatus.Compatible;
     }
 
-    private static MethodStatus GetExceptionStatus(Option<Exception> receivedException, Option<Type> expectedType)
+    private static MethodTestStatus GetExceptionStatus(Option<Exception> receivedException, Option<Type> expectedType)
     {
         var received = receivedException.ValueOrFailure("TODO()");
 
@@ -145,12 +147,12 @@ public class MethodTest
             {
                 if (received.GetType().IsEqual(value))
                 {
-                    return MethodStatus.ReceivedExpectedException;
+                    return MethodTestStatus.ReceivedExpectedException;
                 }
 
-                return MethodStatus.ReceivedUnexpectedException;
+                return MethodTestStatus.ReceivedUnexpectedException;
             },
-            none: () => MethodStatus.ReceivedException);
+            none: () => MethodTestStatus.ReceivedUnexpectedException);
     }
 
     private static TestAttribute GetTestAttribute(MethodInfo type)
@@ -169,7 +171,5 @@ public class MethodTest
         => methodInfo.Invoke(type, EmptyArgs);
 
     public void Print(ITestPrinter printer)
-    {
-        return; //TODO()
-    }
+        => printer.PrintMethodTest(this.method, this.methodTestStatus, this.time, this.ignore, this.exception);
 }

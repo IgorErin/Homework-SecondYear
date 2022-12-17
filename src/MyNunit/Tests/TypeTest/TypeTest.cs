@@ -5,7 +5,6 @@ using Attributes;
 using Exceptions;
 using MethodTest;
 using Optional;
-using Optional.Unsafe;
 using Printer;
 
 public class TypeTest
@@ -14,7 +13,7 @@ public class TypeTest
 
     private readonly TypeInfo typeInfo;
 
-    private Option<IEnumerable<MethodTest>> optionTestMethods = Option.None<IEnumerable<MethodTest>>();
+    private List<MethodTest> resultTests = new ();
     private Option<Exception> exception = Option.None<Exception>();
 
     private TypeTestStatus typeStatus;
@@ -24,6 +23,8 @@ public class TypeTest
         this.typeInfo = type.GetTypeInfo();
         this.typeStatus = GetTypeStatus(this.typeInfo);
     }
+
+    public TypeTestStatus Status => this.typeStatus;
 
     public void Run()
     {
@@ -38,7 +39,7 @@ public class TypeTest
         }
         catch (Exception testRunTimeException)
         {
-            this.exception = testRunTimeException.Some<>();
+            this.exception = testRunTimeException.Some<Exception>();
             this.typeStatus = TypeTestStatus.BeforeFailed;
 
             return;
@@ -51,14 +52,15 @@ public class TypeTest
         var afterTestMethods = GetMethodsWithAttribute(typeof(AfterAttribute), this.typeInfo);
 
         var testMethods = GetMethodsWithAttribute(typeof(TestAttribute), this.typeInfo);
-        var typeTests = new List<MethodTest>();
+
+        this.resultTests.Clear();
 
         foreach (var method in testMethods)
         {
             var test = new MethodTest(instance, beforeTestMethods, method, afterTestMethods);
 
             test.Run();
-            typeTests.Add(test);
+            this.resultTests.Add(test);
         }
 
         try
@@ -67,13 +69,17 @@ public class TypeTest
         }
         catch (Exception testRunTimeException)
         {
-            this.exception = testRunTimeException.Some<>();
+            this.exception = testRunTimeException.Some<Exception>();
             this.typeStatus = TypeTestStatus.AfterFailed;
 
             return;
         }
 
-        this.typeStatus = TypeTestStatus.Passed;
+        this.typeStatus = this.resultTests.Count switch
+        {
+            0 => TypeTestStatus.NoTestsFound,
+            _ => this.typeStatus = TypeTestStatus.Passed
+        };
     }
 
     private static TypeTestStatus GetTypeStatus(Type typeInfo)
@@ -124,7 +130,9 @@ public class TypeTest
 
     public void Print(ITestPrinter printer)
     {
-        foreach (var methodTest in this.optionTestMethods.ValueOrFailure()) //TODO()
+        printer.PrintTypeTest(this.typeInfo, this.typeStatus, this.exception);
+
+        foreach (var methodTest in this.resultTests)
         {
             methodTest.Print(printer);
         }
