@@ -4,12 +4,12 @@ using MyNunit.Attributes;
 using MyNunit.Exceptions;
 
 /// <summary>
-/// <see cref="BeforeClassAttribute"/> class test.
+/// <see cref="AfterAttribute"/> tests class.
 /// </summary>
-public class BeforeClassTest
+public class AfterTest
 {
     /// <summary>
-    /// Gets a value indicating whether that the tests have been run.
+    /// Gets a value indicating whether the tests have been run.
     /// </summary>
     public static bool IsRun
     {
@@ -18,10 +18,10 @@ public class BeforeClassTest
     }
 
     /// <summary>
-    /// <see cref="BeforeAttribute"/> test method.
+    /// <see cref="AfterAttribute"/> test method.
     /// </summary>
-    [BeforeClass]
-    public static void BeforeTestMethod()
+    [After]
+    public void AfterTestMethod()
     {
         IsRun = true;
     }
@@ -29,8 +29,8 @@ public class BeforeClassTest
     /// <summary>
     /// <see cref="TestAttribute"/> test method.
     /// </summary>
-    [Test]
-    public void TestShouldFail()
+    [Test(Ignore = "before test attribute test")]
+    public void SomeTest()
     {
         throw new FailException();
     }
