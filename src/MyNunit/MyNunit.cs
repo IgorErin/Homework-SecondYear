@@ -1,196 +1,41 @@
 namespace MyNunit;
 
-using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Reflection;
-using Attributes;
-using Exceptions;
-using TestsInfo;
-using Optional;
+using Printer;
+using Tests.AssemblyTest;
 
 /// <summary>
-/// Class for testing assemblies and classes.
+/// Class for testing assemblies.
 /// </summary>
-public static class MyNunit
+public class MyNunit
 {
-    private const string TypePassedMessage = "Type passed";
-    private const string TypeFailedMessage = "Type failed";
-    private const string TypeNotMatchMessage = "Class doesn't match to test class";
+    private readonly IEnumerable<AssemblyTest> tests;
 
-    private static readonly object[] EmptyArgs = Array.Empty<object>();
-
-    /// <summary>
-    /// A method that tests all suitable classes in the assembly.
-    /// </summary>
-    /// <param name="assembly">Assembly for the test.</param>
-    /// <returns>Returns information about test results in the form of <see cref="TestAssemblyInfo"/>.</returns>
-    public static TestAssemblyInfo RunAssemblyTests(Assembly assembly)
+    public MyNunit(IEnumerable<Assembly> assemblies)
     {
-        var resultCollection = new ConcurrentQueue<TestClassInfo>();
-        var assemblyStopWatch = new Stopwatch();
+        var testList = new List<AssemblyTest>();
 
-        assemblyStopWatch.Reset();
-        assemblyStopWatch.Start();
-
-        Parallel.ForEach(assembly.ExportedTypes, type =>
+        foreach (var assembly in assemblies)
         {
-            if (type.GetConstructor(Type.EmptyTypes) != null && !type.IsAbstract)
-            {
-                resultCollection.Enqueue(RunTypeTests(type));
-            }
-            else
-            {
-                resultCollection.Enqueue(new TestClassInfo(TypeNotMatchMessage, type.GetTypeInfo()));
-            }
-        });
+            testList.Add(new AssemblyTest(assembly));
+        }
 
-        assemblyStopWatch.Stop();
-        return new TestAssemblyInfo(assemblyStopWatch.ElapsedMilliseconds, resultCollection, assembly);
+        this.tests = testList;
     }
 
-    /// <summary>
-    /// Method for running tests in a class.
-    /// </summary>
-    /// <param name="type">Type for testing.</param>
-    /// <returns>Returns the results of type tests in the form <see cref="TestClassInfo"/>.</returns>
-    /// <exception cref="ClassInstantiationException">Will be thrown out if the class cannot be instantiated.</exception>
-    public static TestClassInfo RunTypeTests(Type type)
+    public void Run()
     {
-        var typeInfo = type.GetTypeInfo();
-        var typeStopWatch = new Stopwatch();
-
-        var testMethods = GetMethodsWithAttribute(typeof(TestAttribute), typeInfo);
-        var results = new List<TestInfo>();
-
-        typeStopWatch.Reset();
-        typeStopWatch.Start();
-
-        try
+        foreach (var test in this.tests)
         {
-            RunStaticMethodsWithEmptyArgs(typeInfo, typeof(BeforeClassAttribute));
-
-            var instance = Activator.CreateInstance(type) ??
-                           throw new ClassInstantiationException("Class cannot be instantiated");
-
-            var beforeTestMethods = GetMethodsWithAttribute(typeof(BeforeAttribute), typeInfo);
-            var afterTestMethods = GetMethodsWithAttribute(typeof(AfterAttribute), typeInfo);
-
-            foreach (var method in testMethods)
-            {
-                var testInfo = RunMethodTest(instance, beforeTestMethods, method, afterTestMethods);
-                results.Add(testInfo);
-            }
-
-            RunStaticMethodsWithEmptyArgs(typeInfo, typeof(AfterClassAttribute));
-        }
-        catch (Exception testRunTimeException)
-        {
-            typeStopWatch.Stop();
-            return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, testRunTimeException.Some(), TypeFailedMessage, typeInfo);
-        }
-
-        typeStopWatch.Stop();
-        return new TestClassInfo(typeStopWatch.ElapsedMilliseconds, results, TypePassedMessage, typeInfo);
-    }
-
-    private static TestInfo RunMethodTest(
-        object instance,
-        List<MethodInfo> beforeTestMethods,
-        MethodInfo testMethod,
-        List<MethodInfo> afterTestMethods)
-    {
-        var resultException = Option.None<Exception>();
-        var methodStopwatch = new Stopwatch();
-
-        try
-        {
-            RunInstanceMethodsWithEmptyArgs(instance, beforeTestMethods);
-
-            methodStopwatch.Reset();
-            methodStopwatch.Start();
-
-            try
-            {
-                RunInstanceMethodWithEmptyArgs(instance, testMethod);
-            }
-            catch (Exception testRunTimeException)
-            {
-                methodStopwatch.Stop();
-
-                var firstAttribute = GetTestAttribute(testMethod);
-                RunInstanceMethodsWithEmptyArgs(instance, afterTestMethods);
-
-                return new TestInfo(
-                    testMethod,
-                    testRunTimeException.InnerException?.Some<Exception>() ?? Option.None<Exception>(),
-                    firstAttribute.Expected?.Some<Type>() ?? Option.None<Type>(),
-                    firstAttribute.Ignore?.Some<string>() ?? Option.None<string>(),
-                    methodStopwatch.ElapsedMilliseconds);
-            }
-
-            methodStopwatch.Stop();
-
-            RunInstanceMethodsWithEmptyArgs(instance, afterTestMethods);
-        }
-        catch (Exception testRunTimeException)
-        {
-            methodStopwatch.Stop();
-            resultException = testRunTimeException.Some<Exception>();
-        }
-
-        var attribute = GetTestAttribute(testMethod);
-
-        return new TestInfo(
-            testMethod,
-            resultException,
-            attribute.Expected?.Some<Type>() ?? Option.None<Type>(),
-            attribute.Ignore?.Some<string>() ?? Option.None<string>(),
-            methodStopwatch.ElapsedMilliseconds);
-    }
-
-    private static bool IsMethodHasAttribute(MethodInfo methodInfo, Type attributeType)
-        => methodInfo.GetCustomAttributes(attributeType).Any();
-
-    private static void RunInstanceMethodWithEmptyArgs(object type, MethodInfo methodInfo)
-        => methodInfo.Invoke(type, EmptyArgs);
-
-    private static TestAttribute GetTestAttribute(MethodInfo type)
-        => (TestAttribute)(Attribute.GetCustomAttribute(type, typeof(TestAttribute))
-                           ?? throw new NullReferenceException("Empty methods attributes"));
-
-    private static void RunInstanceMethodsWithEmptyArgs(object instance, IEnumerable<MethodInfo> methods)
-    {
-        foreach (var afterMethod in methods)
-        {
-            RunInstanceMethodWithEmptyArgs(instance, afterMethod);
+            test.Run();
         }
     }
 
-    private static void RunStaticMethodsWithEmptyArgs(TypeInfo typeInfo, Type methodAttributeType)
+    public void Print(ITestPrinter printer)
     {
-        var staticMethods = GetMethodsWithAttribute(methodAttributeType, typeInfo);
-
-        foreach (var method in staticMethods)
+        foreach (var test in this.tests)
         {
-            if (method.IsStatic)
-            {
-                method.Invoke(null, EmptyArgs);
-            }
+            test.Print(printer);
         }
-    }
-
-    private static List<MethodInfo> GetMethodsWithAttribute(Type attributeType, TypeInfo typeInfo)
-    {
-        var compatibleMethods = new List<MethodInfo>();
-
-        foreach (var method in typeInfo.DeclaredMethods)
-        {
-            if (IsMethodHasAttribute(method, attributeType))
-            {
-                compatibleMethods.Add(method);
-            }
-        }
-
-        return compatibleMethods;
     }
 }

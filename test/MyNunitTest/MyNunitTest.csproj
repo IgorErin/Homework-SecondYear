@@ -1,13 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
     <IsPackable>false</IsPackable>
 
-    <NoWarn>$(NoWarn),SA1633:</NoWarn>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn),SA1633,SA1200</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

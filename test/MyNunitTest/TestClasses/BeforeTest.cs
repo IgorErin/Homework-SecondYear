@@ -1,12 +1,11 @@
 namespace MyNunitTest.TestClasses;
 
 using MyNunit.Attributes;
-using MyNunit.Exceptions;
 
 /// <summary>
-/// <see cref="BeforeClassAttribute"/> class test.
+/// Class for test use only.
 /// </summary>
-public class BeforeClassTest
+public class BeforeTest
 {
     /// <summary>
     /// Gets a value indicating whether that the tests have been run.
@@ -20,8 +19,8 @@ public class BeforeClassTest
     /// <summary>
     /// <see cref="BeforeAttribute"/> test method.
     /// </summary>
-    [BeforeClass]
-    public static void BeforeTestMethod()
+    [Before]
+    public void BeforeTestMethod()
     {
         IsRun = true;
     }
@@ -30,8 +29,8 @@ public class BeforeClassTest
     /// <see cref="TestAttribute"/> test method.
     /// </summary>
     [Test]
-    public void TestShouldFail()
+    public void SomeTestMethod()
     {
-        throw new FailException();
+        throw new Exception();
     }
 }

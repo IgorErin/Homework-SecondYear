@@ -1,21 +1,37 @@
 ﻿using System.Reflection;
+using MyNunit.Printer;
 
-if (File.Exists(args[0]))
+var assemblies = new List<Assembly>();
+
+foreach (var path in args)
 {
-    try
+    if (IsAssembly(path))
     {
-        var assembly = Assembly.LoadFrom(args[0]);
-        var result = MyNunit.MyNunit.RunAssemblyTests(assembly);
-
-        Console.Write(result.ToString());
+        assemblies.Add(Assembly.LoadFrom(path));
     }
-    catch (Exception e)
+    else
     {
-        Console.WriteLine(e.Message);
-        Console.WriteLine("Please, restart the program");
+        Console.WriteLine("The specified file was not found");
     }
 }
-else
+
+var myNunit = new MyNunit.MyNunit(assemblies);
+var printer = new ConsoleTestPrinter();
+
+myNunit.Run();
+
+myNunit.Print(printer);
+
+bool IsAssembly(string path)
 {
-    Console.WriteLine("The specified file was not found");
+    bool isAssembly = false;
+
+    try
+    {
+        AssemblyName a = AssemblyName.GetAssemblyName(path);
+
+        isAssembly = true;
+    } catch {}
+
+    return isAssembly;
 }
