@@ -1,8 +1,8 @@
 namespace MyNunit;
 
 using System.Reflection;
-using Printer;
 using Tests.AssemblyTest;
+using Visitor;
 
 /// <summary>
 /// Class for testing assemblies.
@@ -11,6 +11,10 @@ public class MyNunit
 {
     private readonly IEnumerable<AssemblyTest> tests;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="assemblies"></param>
     public MyNunit(IEnumerable<Assembly> assemblies)
     {
         var testList = new List<AssemblyTest>();
@@ -31,11 +35,11 @@ public class MyNunit
         }
     }
 
-    public void Print(ITestPrinter printer)
+    public void Visit(ITestVisitor visitor)
     {
         foreach (var test in this.tests)
         {
-            test.Print(printer);
+            test.Accept(visitor);
         }
     }
 }

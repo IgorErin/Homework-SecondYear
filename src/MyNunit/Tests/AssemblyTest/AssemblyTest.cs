@@ -2,8 +2,8 @@ namespace MyNunit.Tests.AssemblyTest;
 
 using System.Collections.Concurrent;
 using System.Reflection;
-using Printer;
 using TypeTest;
+using Visitor;
 
 public class AssemblyTest
 {
@@ -15,6 +15,8 @@ public class AssemblyTest
     {
         this.assembly = assembly;
     }
+
+    public string FullName => this.assembly.FullName ?? "Name unknown";
 
     public void Run()
     {
@@ -30,13 +32,13 @@ public class AssemblyTest
         });
     }
 
-    public void Print(ITestPrinter printer)
+    public void Accept(ITestVisitor visitor)
     {
-        printer.PrintAssemblyTest(this.assembly);
+        visitor.Visit(this);
 
         foreach (var typeTest in this.typeTests)
         {
-            typeTest.Print(printer);
+            typeTest.Accept(visitor);
         }
     }
 }

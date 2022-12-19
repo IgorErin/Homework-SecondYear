@@ -6,7 +6,7 @@ using Attributes;
 using Extensions;
 using Optional;
 using Optional.Unsafe;
-using Printer;
+using Visitor;
 using Methods = IEnumerable<System.Reflection.MethodInfo>;
 
 public class MethodTest
@@ -22,7 +22,7 @@ public class MethodTest
     private readonly Methods after;
 
     private readonly Option<Type> expectedExceptionType;
-    private readonly Option<string> ignore;
+    private readonly Option<string> ignoreMessage;
 
     private Option<Exception> exception = Option.None<Exception>();
     private Option<long> time = Option.None<long>();
@@ -40,12 +40,20 @@ public class MethodTest
         var attribute = GetTestAttribute(this.method);
 
         this.expectedExceptionType = attribute.Expected?.Some<Type>() ?? Option.None<Type>();
-        this.ignore = attribute.Ignore?.Some<string>() ?? Option.None<string>();
+        this.ignoreMessage = attribute.Ignore?.Some<string>() ?? Option.None<string>();
 
         this.methodTestStatus = GetMethodStatus(this.method);
     }
 
     public MethodTestStatus Status => this.methodTestStatus;
+
+    public Option<Exception> Exception => this.exception;
+
+    public Option<string> IgnoreMessage => this.ignoreMessage;
+
+    public Option<long> Time => this.time;
+
+    public string Name => this.method.Name;
 
     public void Run()
     {
@@ -66,7 +74,7 @@ public class MethodTest
             return;
         }
 
-        if (!this.ignore.HasValue)
+        if (!this.ignoreMessage.HasValue)
         {
             try
             {
@@ -170,6 +178,6 @@ public class MethodTest
     private static void RunInstanceMethodWithEmptyArgs(object type, MethodInfo methodInfo)
         => methodInfo.Invoke(type, EmptyArgs);
 
-    public void Print(ITestPrinter printer)
-        => printer.PrintMethodTest(this.method, this.methodTestStatus, this.time, this.ignore, this.exception);
+    public void Accept(ITestVisitor visitor)
+        => visitor.Visit(this);
 }

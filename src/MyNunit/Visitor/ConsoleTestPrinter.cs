@@ -1,59 +1,70 @@
-namespace MyNunit.Printer;
+namespace MyNunit.Visitor;
 
-using System.Reflection;
 using Exceptions;
 using Extensions;
 using Optional;
 using Optional.Unsafe;
+using Tests.AssemblyTest;
 using Tests.MethodTest;
 using Tests.TypeTest;
 
-public class ConsoleTestPrinter : ITestPrinter
+/// <summary>
+/// Console test printer <inheritdoc cref="ITestVisitor"/>.
+/// </summary>
+public class ConsoleTestPrinter : ITestVisitor
 {
-    public void PrintAssemblyTest(Assembly assembly)
+    /// <summary>
+    /// <inheritdoc cref="ITestVisitor.Visit(AssemblyTest)"/>
+    /// </summary>
+    /// <param name="assembly">Assembly test to visit.</param>
+    public void Visit(AssemblyTest assembly)
     {
         Console.WriteLine("Assembly test information");
         Console.WriteLine($"Assembly name: {assembly.FullName}");
     }
 
-    public void PrintTypeTest(TypeInfo typeInfo, TypeTestStatus status, Option<Exception> exception)
+    /// <summary>
+    /// <inheritdoc cref="ITestVisitor.Visit(TypeTest)"/>.
+    /// </summary>
+    /// <param name="typeTest">Type test to visit.</param>
+    public void Visit(TypeTest typeTest)
     {
-        Console.WriteLine($">> Test type name: {typeInfo.Name}");
-        Console.WriteLine($">> Status: {GetTypeMessage(status, exception)}");
+        Console.WriteLine($">> Test type name: {typeTest.Name}");
+        Console.WriteLine($">> Message: {GetTypeMessage(typeTest.Status, typeTest.Exception)}");
     }
 
-    public void PrintMethodTest(
-        MethodInfo methodInfo,
-        MethodTestStatus methodTestStatus,
-        Option<long> time,
-        Option<string> ignoreMessage,
-        Option<Exception> exception)
+    /// <summary>
+    /// <inheritdoc cref="ITestVisitor.Visit(MethodTest)"/>.
+    /// </summary>
+    /// <param name="methodTest">Method test to visit.</param>
+    public void Visit(MethodTest methodTest)
     {
-        Console.WriteLine($" => Method name: {methodInfo.Name}");
-        Console.WriteLine($"   --> Status: {GetTestMethodStatus(methodTestStatus, exception)}");
+        Console.WriteLine($" => Method name: {methodTest.Name}");
+        Console.WriteLine($"   --> Status: {GetTestMethodStatus(methodTest.Status, methodTest.Exception)}");
 
-        time.MatchSome(value => Console.WriteLine($"   --> Time: {value} ms"));
+        methodTest.Time.MatchSome(value => Console.WriteLine($"   --> Time: {value} ms"));
 
-        Console.WriteLine($"   --> Message: {GetTestMethodMessage(methodTestStatus, ignoreMessage, exception)}");
+        Console.WriteLine(
+            $"   --> Message: {GetTestMethodMessage(methodTest.Status, methodTest.IgnoreMessage, methodTest.Exception)}");
     }
-    
+
     private static string GetTypeMessage(TypeTestStatus status, Option<Exception> exception)
         => status switch
         {
             TypeTestStatus.NoTestsFound => "No test found",
             TypeTestStatus.AbstractType => "The type cannot be tested because it is abstract",
             TypeTestStatus.IncompatibleConstructorParameters => "The type has incompatible constructor parameters",
-            TypeTestStatus.AfterFailed => "An exception was received when performing post actions",
-            TypeTestStatus.BeforeFailed => "An exception was received when performing pre-actions",
+            TypeTestStatus.AfterFailed => $"An exception was received when performing post actions, {exception.ValueOrFailure()}",
+            TypeTestStatus.BeforeFailed => $"An exception was received when performing pre-actions. {exception.ValueOrFailure()}",
             TypeTestStatus.Passed => "Passed",
-            TypeTestStatus.Compatible => throw new Exception(), //TODO()
-            _ => throw new Exception() // TODO()
+            TypeTestStatus.Compatible => throw new PrinterException("the type has not been tested yet"),
+            _ => throw new PrinterException("Type status incompatible")
         };
 
     private static string GetTestMethodStatus(MethodTestStatus methodTestStatus, Option<Exception> exception)
         => methodTestStatus switch
         {
-            MethodTestStatus.Compatible => throw new Exception(), // TODO()
+            MethodTestStatus.Compatible => throw new PrinterException("the type has not been tested yet"),
             MethodTestStatus.Constructor or
                 MethodTestStatus.Generic or
                 MethodTestStatus.IncompatibleParameters or
@@ -65,7 +76,7 @@ public class ConsoleTestPrinter : ITestPrinter
             MethodTestStatus.IgnoredWithMessage or
                 MethodTestStatus.ReceivedExpectedException or
                 MethodTestStatus.Passed => "Passed",
-            _ => throw new Exception() //TODO()
+            _ => throw new PrinterException("method status incompatible")
         };
 
     private static string GetMethodTestStatusByException(Exception exception)
@@ -89,7 +100,7 @@ public class ConsoleTestPrinter : ITestPrinter
         Option<Exception> exception)
         => methodTestStatus switch
         {
-            MethodTestStatus.Compatible => throw new Exception(), // TODO()
+            MethodTestStatus.Compatible => throw new PrinterException("the type has not been tested yet"),
             MethodTestStatus.Constructor => "This method is a constructor --- cannot be tested",
             MethodTestStatus.Generic => "Generalized method --- incompatible for testing",
             MethodTestStatus.IncompatibleParameters or
@@ -106,7 +117,7 @@ public class ConsoleTestPrinter : ITestPrinter
                 $"An expected exception was received: {exception.ValueOrFailure().GetType()}",
             MethodTestStatus.ReceivedUnexpectedException => GetMethodTestMessageByException(exception.ValueOrFailure()),
             MethodTestStatus.Passed => "Test passed",
-            _ => throw new Exception() //TODO()
+            _ => throw new PrinterException("method status incompatible")
         };
 
     private static string GetMethodTestMessageByException(Exception exception)

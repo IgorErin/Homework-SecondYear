@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using MyNunit.Printer;
+using MyNunit.Visitor;
 
 var assemblies = new List<Assembly>();
 
@@ -20,7 +20,7 @@ var printer = new ConsoleTestPrinter();
 
 myNunit.Run();
 
-myNunit.Print(printer);
+myNunit.Visit(printer);
 
 bool IsAssembly(string path)
 {

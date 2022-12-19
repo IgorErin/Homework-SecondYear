@@ -5,7 +5,7 @@ using Attributes;
 using Exceptions;
 using MethodTest;
 using Optional;
-using Printer;
+using Visitor;
 
 public class TypeTest
 {
@@ -25,6 +25,10 @@ public class TypeTest
     }
 
     public TypeTestStatus Status => this.typeStatus;
+
+    public Option<Exception> Exception => this.exception;
+
+    public string Name => this.typeInfo.Name;
 
     public void Run()
     {
@@ -128,13 +132,13 @@ public class TypeTest
         return compatibleMethods;
     }
 
-    public void Print(ITestPrinter printer)
+    public void Accept(ITestVisitor visitor)
     {
-        printer.PrintTypeTest(this.typeInfo, this.typeStatus, this.exception);
+        visitor.Visit(this);
 
         foreach (var methodTest in this.resultTests)
         {
-            methodTest.Print(printer);
+            methodTest.Accept(visitor);
         }
     }
 }
