@@ -104,9 +104,9 @@ public class MyThreadPoolTest
         var testTask = threadPool.Submit(() => resultObject);
         threadPool.ShutDown();
 
-        Assert.Throws<MyThreadPoolException>(() =>
+        Assert.Throws<AggregateException>(() =>
         {
-            testTask.ContinueWith(result => result);
+            testTask.ContinueWith(result => result).Result.Ignore();
         });
     }
 
