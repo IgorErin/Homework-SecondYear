@@ -118,7 +118,7 @@ public sealed class MyThreadPool : IDisposable
         }
     }
 
-    private Type.Unit SubmitAction(Action action)
+    private Type.UnitType SubmitAction(Action action)
     {
         try
         {
@@ -133,7 +133,7 @@ public sealed class MyThreadPool : IDisposable
             throw new MyThreadPoolException("the shutdown is called, the task cannot be completed", e);
         }
 
-        return Type.UnitType;
+        return Type.Unit;
     }
 
     /// <summary>
@@ -257,13 +257,13 @@ public sealed class MyThreadPool : IDisposable
         /// </summary>
         private class Submitter
         {
-            private readonly Lazy<Type.Unit> lazySubmit;
+            private readonly Lazy<Type.UnitType> lazySubmit;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="Submitter"/> class.
             /// </summary>
             public Submitter(MyThreadPool threadPool, Action action)
-                => this.lazySubmit = new Lazy<Type.Unit>(() => threadPool.SubmitAction(action));
+                => this.lazySubmit = new Lazy<Type.UnitType>(() => threadPool.SubmitAction(action));
 
             /// <summary>
             /// Gets a value indicating whether action submitted.

@@ -5,17 +5,17 @@ namespace ThreadPool;
 /// </summary>
 public static class Type
 {
-    private static readonly Unit unit = new ();
+    private static readonly UnitType UnitInstance = new ();
 
     /// <summary>
-    /// Gets <see cref="Type.UnitType"/>.
+    /// Gets <see cref="Unit"/>.
     /// </summary>
-    public static Unit UnitType => unit;
+    public static UnitType Unit => UnitInstance;
 
     /// <summary>
     /// Type of alias for <see cref="Void"/>.
     /// </summary>
-    public class Unit
+    public class UnitType
     {
     }
 }

@@ -8,9 +8,6 @@ public static class CommonExtensions
     /// <summary>
     /// Ignore method.
     /// </summary>
-    /// <remarks>
-    /// Value types will be boxed.
-    /// </remarks>
     /// <param name="someObject">Some object to ignore.</param>
     /// <typeparam name="T">Type of ignored value.</typeparam>
     public static void Ignore<T>(this T someObject)
