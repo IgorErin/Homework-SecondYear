@@ -57,14 +57,14 @@ public class ConsoleTestPrinter : ITestVisitor
             TypeTestStatus.AfterFailed => $"An exception was received when performing post actions, {exception.ValueOrFailure()}",
             TypeTestStatus.BeforeFailed => $"An exception was received when performing pre-actions. {exception.ValueOrFailure()}",
             TypeTestStatus.Passed => "Passed",
-            TypeTestStatus.Compatible => throw new PrinterException("the type has not been tested yet"),
-            _ => throw new PrinterException("Type status incompatible")
+            TypeTestStatus.Compatible => throw new TestVisitorException("the type has not been tested yet"),
+            _ => throw new TestVisitorException("Type status incompatible")
         };
 
     private static string GetTestMethodStatus(MethodTestStatus methodTestStatus, Option<Exception> exception)
         => methodTestStatus switch
         {
-            MethodTestStatus.Compatible => throw new PrinterException("the type has not been tested yet"),
+            MethodTestStatus.Compatible => throw new TestVisitorException("the type has not been tested yet"),
             MethodTestStatus.Constructor or
                 MethodTestStatus.Generic or
                 MethodTestStatus.IncompatibleParameters or
@@ -76,7 +76,7 @@ public class ConsoleTestPrinter : ITestVisitor
             MethodTestStatus.IgnoredWithMessage or
                 MethodTestStatus.ReceivedExpectedException or
                 MethodTestStatus.Passed => "Passed",
-            _ => throw new PrinterException("method status incompatible")
+            _ => throw new TestVisitorException("method status incompatible")
         };
 
     private static string GetMethodTestStatusByException(Exception exception)
@@ -100,7 +100,7 @@ public class ConsoleTestPrinter : ITestVisitor
         Option<Exception> exception)
         => methodTestStatus switch
         {
-            MethodTestStatus.Compatible => throw new PrinterException("the type has not been tested yet"),
+            MethodTestStatus.Compatible => throw new TestVisitorException("the type has not been tested yet"),
             MethodTestStatus.Constructor => "This method is a constructor --- cannot be tested",
             MethodTestStatus.Generic => "Generalized method --- incompatible for testing",
             MethodTestStatus.IncompatibleParameters or
@@ -117,7 +117,7 @@ public class ConsoleTestPrinter : ITestVisitor
                 $"An expected exception was received: {exception.ValueOrFailure().GetType()}",
             MethodTestStatus.ReceivedUnexpectedException => GetMethodTestMessageByException(exception.ValueOrFailure()),
             MethodTestStatus.Passed => "Test passed",
-            _ => throw new PrinterException("method status incompatible")
+            _ => throw new TestVisitorException("method status incompatible")
         };
 
     private static string GetMethodTestMessageByException(Exception exception)

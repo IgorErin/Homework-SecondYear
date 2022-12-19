@@ -7,6 +7,9 @@ using MethodTest;
 using Optional;
 using Visitor;
 
+/// <summary>
+/// Type test.
+/// </summary>
 public class TypeTest
 {
     private static readonly object[] EmptyArgs = Array.Empty<object>();
@@ -18,18 +21,34 @@ public class TypeTest
 
     private TypeTestStatus typeStatus;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TypeTest"/> class.
+    /// </summary>
+    /// <param name="type">Type to test.</param>
     public TypeTest(Type type)
     {
         this.typeInfo = type.GetTypeInfo();
         this.typeStatus = GetTypeStatus(this.typeInfo);
     }
 
+    /// <summary>
+    /// Gets test status.
+    /// </summary>
     public TypeTestStatus Status => this.typeStatus;
 
+    /// <summary>
+    /// Gets optional test runtime exception.
+    /// </summary>
     public Option<Exception> Exception => this.exception;
 
+    /// <summary>
+    /// Gets type name.
+    /// </summary>
     public string Name => this.typeInfo.Name;
 
+    /// <summary>
+    /// Run test.
+    /// </summary>
     public void Run()
     {
         if (this.typeStatus != TypeTestStatus.Compatible)
@@ -86,6 +105,20 @@ public class TypeTest
         };
     }
 
+    /// <summary>
+    /// Accept <see cref="ITestVisitor"/>.
+    /// </summary>
+    /// <param name="visitor">Visitor to accept.</param>
+    public void Accept(ITestVisitor visitor)
+    {
+        visitor.Visit(this);
+
+        foreach (var methodTest in this.resultTests)
+        {
+            methodTest.Accept(visitor);
+        }
+    }
+
     private static TypeTestStatus GetTypeStatus(Type typeInfo)
     {
         if (typeInfo.GetConstructor(Type.EmptyTypes) == null)
@@ -130,15 +163,5 @@ public class TypeTest
         }
 
         return compatibleMethods;
-    }
-
-    public void Accept(ITestVisitor visitor)
-    {
-        visitor.Visit(this);
-
-        foreach (var methodTest in this.resultTests)
-        {
-            methodTest.Accept(visitor);
-        }
     }
 }

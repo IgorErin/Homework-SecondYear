@@ -1,6 +1,5 @@
 namespace MyNunit.Visitor;
 
-using System.Reflection;
 using Tests.MethodTest;
 using Tests.TypeTest;
 using Tests.AssemblyTest;

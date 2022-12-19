@@ -9,6 +9,9 @@ using Optional.Unsafe;
 using Visitor;
 using Methods = IEnumerable<System.Reflection.MethodInfo>;
 
+/// <summary>
+/// Method test.
+/// </summary>
 public class MethodTest
 {
     private static readonly object[] EmptyArgs = Array.Empty<object>();
@@ -29,6 +32,13 @@ public class MethodTest
 
     private MethodTestStatus methodTestStatus;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MethodTest"/> class.
+    /// </summary>
+    /// <param name="instance">Instance whose method is being tested.</param>
+    /// <param name="before">Methods performed before testing.</param>
+    /// <param name="method">Method to test.</param>
+    /// <param name="after">Methods to perform after testing.</param>
     public MethodTest(object instance, Methods before, MethodInfo method, Methods after)
     {
         this.instance = instance;
@@ -45,16 +55,34 @@ public class MethodTest
         this.methodTestStatus = GetMethodStatus(this.method);
     }
 
+    /// <summary>
+    /// Gets test status.
+    /// </summary>
     public MethodTestStatus Status => this.methodTestStatus;
 
+    /// <summary>
+    /// Gets optional test run time exception.
+    /// </summary>
     public Option<Exception> Exception => this.exception;
 
+    /// <summary>
+    /// Gets optional <see cref="TestAttribute"/> ignore message.
+    /// </summary>
     public Option<string> IgnoreMessage => this.ignoreMessage;
 
+    /// <summary>
+    /// Gets optional test time of execution.
+    /// </summary>
     public Option<long> Time => this.time;
 
+    /// <summary>
+    /// Gets test name.
+    /// </summary>
     public string Name => this.method.Name;
 
+    /// <summary>
+    /// Run test.
+    /// </summary>
     public void Run()
     {
         if (this.methodTestStatus != MethodTestStatus.Compatible)
@@ -91,13 +119,14 @@ public class MethodTest
                 this.stopwatch.Stop();
 
                 this.exception =
-                    testRuntimeException.InnerException?.Some<Exception>() ?? throw new Exception(); //TODO()
+                    testRuntimeException.InnerException?.Some<Exception>() ??
+                        throw new NullReferenceException("Null inner exception");
 
                 this.methodTestStatus = GetExceptionStatus(this.exception, this.expectedExceptionType);
             }
             finally
             {
-                this.time = this.stopwatch.ElapsedMilliseconds.Some<long>(); // TODO()
+                this.time = this.stopwatch.ElapsedMilliseconds.Some<long>();
             }
         }
         else
@@ -115,6 +144,13 @@ public class MethodTest
             this.methodTestStatus = MethodTestStatus.AfterFailed;
         }
     }
+
+    /// <summary>
+    /// Accept <see cref="ITestVisitor"/>.
+    /// </summary>
+    /// <param name="visitor">Visitor to accept.</param>
+    public void Accept(ITestVisitor visitor)
+        => visitor.Visit(this);
 
     private static MethodTestStatus GetMethodStatus(MethodInfo methodInfo)
     {
@@ -177,7 +213,4 @@ public class MethodTest
 
     private static void RunInstanceMethodWithEmptyArgs(object type, MethodInfo methodInfo)
         => methodInfo.Invoke(type, EmptyArgs);
-
-    public void Accept(ITestVisitor visitor)
-        => visitor.Visit(this);
 }
