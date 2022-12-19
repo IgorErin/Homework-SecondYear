@@ -118,7 +118,7 @@ public sealed class MyThreadPool : IDisposable
         }
     }
 
-    private Type.UnitType SubmitAction(Action action)
+    private void SubmitAction(Action action)
     {
         try
         {
@@ -132,8 +132,6 @@ public sealed class MyThreadPool : IDisposable
         {
             throw new MyThreadPoolException("the shutdown is called, the task cannot be completed", e);
         }
-
-        return Type.Unit;
     }
 
     /// <summary>
@@ -147,6 +145,8 @@ public sealed class MyThreadPool : IDisposable
         private readonly Lazy<TResult> lazyFun;
 
         private readonly ActionExecutor actionExecutor;
+
+        private Option<Exception> submitException = Option.None<Exception>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MyTask{TResult}"/> class.
@@ -170,7 +170,10 @@ public sealed class MyThreadPool : IDisposable
         /// Gets the result of the evaluation or, if it has not yet been evaluated,
         /// blocks the calling thread until it is evaluated and returns the value.
         /// </summary>
-        public TResult Result => this.lazyFun.Value;
+        public TResult Result =>
+            this.submitException.Match(
+                some: value => throw new AggregateException(value),
+                none: () => this.lazyFun.Value);
 
         /// <summary>
         /// The method that allows you to get the continuation of the result in the form <see cref="IMyTask{TResult}"/>.
@@ -190,34 +193,20 @@ public sealed class MyThreadPool : IDisposable
 
             if (this.IsCompleted)
             {
-                this.threadPool.SubmitAction(newTask.Compute);
+                newTask.Submit();
 
                 return newTask;
             }
 
             lock (this.actionExecutor)
             {
-                if (this.IsCompleted)
+                if (this.IsCompleted || this.actionExecutor.IsCompleted)
                 {
-                    this.threadPool.SubmitAction(newTask.Compute);
+                    newTask.Submit();
                 }
                 else
                 {
-                    var submitter = new Submitter(this.threadPool, newTask.Compute);
-
-                    var funWithSubmitExceptionCheck = () =>
-                    {
-                        if (submitter.IsSubmitted)
-                        {
-                            submitter.ThrowSubmitExceptionIfThatExist();
-                        }
-
-                        return continuation.Invoke(this.lazyFun.Value);
-                    };
-
-                    this.actionExecutor.AddAction(submitter.Submit);
-
-                    newTask = new MyTask<TNewResult>(this.threadPool, funWithSubmitExceptionCheck);
+                    this.actionExecutor.AddAction(newTask.Submit);
                 }
             }
 
@@ -227,9 +216,6 @@ public sealed class MyThreadPool : IDisposable
         /// <summary>
         /// Compute task.
         /// </summary>
-        /// <remarks>
-        /// The computation can be performed in the current thread.
-        /// </remarks>
         public void Compute() => this.lazyFun.Compute();
 
         private TResult ExecuteFunAndSubmitContinuationsToThreadPool(Func<TResult> func)
@@ -238,47 +224,30 @@ public sealed class MyThreadPool : IDisposable
             {
                 return func.Invoke();
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                throw new AggregateException(e);
+                throw new AggregateException(exception);
             }
             finally
             {
                 lock (this.actionExecutor)
                 {
-                    this.actionExecutor.Release();
+                    this.actionExecutor.Execute();
                     this.actionExecutor.Dispose();
                 }
             }
         }
 
-        /// <summary>
-        /// Class for encapsulating an exception when submitting.
-        /// </summary>
-        private class Submitter
+        private void Submit()
         {
-            private readonly Lazy<Type.UnitType> lazySubmit;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref="Submitter"/> class.
-            /// </summary>
-            public Submitter(MyThreadPool threadPool, Action action)
-                => this.lazySubmit = new Lazy<Type.UnitType>(() => threadPool.SubmitAction(action));
-
-            /// <summary>
-            /// Gets a value indicating whether action submitted.
-            /// </summary>
-            public bool IsSubmitted => this.lazySubmit.IsValueCreated;
-
-            /// <summary>
-            /// Submit action.
-            /// </summary>
-            public void Submit() => this.lazySubmit.Compute();
-
-            /// <summary>
-            /// Throw an exception that was thrown during the submission.
-            /// </summary>
-            public void ThrowSubmitExceptionIfThatExist() => this.lazySubmit.Value.Ignore();
+            try
+            {
+                this.threadPool.SubmitAction(this.Compute);
+            }
+            catch (Exception exception)
+            {
+                this.submitException = exception.Some<Exception>();
+            }
         }
 
         /// <summary>
@@ -291,6 +260,11 @@ public sealed class MyThreadPool : IDisposable
             private volatile bool isDisposed;
 
             /// <summary>
+            /// Gets a value indicating whether adding is completed.
+            /// </summary>
+            public bool IsCompleted => this.actions.IsCompleted;
+
+            /// <summary>
             /// Add an action for execution.
             /// </summary>
             /// <param name="action">Action for execution.</param>
@@ -299,7 +273,7 @@ public sealed class MyThreadPool : IDisposable
             /// <summary>
             /// Execute all previously added actions and complete addition.
             /// </summary>
-            public void Release()
+            public void Execute()
             {
                 this.actions.CompleteAdding();
 
