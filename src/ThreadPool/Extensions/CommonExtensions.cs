@@ -12,7 +12,8 @@ public static class CommonExtensions
     /// Value types will be boxed.
     /// </remarks>
     /// <param name="someObject">Some object to ignore.</param>
-    public static void Ignore(this object? someObject)
+    /// <typeparam name="T">Type of ignored value.</typeparam>
+    public static void Ignore<T>(this T someObject)
     {
         var _ = someObject;
     }
@@ -26,7 +27,7 @@ public static class CommonExtensions
     {
         try
         {
-            lazy.Value.Ignore(); // boxing...
+            lazy.Value.Ignore();
         }
         catch
         {
