@@ -16,7 +16,7 @@ public class TypeTest
 
     private readonly TypeInfo typeInfo;
 
-    private List<MethodTest> resultTests = new ();
+    private readonly List<MethodTest> resultTests = new ();
     private Option<Exception> exception = Option.None<Exception>();
 
     private TypeTestStatus typeStatus;
