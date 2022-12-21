@@ -1,5 +1,7 @@
 ﻿using Queue;
 
+// Examples
+
 var queue = new BlockingQueue<int>();
 
 queue.Enqueue(1, 1);
