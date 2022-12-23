@@ -148,7 +148,7 @@ public class MyTaskTest
     [Test]
     public void ExceptionInBaseTaskContinuationTest()
     {
-        using var threadPool = new MyThreadPool(Environment.ProcessorCount);
+        var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var testException = new TestException();
 
         var newTestTask = threadPool.Submit<int>(() => throw testException);
@@ -159,6 +159,8 @@ public class MyTaskTest
             testTaskContinuation.Result.Ignore();
         });
         Assert.That(aggregateException!.InnerException!.InnerException, Is.EqualTo(testException));
+
+        threadPool.Dispose();
     }
 
     /// <summary>
@@ -169,7 +171,7 @@ public class MyTaskTest
     [Test]
     public void ExceptionInContinuationTaskTest()
     {
-        using var threadPool = new MyThreadPool(Environment.ProcessorCount);
+        var threadPool = new MyThreadPool(Environment.ProcessorCount);
         var testException = new TestException();
 
         var newTestTask = threadPool.Submit(() => 0);
@@ -180,5 +182,7 @@ public class MyTaskTest
             testTaskContinuation.Result.Ignore();
         });
         Assert.That(aggregateException!.InnerException, Is.EqualTo(testException));
+
+        threadPool.Dispose();
     }
 }
