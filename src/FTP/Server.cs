@@ -49,7 +49,7 @@ public class Server
                 }
 
                 taskList.AddLast(
-                    Task.Run(async () => await this.ReadAndExecuteRequests(socket).ConfigureAwait(false)));
+                    Task.Run(async () => await ReadAndExecuteRequests(socket).ConfigureAwait(false)));
             }
         }
         finally
@@ -63,19 +63,22 @@ public class Server
         }
     }
 
-    private async Task ListAsync(string path, NetworkStream stream)
+    private static async Task ListAsync(string path, NetworkStream stream)
     {
         var currentDirectory = new DirectoryInfo(Directory.GetCurrentDirectory() + path);
 
         if (!currentDirectory.Exists)
         {
-            await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(IncorrectRequestLengthAnswer),  ListAnswerBufferSize);
+            await stream.ConfigureWriteAsyncFromZero(
+                BitConverter.GetBytes(IncorrectRequestLengthAnswer),  ListAnswerBufferSize);
+
             await stream.ConfigureFlushAsync();
 
             return;
         }
 
         var size = currentDirectory.GetFiles().Length + currentDirectory.GetDirectories().Length;
+
         await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(size), ListAnswerBufferSize);
 
         foreach (var file in currentDirectory.EnumerateFiles())
@@ -99,13 +102,14 @@ public class Server
         await stream.ConfigureFlushAsync();
     }
 
-    private async Task GetAsync(string inputPath, NetworkStream stream)
+    private static async Task GetAsync(string inputPath, NetworkStream stream)
     {
         var path = Directory.GetCurrentDirectory() + inputPath;
 
         if (!File.Exists(path))
         {
-            await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(IncorrectRequestLengthAnswer), GetAnswerBufferSize);
+            await stream.ConfigureWriteAsyncFromZero(
+                BitConverter.GetBytes(IncorrectRequestLengthAnswer), GetAnswerBufferSize);
 
             await stream.ConfigureFlushAsync();
 
@@ -114,7 +118,8 @@ public class Server
 
         var file = new FileInfo(path);
 
-        await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(file.Length), GetAnswerBufferSize);
+        await stream.ConfigureWriteAsyncFromZero(
+            BitConverter.GetBytes(file.Length), GetAnswerBufferSize);
 
         var fileStream = file.Open(FileMode.Open);
         await fileStream.CopyToAsync(stream).ConfigureAwait(false);
@@ -123,10 +128,10 @@ public class Server
         await stream.ConfigureFlushAsync();
     }
 
-    private async Task ReadAndExecuteRequests(Socket socket)
+    private static async Task ReadAndExecuteRequests(Socket socket)
     {
         var stream = new NetworkStream(socket);
-        using var reader = new StreamReader(stream);
+        var reader = new StreamReader(stream);
 
         try
         {
@@ -138,9 +143,9 @@ public class Server
             var transmissionTask = commandType switch
             {
                 "1" => Task.Run(
-                    async () => await this.ListAsync(path, stream).ConfigureAwait(false)),
+                    async () => await ListAsync(path, stream).ConfigureAwait(false)),
                 "2" => Task.Run(
-                    async () => await this.GetAsync(path, stream).ConfigureAwait(false)),
+                    async () => await GetAsync(path, stream).ConfigureAwait(false)),
                 _ => Task.Run(async () =>
                     await stream.ConfigureWriteAsyncFromZero(BitConverter.GetBytes(-1), GetAnswerBufferSize))
             };
