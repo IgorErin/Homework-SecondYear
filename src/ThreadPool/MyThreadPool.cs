@@ -50,29 +50,18 @@ public sealed class MyThreadPool : IDisposable
     /// <returns>Abstraction over the task accepted for execution, see <see cref="IMyTask{TResult}"/>.</returns>
     public MyTask<TResult> Submit<TResult>(Func<TResult> func)
     {
-        var resultTask = Option.None<MyTask<TResult>>();
-
         lock (this.locker)
         {
-            try
+            if (this.isShutDown)
             {
-                if (!this.isShutDown)
-                {
-                    var newTask = new MyTask<TResult>(this, func);
-
-                    resultTask = newTask.Some<MyTask<TResult>>();
-
-                    this.queue.Add(newTask.Compute);
-                }
+                throw new MyThreadPoolException("submit error, task not added");
             }
-            catch (Exception e)
-            {
-                throw new MyThreadPoolException($"submit error:{e.Message}", e);
-            }
+
+            var newTask = new MyTask<TResult>(this, func);
+            this.SubmitAction(newTask.Compute);
+
+            return newTask;
         }
-
-        return resultTask.ValueOr(
-            () => throw new MyThreadPoolException("submit error, task not added"));
     }
 
     /// <summary>
@@ -158,7 +147,8 @@ public sealed class MyThreadPool : IDisposable
             this.threadPool = threadPool;
             this.actionExecutor = new ActionExecutor();
 
-            this.lazyFun = new Lazy<TResult>(() => this.ExecuteFunAndSubmitContinuationsToThreadPool(func));
+            this.lazyFun = new Lazy<TResult>(
+                () => this.ExecuteFunAndSubmitContinuationsToThreadPool(func));
         }
 
         /// <summary>
@@ -194,7 +184,6 @@ public sealed class MyThreadPool : IDisposable
             if (this.IsCompleted)
             {
                 newTask.Submit();
-
                 return newTask;
             }
 
